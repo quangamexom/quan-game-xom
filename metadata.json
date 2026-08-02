@@ -1,0 +1,6 @@
+{
+  "name": "Quán Game Xóm - Game Download Hub",
+  "description": "Trang web Quán Game Xóm 2026 - Tải game Việt Hóa & Giả lập, góc đọc bài viết hoài niệm CRT, liên hệ Facebook/Telegram/Discord và ủng hộ trà đá Tifa.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
