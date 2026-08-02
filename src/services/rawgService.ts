@@ -1,4 +1,5 @@
 import { parseGameTitle } from '../utils/titleParser';
+import { KNOWN_GAME_ART } from '../data/gameArtMap';
 
 // RAWG API Service & Cover Art Manager
 // API Key provided by user: 290390ff53654730a48aa3e86f3ddf4f
@@ -261,6 +262,82 @@ async function queryRawgSearchResults(cleanedTitle: string): Promise<any[] | nul
 }
 
 /**
+ * Resolves game cover & banner using Known Art Map -> Steam Search API -> RAWG API.
+ */
+async function queryGameArtFromProviders(cleanedTitle: string): Promise<{ coverImage: string | null; bannerImage: string | null; rating: number | null; genres: string[] } | null> {
+  const normKey = cleanedTitle.toLowerCase().replace(/[:\-\—\–\/\_\.\,]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  // 1. Check KNOWN_GAME_ART first (Instant, zero latency)
+  if (KNOWN_GAME_ART[normKey]) {
+    const ka = KNOWN_GAME_ART[normKey];
+    return {
+      coverImage: ka.coverImage,
+      bannerImage: ka.bannerImage,
+      rating: ka.rating || 95,
+      genres: ka.genres || ['Game Quán Xóm']
+    };
+  }
+
+  for (const [key, ka] of Object.entries(KNOWN_GAME_ART)) {
+    if (normKey.includes(key) || key.includes(normKey)) {
+      return {
+        coverImage: ka.coverImage,
+        bannerImage: ka.bannerImage,
+        rating: ka.rating || 95,
+        genres: ka.genres || ['Game Quán Xóm']
+      };
+    }
+  }
+
+  // 2. Query Steam Store Search API (100% open CORS, fast 2:3 vertical covers)
+  try {
+    const steamUrl = `https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(cleanedTitle)}&l=english&cc=US`;
+    const res = await fetch(steamUrl);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && Array.isArray(data.items) && data.items.length > 0) {
+        const item = data.items[0];
+        const appId = item.id;
+        const coverImage = `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/library_600x900.jpg`;
+        const bannerImage = `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`;
+        return {
+          coverImage,
+          bannerImage,
+          rating: 94,
+          genres: item.genres ? item.genres.map((g: any) => g.name || g) : ['Game PC']
+        };
+      }
+    }
+  } catch (e) {
+    // Steam search failed
+  }
+
+  // 3. Fallback to RAWG API
+  try {
+    const results = await queryRawgSearchResults(cleanedTitle);
+    if (results && results.length > 0) {
+      const matched = findBestGameMatch(results, cleanedTitle);
+      const coverImg = matched.background_image || matched.background_image_additional || matched.short_screenshots?.[0]?.image || null;
+      const bannerImg = matched.background_image || matched.background_image_additional || null;
+      const rating = matched.rating ? Math.round(matched.rating * 20) : null;
+      const genres = matched.genres ? matched.genres.map((g: any) => g.name) : [];
+      if (coverImg || bannerImg) {
+        return {
+          coverImage: coverImg,
+          bannerImage: bannerImg,
+          rating,
+          genres
+        };
+      }
+    }
+  } catch (e) {
+    // RAWG search failed
+  }
+
+  return null;
+}
+
+/**
  * Clear failed RAWG cache entries from localStorage to unblock fetches
  */
 export function clearFailedRawgCache(): void {
@@ -280,7 +357,7 @@ export function clearFailedRawgCache(): void {
 clearFailedRawgCache();
 
 /**
- * Fetch game avatar/cover image from RAWG.io API with dedicated cache key rawg_cover_[cleanTitle]
+ * Fetch game avatar/cover image with dedicated cache key rawg_cover_[cleanTitle]
  */
 export async function fetchRawgCover(title: string): Promise<RawgCoverResult | null> {
   const cleanedTitle = cleanTitleForSearch(title);
@@ -306,7 +383,7 @@ export async function fetchRawgCover(title: string): Promise<RawgCoverResult | n
     const failed = localStorage.getItem(failKey);
     if (failed) {
       const failTime = parseInt(failed, 10);
-      if (Date.now() - failTime < 5 * 60 * 1000) { // 5 minutes max fail cache
+      if (Date.now() - failTime < 2 * 60 * 1000) { // 2 mins fail cache
         return null;
       } else {
         localStorage.removeItem(failKey);
@@ -318,44 +395,35 @@ export async function fetchRawgCover(title: string): Promise<RawgCoverResult | n
 
   return enqueueRequest(async () => {
     try {
-      const results = await queryRawgSearchResults(cleanedTitle);
+      const art = await queryGameArtFromProviders(cleanedTitle);
 
-      if (results && results.length > 0) {
-        const matched = findBestGameMatch(results, cleanedTitle);
-        // Prefer background_image or screenshot for cover art
-        const coverImg = matched.background_image || matched.background_image_additional || matched.short_screenshots?.[0]?.image || null;
-        const rating = matched.rating ? Math.round(matched.rating * 20) : null;
-        const genres = matched.genres ? matched.genres.map((g: any) => g.name) : [];
+      if (art && art.coverImage) {
+        const resultObj: RawgCoverResult = {
+          coverImage: art.coverImage,
+          rating: art.rating,
+          genres: art.genres
+        };
 
-        if (coverImg) {
-          const resultObj: RawgCoverResult = {
-            coverImage: coverImg,
-            rating: rating,
-            genres: genres
-          };
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify(resultObj));
+        } catch (e) {}
 
-          try {
-            localStorage.setItem(cacheKey, JSON.stringify(resultObj));
-          } catch (e) {}
-
-          return resultObj;
-        }
+        return resultObj;
       }
 
-      // Record failure only if API responded with empty results
       try {
         localStorage.setItem(failKey, Date.now().toString());
       } catch (e) {}
       return null;
     } catch (error) {
-      console.warn(`RAWG cover fetch error for "${title}" (${cleanedTitle}):`, error);
+      console.warn(`Cover fetch error for "${title}" (${cleanedTitle}):`, error);
       return null;
     }
   });
 }
 
 /**
- * Fetch game wide top hero banner image from RAWG.io API with dedicated cache key rawg_banner_[cleanTitle]
+ * Fetch game wide top hero banner image with dedicated cache key rawg_banner_[cleanTitle]
  */
 export async function fetchRawgBanner(title: string): Promise<RawgBannerResult | null> {
   const cleanedTitle = cleanTitleForSearch(title);
@@ -380,7 +448,7 @@ export async function fetchRawgBanner(title: string): Promise<RawgBannerResult |
     const failed = localStorage.getItem(failKey);
     if (failed) {
       const failTime = parseInt(failed, 10);
-      if (Date.now() - failTime < 5 * 60 * 1000) {
+      if (Date.now() - failTime < 2 * 60 * 1000) {
         return null;
       } else {
         localStorage.removeItem(failKey);
@@ -392,26 +460,20 @@ export async function fetchRawgBanner(title: string): Promise<RawgBannerResult |
 
   return enqueueRequest(async () => {
     try {
-      const results = await queryRawgSearchResults(cleanedTitle);
+      const art = await queryGameArtFromProviders(cleanedTitle);
 
-      if (results && results.length > 0) {
-        const matched = findBestGameMatch(results, cleanedTitle);
-        // Primary choice for top banner is background_image (wide wallpaper/art)
-        const bannerImg = matched.background_image || matched.background_image_additional || matched.short_screenshots?.[0]?.image || null;
-        const rating = matched.rating ? Math.round(matched.rating * 20) : null;
+      if (art && (art.bannerImage || art.coverImage)) {
+        const bannerImg = art.bannerImage || art.coverImage;
+        const resultObj: RawgBannerResult = {
+          bannerImage: bannerImg,
+          rating: art.rating
+        };
 
-        if (bannerImg) {
-          const resultObj: RawgBannerResult = {
-            bannerImage: bannerImg,
-            rating: rating
-          };
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify(resultObj));
+        } catch (e) {}
 
-          try {
-            localStorage.setItem(cacheKey, JSON.stringify(resultObj));
-          } catch (e) {}
-
-          return resultObj;
-        }
+        return resultObj;
       }
 
       try {
@@ -419,7 +481,7 @@ export async function fetchRawgBanner(title: string): Promise<RawgBannerResult |
       } catch (e) {}
       return null;
     } catch (error) {
-      console.warn(`RAWG banner fetch error for "${title}" (${cleanedTitle}):`, error);
+      console.warn(`Banner fetch error for "${title}" (${cleanedTitle}):`, error);
       return null;
     }
   });

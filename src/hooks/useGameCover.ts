@@ -94,9 +94,9 @@ export function useGameCover(game: GameItem): UseGameCoverResult {
     setManualUrl(null);
   };
 
-  // Determine active coverUrl: Manual > RAWG > non-stock game.coverArt > null
+  // Determine active coverUrl: Manual > RAWG/Steam > game.coverArt > game.backdropArt > null
   const fallbackCover = isStockPhotoUrl(game.coverArt) ? null : game.coverArt;
-  const effectiveCover = manualUrl || rawgCover || fallbackCover || null;
+  const effectiveCover = manualUrl || rawgCover || fallbackCover || game.coverArt || game.backdropArt || null;
 
   return {
     coverUrl: effectiveCover,
@@ -188,7 +188,7 @@ export function useGameBanner(game: GameItem): UseGameBannerResult {
 
   // Banner strictly uses backdropArt or RAWG banner, never coverArt
   const fallbackBanner = isStockPhotoUrl(game.backdropArt) ? null : game.backdropArt;
-  const effectiveBanner = manualBanner || rawgBanner || fallbackBanner || null;
+  const effectiveBanner = manualBanner || rawgBanner || fallbackBanner || game.backdropArt || game.coverArt || null;
 
   return {
     bannerUrl: effectiveBanner,

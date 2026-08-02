@@ -34,8 +34,8 @@ const DEFAULT_SLIDES: HeroSlide[] = [
     description: 'Hóa thân thành Ngộ Không trong hành trình phục thù hoành tráng, đồ họa Unreal Engine 5 đỉnh cao, bản Việt Hóa chuẩn 100% ngữ cảnh từ Quán Game Xóm.',
     date: '04/10',
     badgeColor: 'border-amber-400 text-amber-300 bg-amber-500/20',
-    fallbackCover: 'https://media.rawg.io/media/games/81e/81e5927c32b509d3da13f993d0c9f803.jpg',
-    fallbackBanner: 'https://media.rawg.io/media/games/81e/81e5927c32b509d3da13f993d0c9f803.jpg'
+    fallbackCover: 'https://cdn.cloudflare.steamstatic.com/steam/apps/2358720/library_600x900.jpg',
+    fallbackBanner: 'https://cdn.cloudflare.steamstatic.com/steam/apps/2358720/header.jpg'
   },
   {
     id: '2',
@@ -45,8 +45,8 @@ const DEFAULT_SLIDES: HeroSlide[] = [
     description: 'Trải nghiệm cuộc chiến định mệnh chống lại các thần Bắc Âu. Bản Việt Hóa trọn bộ thoại và giao diện, đồ họa rực rỡ tốc độ cao không cần giả lập rườm rà.',
     date: '12/08',
     badgeColor: 'border-cyan-400 text-cyan-300 bg-cyan-500/20',
-    fallbackCover: 'https://media.rawg.io/media/games/30d/30d320959f21f15160be1c4a005ee362.jpg',
-    fallbackBanner: 'https://media.rawg.io/media/games/30d/30d320959f21f15160be1c4a005ee362.jpg'
+    fallbackCover: 'https://cdn.cloudflare.steamstatic.com/steam/apps/2322010/library_600x900.jpg',
+    fallbackBanner: 'https://cdn.cloudflare.steamstatic.com/steam/apps/2322010/header.jpg'
   },
   {
     id: '3',
@@ -56,8 +56,8 @@ const DEFAULT_SLIDES: HeroSlide[] = [
     description: 'Thoát khỏi thảm họa T-Virus cùng Jill Valentine. Đồ họa RE Engine siêu chân thực, hỗ trợ giả lập và bản dịch Việt Hóa trọn vẹn từng trang tài liệu.',
     date: '15/06',
     badgeColor: 'border-red-400 text-red-300 bg-red-500/20',
-    fallbackCover: 'https://media.rawg.io/media/games/5a4/5a441113b246a4805c6d32c5f11181f0.jpg',
-    fallbackBanner: 'https://media.rawg.io/media/games/5a4/5a441113b246a4805c6d32c5f11181f0.jpg'
+    fallbackCover: 'https://cdn.cloudflare.steamstatic.com/steam/apps/952060/library_600x900.jpg',
+    fallbackBanner: 'https://cdn.cloudflare.steamstatic.com/steam/apps/952060/header.jpg'
   },
   {
     id: '4',
@@ -67,8 +67,8 @@ const DEFAULT_SLIDES: HeroSlide[] = [
     description: 'Trở lại thập niên 80 cùng Tommy Vercetti. Bản Việt Hóa hoàn chỉnh Quán Game Xóm, đồ họa cải tiến kèm kho nhạc radio retro bùng nổ.',
     date: '01/05',
     badgeColor: 'border-indigo-400 text-indigo-300 bg-indigo-500/20',
-    fallbackCover: 'https://media.rawg.io/media/games/846/846273132dbf2122394336c1e95b1e42.jpg',
-    fallbackBanner: 'https://media.rawg.io/media/games/846/846273132dbf2122394336c1e95b1e42.jpg'
+    fallbackCover: 'https://cdn.cloudflare.steamstatic.com/steam/apps/1547000/library_600x900.jpg',
+    fallbackBanner: 'https://cdn.cloudflare.steamstatic.com/steam/apps/1547000/header.jpg'
   }
 ];
 
