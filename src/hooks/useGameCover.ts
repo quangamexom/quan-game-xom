@@ -7,7 +7,8 @@ import {
   getManualBanner,
   saveManualBanner,
   removeManualBanner,
-  fetchRawgCover
+  fetchRawgCover,
+  isStockPhotoUrl
 } from '../services/rawgService';
 
 export interface UseGameCoverResult {
@@ -92,8 +93,9 @@ export function useGameCover(game: GameItem): UseGameCoverResult {
     setManualUrl(null);
   };
 
-  // Determine active coverUrl: Manual > RAWG > game.coverArt > null
-  const effectiveCover = manualUrl || rawgCover || game.coverArt || null;
+  // Determine active coverUrl: Manual > RAWG > non-stock game.coverArt > null
+  const fallbackCover = isStockPhotoUrl(game.coverArt) ? null : game.coverArt;
+  const effectiveCover = manualUrl || rawgCover || fallbackCover || null;
 
   return {
     coverUrl: effectiveCover,
@@ -183,7 +185,10 @@ export function useGameBanner(game: GameItem): UseGameBannerResult {
     setManualBanner(null);
   };
 
-  const effectiveBanner = manualBanner || rawgBanner || game.backdropArt || game.coverArt || null;
+  const fallbackBanner = isStockPhotoUrl(game.backdropArt)
+    ? (isStockPhotoUrl(game.coverArt) ? null : game.coverArt)
+    : game.backdropArt;
+  const effectiveBanner = manualBanner || rawgBanner || fallbackBanner || null;
 
   return {
     bannerUrl: effectiveBanner,

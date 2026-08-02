@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { Camera, Image as ImageIcon, RefreshCw } from 'lucide-react';
+import { Camera, Gamepad2, RefreshCw } from 'lucide-react';
 import { GameItem } from '../types';
 import { useGameCover } from '../hooks/useGameCover';
 
@@ -99,9 +99,9 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelect }) => {
           /* Placeholder state when no image is found or failed to load */
           <div
             onClick={handleUploadClick}
-            className="w-full h-full bg-[#0B0F1C] flex flex-col items-center justify-center p-3 text-center group/placeholder border border-dashed border-slate-800 hover:border-amber-400/60 transition-colors"
+            className="w-full h-full bg-gradient-to-b from-[#0e1322] via-[#090d18] to-[#05070e] flex flex-col items-center justify-center p-3 text-center group/placeholder border border-slate-800/80 hover:border-amber-400/60 transition-colors cursor-pointer"
           >
-            <ImageIcon className="w-7 h-7 text-slate-600 group-hover/placeholder:text-amber-400 transition-colors mb-1" />
+            <Gamepad2 className="w-8 h-8 text-slate-600/90 group-hover/placeholder:text-amber-400/90 transition-colors mb-1 stroke-[1.5]" />
             <span className="text-[11px] font-display font-medium text-slate-400 group-hover/placeholder:text-slate-200">
               Chưa có ảnh
             </span>

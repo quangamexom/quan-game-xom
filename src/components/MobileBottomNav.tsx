@@ -2,14 +2,12 @@ import React from 'react';
 import { Gamepad2, Search, Coffee, Database, Layers, Sparkles } from 'lucide-react';
 
 interface MobileBottomNavProps {
-  onOpenCMS: () => void;
   onOpenDonate: () => void;
   onScrollTop: () => void;
   gameCount: number;
 }
 
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
-  onOpenCMS,
   onOpenDonate,
   onScrollTop,
   gameCount
@@ -24,21 +22,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           className="flex flex-col items-center gap-0.5 text-amber-400 cursor-pointer"
         >
           <Gamepad2 className="w-5 h-5" />
-          <span className="text-[10px] font-bold">Kho Game</span>
-        </button>
-
-        {/* CMS Sync */}
-        <button
-          onClick={onOpenCMS}
-          className="flex flex-col items-center gap-0.5 text-slate-400 hover:text-slate-200 cursor-pointer"
-        >
-          <div className="relative">
-            <Database className="w-5 h-5" />
-            <span className="absolute -top-1 -right-2 bg-amber-500 text-slate-950 text-[9px] font-mono font-bold px-1 rounded-full">
-              {gameCount}
-            </span>
-          </div>
-          <span className="text-[10px] font-medium">Sheet CMS</span>
+          <span className="text-[10px] font-bold">Kho Game ({gameCount})</span>
         </button>
 
         {/* Coffee / Donate */}

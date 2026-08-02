@@ -138,38 +138,5 @@ export function parseGoogleSheetCSV(csvText: string): GameItem[] {
 }
 
 export async function fetchSheetData(sheetUrlOrId: string, gid = '0'): Promise<GameItem[]> {
-  try {
-    // Call server endpoint first
-    const res = await fetch(`/api/sheet-sync?url=${encodeURIComponent(sheetUrlOrId)}&gid=${gid}`);
-    if (res.ok) {
-      const data = await res.json();
-      if (data.games && data.games.length > 0) {
-        return data.games;
-      }
-    }
-  } catch (err) {
-    console.warn("Server sheet-sync fetch failed, trying direct public CSV export:", err);
-  }
-
-  // Fallback direct CSV fetch
-  let csvUrl = '';
-  if (sheetUrlOrId.includes('docs.google.com/spreadsheets')) {
-    const idMatch = sheetUrlOrId.match(/\/d\/([a-zA-Z0-9-_]+)/);
-    const gidMatch = sheetUrlOrId.match(/gid=([0-9]+)/);
-    const id = idMatch ? idMatch[1] : '1UafcEOp-1R6LWnnu36EQRp5V0b12K4fqho9X0qJYPy4';
-    const targetGid = gidMatch ? gidMatch[1] : gid;
-    csvUrl = `https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${targetGid}`;
-  } else {
-    csvUrl = `https://docs.google.com/spreadsheets/d/${sheetUrlOrId}/export?format=csv&gid=${gid}`;
-  }
-
-  try {
-    const res = await fetch(csvUrl);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const csvText = await res.text();
-    return parseGoogleSheetCSV(csvText);
-  } catch (error) {
-    console.error("Error fetching Google Sheet CSV directly:", error);
-    return INITIAL_GAMES;
-  }
+  return INITIAL_GAMES;
 }

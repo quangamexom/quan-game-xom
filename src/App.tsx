@@ -17,16 +17,12 @@ import { GameListRow } from './components/GameListRow';
 import { GameDetailModal } from './components/GameDetailModal';
 import { DownloadDrawer } from './components/DownloadDrawer';
 import { DonateModal } from './components/DonateModal';
-import { CMSDrawer } from './components/CMSDrawer';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { Footer } from './components/Footer';
 
 export default function App() {
   const [games, setGames] = useState<GameItem[]>(INITIAL_GAMES);
-  const [sheetUrl, setSheetUrl] = useState<string>(DEFAULT_SHEET_URL);
   const [defaultPassword, setDefaultPassword] = useState<string>("quangamexom");
-  const [isSyncing, setIsSyncing] = useState<boolean>(false);
-  const [lastSyncedAt, setLastSyncedAt] = useState<string | undefined>(undefined);
   
   // Active Navigation Category: 'HOME' by default
   const [activeCategory, setActiveCategory] = useState<string>('HOME');
@@ -36,7 +32,6 @@ export default function App() {
   const [downloadGame, setDownloadGame] = useState<GameItem | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [isDonateOpen, setIsDonateOpen] = useState<boolean>(false);
-  const [isCMSOpen, setIsCMSOpen] = useState<boolean>(false);
 
   // Filters State
   const [filterState, setFilterState] = useState<FilterState>({
@@ -47,26 +42,6 @@ export default function App() {
     sortBy: 'latest',
     viewMode: 'grid'
   });
-
-  // Initial Sync from Google Sheet
-  const handleSyncSheet = async (targetUrl = sheetUrl) => {
-    setIsSyncing(true);
-    try {
-      const fetched = await fetchSheetData(targetUrl);
-      if (fetched && fetched.length > 0) {
-        setGames(fetched);
-        setLastSyncedAt(new Date().toLocaleTimeString());
-      }
-    } catch (err) {
-      console.error("Sheet sync failed:", err);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  useEffect(() => {
-    handleSyncSheet(DEFAULT_SHEET_URL);
-  }, []);
 
   const handleFilterChange = (newState: Partial<FilterState>) => {
     setFilterState(prev => ({ ...prev, ...newState }));
@@ -150,10 +125,7 @@ export default function App() {
       <Navbar
         searchQuery={filterState.searchQuery}
         onSearchChange={(q) => handleFilterChange({ searchQuery: q })}
-        onOpenCMS={() => setIsCMSOpen(true)}
         onOpenDonate={() => setIsDonateOpen(true)}
-        onRefreshSync={() => handleSyncSheet(sheetUrl)}
-        isSyncing={isSyncing}
         gameCount={games.length}
         activeCategory={activeCategory}
         onCategoryChange={handleCategoryChange}
@@ -356,7 +328,6 @@ export default function App() {
 
       {/* 7. Mobile App Bottom Navigation Bar */}
       <MobileBottomNav
-        onOpenCMS={() => setIsCMSOpen(true)}
         onOpenDonate={() => setIsDonateOpen(true)}
         onScrollTop={scrollToTop}
         gameCount={games.length}
@@ -383,20 +354,6 @@ export default function App() {
       <DonateModal
         isOpen={isDonateOpen}
         onClose={() => setIsDonateOpen(false)}
-      />
-
-      <CMSDrawer
-        isOpen={isCMSOpen}
-        onClose={() => setIsCMSOpen(false)}
-        currentSheetUrl={sheetUrl}
-        onUpdateSheetUrl={(url) => setSheetUrl(url)}
-        onManualSync={() => handleSyncSheet(sheetUrl)}
-        isSyncing={isSyncing}
-        lastSyncedAt={lastSyncedAt}
-        defaultPassword={defaultPassword}
-        onUpdatePassword={(pass) => setDefaultPassword(pass)}
-        onAddCustomGame={handleAddCustomGame}
-        gameCount={games.length}
       />
 
     </div>

@@ -36,20 +36,52 @@ function enqueueRequest<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 /**
+ * Check if a given URL is a generic stock/unsplash/placeholder image
+ */
+export function isStockPhotoUrl(url: string | undefined | null): boolean {
+  if (!url) return true;
+  const lower = url.toLowerCase();
+  return (
+    lower.includes('unsplash.com') ||
+    lower.includes('placeholder') ||
+    lower.includes('dummyimage') ||
+    lower.includes('via.placeholder')
+  );
+}
+
+/**
  * Clean title to improve RAWG search accuracy.
- * Removes brackets, tags like "Việt Hóa", "VH", "Resynced", platform markers, etc.
+ * Strips custom store/mod/edition suffixes, extra tags, emojis, brackets, etc.
+ * E.g., "FINAL FANTASY VII — QUÁN GAME XÓM EDITION" -> "FINAL FANTASY VII"
  */
 export function cleanTitleForSearch(rawTitle: string): string {
   if (!rawTitle) return '';
   let t = rawTitle;
-  // Remove content inside parentheses or brackets like (GTA 5), [PC], etc.
+
+  // 1. Strip emojis and special symbols
+  t = t.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[⭐🇻🇳🔥💥✦⚡✨🎮👑💎]/gu, ' ');
+
+  // 2. If title contains dashes, colons, bullets, or tildes, check if right part is a mod/edition suffix
+  const dashParts = t.split(/\s*[-—–:•·|~]\s*/);
+  if (dashParts.length > 1 && dashParts[0].trim().length >= 2) {
+    const mainCandidate = dashParts[0].trim();
+    const restText = dashParts.slice(1).join(' ').toLowerCase();
+    // Check if the rest of the title contains mod, store, or edition keywords
+    const isSuffix = /quán game xóm|qgx|edition|việt hóa|việt hoá|viethoa|collection|full|mod|dlc|fix|repack|version|build|update|ps1|ps2|ps3|ps4|ps5|pc|android/i.test(restText);
+    if (isSuffix) {
+      t = mainCandidate;
+    }
+  }
+
+  // 3. Remove content inside parentheses, brackets, or braces like (GTA 5), [PC], {Mod}
   t = t.replace(/[\(\[\{].*?[\)\]\}]/g, ' ');
-  // Remove common Vietnamese game release keywords
-  t = t.replace(/việt hóa|việt hoá|viethoa|vh|resynced|remastered|remake|repack|full iso|iso|crack|online|mobile|pc|android|ps1|ps2|ps3|ps4|ps5|switch/gi, ' ');
-  // Remove special emojis
-  t = t.replace(/[⭐🇻🇳🔥💥✦⚡✨]/g, '');
-  // Replace multiple spaces
+
+  // 4. Remove common Vietnamese/release/mod keywords
+  t = t.replace(/quán game xóm|qgx edition|edition|việt hóa|việt hoá|viethoa|vh|resynced|remastered|remake|repack|full iso|iso|crack|online|mobile|pc|android|ps1|ps2|ps3|ps4|ps5|switch|deluxe|gold|goty|ultimate|complete|definitive|enhanced|v\d+\.\d+(\.\d+)*/gi, ' ');
+
+  // 5. Replace multiple spaces and trim
   t = t.replace(/\s+/g, ' ').trim();
+
   return t || rawTitle.trim();
 }
 

@@ -8,10 +8,7 @@ import {
 interface NavbarProps {
   searchQuery: string;
   onSearchChange: (q: string) => void;
-  onOpenCMS: () => void;
   onOpenDonate: () => void;
-  onRefreshSync: () => void;
-  isSyncing: boolean;
   gameCount: number;
   activeCategory: string;
   onCategoryChange: (cat: string) => void;
@@ -23,10 +20,7 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({
   searchQuery,
   onSearchChange,
-  onOpenCMS,
   onOpenDonate,
-  onRefreshSync,
-  isSyncing,
   gameCount,
   activeCategory,
   onCategoryChange,
@@ -144,27 +138,15 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </div>
 
-            {/* Sync Badge */}
-            <button
-              onClick={onRefreshSync}
-              disabled={isSyncing}
-              className="hidden md:flex items-center gap-1.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-full px-2.5 py-1 text-[11px] font-mono transition-all cursor-pointer"
-              title="Đồng bộ Google Sheet"
+            {/* Game Count Badge */}
+            <div
+              className="hidden md:flex items-center gap-1.5 bg-slate-900/80 border border-slate-800 text-slate-300 rounded-full px-2.5 py-1 text-[11px] font-mono"
             >
-              <RefreshCw className={`w-3 h-3 text-amber-400 ${isSyncing ? 'animate-spin' : ''}`} />
+              <Sparkles className="w-3 h-3 text-amber-400" />
               <span className="text-[10px] text-slate-300">
-                {isSyncing ? 'Syncing' : `${gameCount} Games`}
+                {gameCount} Games
               </span>
-            </button>
-
-            {/* CMS Button */}
-            <button
-              onClick={onOpenCMS}
-              className="hidden sm:flex items-center gap-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-full px-2.5 py-1 text-[10px] font-display font-bold uppercase tracking-wider transition-all cursor-pointer"
-            >
-              <Database className="w-3 h-3 text-cyan-400" />
-              <span>CMS</span>
-            </button>
+            </div>
 
           </div>
 

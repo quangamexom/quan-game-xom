@@ -131,10 +131,10 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
             ) : !bannerState.isLoading && (
               <div
                 onClick={() => bannerInputRef.current?.click()}
-                className="w-full h-full bg-[#0B0F1C] flex flex-col items-center justify-center p-4 text-center cursor-pointer border border-dashed border-slate-800 hover:border-amber-400/60 transition-colors"
+                className="w-full h-full bg-gradient-to-b from-[#0e1322] via-[#090d18] to-[#05070e] flex flex-col items-center justify-center p-4 text-center cursor-pointer border border-slate-800/80 hover:border-amber-400/60 transition-colors"
               >
-                <ImageIcon className="w-10 h-10 text-slate-600 mb-1" />
-                <span className="text-xs font-medium text-slate-400">Chưa có ảnh banner</span>
+                <Gamepad2 className="w-10 h-10 text-slate-600/90 mb-1.5 stroke-[1.5]" />
+                <span className="text-xs font-display font-medium text-slate-400">Chưa có ảnh banner</span>
                 <span className="text-[10px] font-mono text-amber-400 underline mt-1">Click để upload banner</span>
               </div>
             )}
@@ -198,11 +198,11 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                 ) : !coverState.isLoading && (
                   <div
                     onClick={() => avatarInputRef.current?.click()}
-                    className="w-full h-full bg-[#0B0F1C] flex flex-col items-center justify-center p-2 text-center cursor-pointer border border-dashed border-slate-800 hover:border-amber-400/60 transition-colors"
+                    className="w-full h-full bg-gradient-to-b from-[#0e1322] via-[#090d18] to-[#05070e] flex flex-col items-center justify-center p-2 text-center cursor-pointer border border-slate-800/80 hover:border-amber-400/60 transition-colors"
                   >
-                    <ImageIcon className="w-6 h-6 text-slate-600 mb-1" />
-                    <span className="text-[9px] text-slate-400">Chưa có ảnh</span>
-                    <span className="text-[8px] font-mono text-amber-400 underline">Upload</span>
+                    <Gamepad2 className="w-6 h-6 text-slate-600/90 mb-1 stroke-[1.5]" />
+                    <span className="text-[9px] font-medium text-slate-400">Chưa có ảnh</span>
+                    <span className="text-[8px] font-mono text-amber-400 underline mt-0.5">Upload</span>
                   </div>
                 )}
 
