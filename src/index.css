@@ -3,10 +3,54 @@
 body {
   font-family: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
   color: #F1F5F9;
-  background-color: #07090F;
+  background-color: #05070E;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+@keyframes float-blob-1 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(40px, -60px) scale(1.08);
+  }
+  66% {
+    transform: translate(-30px, 30px) scale(0.95);
+  }
+}
+
+@keyframes float-blob-2 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(-50px, 40px) scale(1.12);
+  }
+  66% {
+    transform: translate(30px, -40px) scale(0.92);
+  }
+}
+
+@keyframes float-blob-3 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate(45px, 50px) scale(1.06);
+  }
+}
+
+.animate-blob-1 {
+  animation: float-blob-1 20s ease-in-out infinite;
+}
+.animate-blob-2 {
+  animation: float-blob-2 25s ease-in-out infinite;
+}
+.animate-blob-3 {
+  animation: float-blob-3 28s ease-in-out infinite;
 }
 
 @layer utilities {
@@ -42,6 +86,38 @@ body {
     letter-spacing: 0.08em;
   }
 
+  /* Glassmorphism Presets */
+  .glass-card {
+    background: rgba(13, 18, 30, 0.55);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .glass-card:hover {
+    background: rgba(20, 27, 46, 0.75);
+    border-color: rgba(245, 158, 11, 0.6);
+    box-shadow: 0 12px 40px rgba(245, 158, 11, 0.22), 0 8px 32px rgba(0, 0, 0, 0.45);
+  }
+
+  .glass-panel {
+    background: rgba(11, 15, 26, 0.65);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
+  }
+
+  .glass-modal {
+    background: rgba(9, 12, 22, 0.82);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65), 0 0 35px rgba(245, 158, 11, 0.12);
+  }
+
   .crt-scanlines {
     background: linear-gradient(
       rgba(18, 16, 16, 0) 50%, 
@@ -56,4 +132,5 @@ body {
     pointer-events: none;
   }
 }
+
 

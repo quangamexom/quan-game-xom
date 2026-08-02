@@ -58,10 +58,10 @@ export const AccordionShowcase: React.FC = () => {
                 <div
                   key={item.id}
                   onClick={() => setActiveTab(index)}
-                  className={`rounded-xl border transition-all cursor-pointer overflow-hidden ${
+                  className={`rounded-xl transition-all cursor-pointer overflow-hidden ${
                     isOpen 
-                      ? 'bg-slate-900/90 border-indigo-500/60 shadow-[0_0_20px_rgba(99,102,241,0.2)]' 
-                      : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700'
+                      ? 'glass-card border-amber-400/60 shadow-[0_0_20px_rgba(245,158,11,0.2)]' 
+                      : 'glass-panel border-white/10 hover:border-white/20'
                   }`}
                 >
                   <div className="p-4 flex items-center justify-between">

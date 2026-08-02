@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { GameItem } from '../types';
 import { X, Download, Star, Monitor, Cpu, HardDrive, Gamepad2, ExternalLink, Image as ImageIcon, Sparkles, CheckCircle, Camera, RefreshCw } from 'lucide-react';
 import { useGameCover, useGameBanner } from '../hooks/useGameCover';
+import { useAdminMode } from '../hooks/useAdminMode';
 
 interface GameDetailModalProps {
   game: GameItem | null;
@@ -15,6 +16,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
   onClose,
   onOpenDownload
 }) => {
+  const { isAdmin } = useAdminMode();
   const [activeTab, setActiveTab] = useState<'overview' | 'reqs' | 'screenshots'>('overview');
 
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -104,7 +106,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="relative w-full max-w-4xl max-h-[90vh] bg-slate-900 border border-amber-500/30 rounded-3xl shadow-2xl z-10 overflow-hidden flex flex-col"
+          className="relative w-full max-w-4xl max-h-[90vh] glass-modal rounded-3xl z-10 overflow-hidden flex flex-col"
         >
 
           {/* Top Hero Banner */}
@@ -130,12 +132,12 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
               />
             ) : !bannerState.isLoading && (
               <div
-                onClick={() => bannerInputRef.current?.click()}
-                className="w-full h-full bg-gradient-to-b from-[#0e1322] via-[#090d18] to-[#05070e] flex flex-col items-center justify-center p-4 text-center cursor-pointer border border-slate-800/80 hover:border-amber-400/60 transition-colors"
+                onClick={isAdmin ? () => bannerInputRef.current?.click() : undefined}
+                className={`w-full h-full bg-gradient-to-b from-[#0e1322] via-[#090d18] to-[#05070e] flex flex-col items-center justify-center p-4 text-center border border-slate-800/80 transition-colors ${isAdmin ? 'hover:border-amber-400/60 cursor-pointer' : ''}`}
               >
                 <Gamepad2 className="w-10 h-10 text-slate-600/90 mb-1.5 stroke-[1.5]" />
                 <span className="text-xs font-display font-medium text-slate-400">Chưa có ảnh banner</span>
-                <span className="text-[10px] font-mono text-amber-400 underline mt-1">Click để upload banner</span>
+                {isAdmin && <span className="text-[10px] font-mono text-amber-400 underline mt-1">Click để upload banner</span>}
               </div>
             )}
 
@@ -143,7 +145,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
 
             {/* Close Button & Banner Upload Controls */}
             <div className="absolute top-4 right-4 flex items-center gap-2 z-30">
-              {bannerState.isManual && (
+              {isAdmin && bannerState.isManual && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -157,14 +159,16 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                 </button>
               )}
 
-              <button
-                type="button"
-                onClick={() => bannerInputRef.current?.click()}
-                className="p-2 text-slate-200 hover:text-slate-950 bg-slate-950/80 hover:bg-amber-500 rounded-full border border-slate-700 transition-all opacity-80 group-hover/banner:opacity-100 cursor-pointer backdrop-blur-md"
-                title="Upload / Thay đổi ảnh Banner nền"
-              >
-                <Camera className="w-4 h-4" />
-              </button>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => bannerInputRef.current?.click()}
+                  className="p-2 text-slate-200 hover:text-slate-950 bg-slate-950/80 hover:bg-amber-500 rounded-full border border-slate-700 transition-all opacity-80 group-hover/banner:opacity-100 cursor-pointer backdrop-blur-md"
+                  title="Upload / Thay đổi ảnh Banner nền"
+                >
+                  <Camera className="w-4 h-4" />
+                </button>
+              )}
 
               <button
                 onClick={onClose}
@@ -197,27 +201,29 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                   />
                 ) : !coverState.isLoading && (
                   <div
-                    onClick={() => avatarInputRef.current?.click()}
-                    className="w-full h-full bg-gradient-to-b from-[#0e1322] via-[#090d18] to-[#05070e] flex flex-col items-center justify-center p-2 text-center cursor-pointer border border-slate-800/80 hover:border-amber-400/60 transition-colors"
+                    onClick={isAdmin ? () => avatarInputRef.current?.click() : undefined}
+                    className={`w-full h-full bg-gradient-to-b from-[#0e1322] via-[#090d18] to-[#05070e] flex flex-col items-center justify-center p-2 text-center border border-slate-800/80 transition-colors ${isAdmin ? 'hover:border-amber-400/60 cursor-pointer' : ''}`}
                   >
                     <Gamepad2 className="w-6 h-6 text-slate-600/90 mb-1 stroke-[1.5]" />
                     <span className="text-[9px] font-medium text-slate-400">Chưa có ảnh</span>
-                    <span className="text-[8px] font-mono text-amber-400 underline mt-0.5">Upload</span>
+                    {isAdmin && <span className="text-[8px] font-mono text-amber-400 underline mt-0.5">Upload</span>}
                   </div>
                 )}
 
                 {/* Avatar Camera Upload Icon Overlay */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    avatarInputRef.current?.click();
-                  }}
-                  className="absolute bottom-1 right-1 p-1.5 rounded-full bg-slate-950/90 hover:bg-amber-500 text-slate-300 hover:text-slate-950 border border-slate-700 opacity-70 group-hover/avatar:opacity-100 transition-all cursor-pointer z-20 shadow"
-                  title="Upload / Thay đổi ảnh Avatar vuông"
-                >
-                  <Camera className="w-3 h-3" />
-                </button>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      avatarInputRef.current?.click();
+                    }}
+                    className="absolute bottom-1 right-1 p-1.5 rounded-full bg-slate-950/90 hover:bg-amber-500 text-slate-300 hover:text-slate-950 border border-slate-700 opacity-70 group-hover/avatar:opacity-100 transition-all cursor-pointer z-20 shadow"
+                    title="Upload / Thay đổi ảnh Avatar vuông"
+                  >
+                    <Camera className="w-3 h-3" />
+                  </button>
+                )}
               </div>
 
               <div className="mb-1">
@@ -253,7 +259,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex items-center gap-2 px-6 pt-3 bg-slate-900 border-b border-slate-800 text-xs font-bold shrink-0">
+          <div className="flex items-center gap-2 px-6 pt-3 bg-slate-950/50 backdrop-blur-md border-b border-white/10 text-xs font-bold shrink-0">
             <button
               onClick={() => setActiveTab('overview')}
               className={`pb-3 px-3 transition-colors border-b-2 cursor-pointer ${
@@ -295,28 +301,28 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
             
             {activeTab === 'overview' && (
               <div className="space-y-4">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-950/60 p-4 rounded-2xl border border-slate-800 text-xs font-mono">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 glass-panel p-4 rounded-2xl border border-white/10 text-xs font-mono">
                   <div>
-                    <span className="text-slate-500 block">NĂM PHÁT HÀNH</span>
+                    <span className="text-slate-400 block">NĂM PHÁT HÀNH</span>
                     <strong className="text-amber-300">{game.releaseYear || '2024'}</strong>
                   </div>
                   <div>
-                    <span className="text-slate-500 block">DUNG LƯỢNG</span>
+                    <span className="text-slate-400 block">DUNG LƯỢNG</span>
                     <strong className="text-amber-300">{game.fileSize || 'Standard'}</strong>
                   </div>
                   <div>
-                    <span className="text-slate-500 block">ĐÁNH GIÁ LAUNCHBOX</span>
+                    <span className="text-slate-400 block">ĐÁNH GIÁ LAUNCHBOX</span>
                     <strong className="text-emerald-400">★ {game.rating || 4.9} / 5.0</strong>
                   </div>
                   <div>
-                    <span className="text-slate-500 block">NGÔN NGỮ</span>
+                    <span className="text-slate-400 block">NGÔN NGỮ</span>
                     <strong className="text-white">{game.language || 'Tiếng Việt'}</strong>
                   </div>
                 </div>
 
-                <div>
-                  <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-1 font-mono">NỘI DUNG & NỔI BẬT:</h4>
-                  <p className="text-slate-300 leading-relaxed text-xs sm:text-sm">
+                <div className="glass-panel p-4 rounded-2xl border border-white/10 space-y-2">
+                  <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider font-mono">NỘI DUNG & NỔI BẬT:</h4>
+                  <p className="text-slate-200 leading-relaxed text-xs sm:text-sm">
                     {game.description || `${game.title} là siêu phẩm được đông đảo cộng đồng game thủ săn đón. Tải ngay bản chuẩn sắc nét từ Quán Game Xóm, cài đặt siêu mượt không lo lỗi.`}
                   </p>
                 </div>
@@ -331,35 +337,35 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
             )}
 
             {activeTab === 'reqs' && (
-              <div className="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 space-y-3 font-mono text-xs">
+              <div className="glass-panel p-5 rounded-2xl border border-white/10 space-y-3 font-mono text-xs">
                 <h4 className="text-amber-400 font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5 text-sm">
                   <Monitor className="w-4 h-4" />
                   CẤU HÌNH HỆ THỐNG KHUYÊN DÙNG:
                 </h4>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
-                    <span className="text-slate-500 block mb-1">HỆ ĐIỀU HÀNH (OS)</span>
+                  <div className="p-3 bg-slate-900/60 rounded-xl border border-white/10 backdrop-blur-sm">
+                    <span className="text-slate-400 block mb-1">HỆ ĐIỀU HÀNH (OS)</span>
                     <span className="text-slate-200">{game.systemReqs?.os || "Windows 10/11 64-bit"}</span>
                   </div>
 
-                  <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
-                    <span className="text-slate-500 block mb-1">VI XỬ LÝ (CPU)</span>
+                  <div className="p-3 bg-slate-900/60 rounded-xl border border-white/10 backdrop-blur-sm">
+                    <span className="text-slate-400 block mb-1">VI XỬ LÝ (CPU)</span>
                     <span className="text-slate-200">{game.systemReqs?.cpu || "Intel Core i5-8400 / AMD Ryzen 5 2600"}</span>
                   </div>
 
-                  <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
-                    <span className="text-slate-500 block mb-1">BỘ NHỚ (RAM)</span>
+                  <div className="p-3 bg-slate-900/60 rounded-xl border border-white/10 backdrop-blur-sm">
+                    <span className="text-slate-400 block mb-1">BỘ NHỚ (RAM)</span>
                     <span className="text-slate-200">{game.systemReqs?.ram || "8 GB RAM hoặc 16 GB RAM (Khuyên dùng)"}</span>
                   </div>
 
-                  <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
-                    <span className="text-slate-500 block mb-1">CARD ĐỒ HỌA (GPU)</span>
+                  <div className="p-3 bg-slate-900/60 rounded-xl border border-white/10 backdrop-blur-sm">
+                    <span className="text-slate-400 block mb-1">CARD ĐỒ HỌA (GPU)</span>
                     <span className="text-slate-200">{game.systemReqs?.gpu || "NVIDIA GTX 1060 (6GB) / AMD Radeon RX 580"}</span>
                   </div>
 
-                  <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 sm:col-span-2">
-                    <span className="text-slate-500 block mb-1">Ổ CỨNG TRỐNG (SSD)</span>
+                  <div className="p-3 bg-slate-900/60 rounded-xl border border-white/10 backdrop-blur-sm sm:col-span-2">
+                    <span className="text-slate-400 block mb-1">Ổ CỨNG TRỐNG (SSD)</span>
                     <span className="text-amber-300 font-bold">{game.systemReqs?.storage || game.fileSize || "Khuyên dùng cài trên ổ SSD"}</span>
                   </div>
                 </div>

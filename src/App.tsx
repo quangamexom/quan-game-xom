@@ -19,10 +19,25 @@ import { DownloadDrawer } from './components/DownloadDrawer';
 import { DonateModal } from './components/DonateModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { Footer } from './components/Footer';
+import { AdminBadge } from './components/AdminBadge';
 
 export default function App() {
   const [games, setGames] = useState<GameItem[]>(INITIAL_GAMES);
   const [defaultPassword, setDefaultPassword] = useState<string>("quangamexom");
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+
+  useEffect(() => {
+    setIsSyncing(true);
+    fetchSheetData(DEFAULT_SHEET_URL)
+      .then((data) => {
+        if (data && data.length > 0) {
+          setGames(data);
+        }
+      })
+      .catch((err) => console.error("Sync sheet error:", err))
+      .finally(() => setIsSyncing(false));
+  }, []);
+
   
   // Active Navigation Category: 'HOME' by default
   const [activeCategory, setActiveCategory] = useState<string>('HOME');
@@ -119,8 +134,18 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#07090F] text-slate-100 font-sans selection:bg-[#22D3EE] selection:text-slate-950 pb-20 md:pb-0">
+    <div className="min-h-screen bg-[#05070E] text-slate-100 font-sans selection:bg-[#22D3EE] selection:text-slate-950 pb-20 md:pb-0 relative">
       
+      {/* Dynamic Glassmorphism Background Ambient Blobs */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        {/* Blob 1: Warm Amber/Orange (Top-Left) */}
+        <div className="absolute top-[-5%] left-[-5%] w-[450px] h-[450px] sm:w-[650px] sm:h-[650px] rounded-full bg-gradient-to-br from-amber-500/18 via-orange-600/12 to-transparent blur-[110px] animate-blob-1" />
+        {/* Blob 2: Cyan/Indigo (Middle-Right) */}
+        <div className="absolute top-[30%] right-[-5%] w-[400px] h-[400px] sm:w-[600px] sm:h-[600px] rounded-full bg-gradient-to-bl from-cyan-500/16 via-indigo-600/12 to-transparent blur-[120px] animate-blob-2" />
+        {/* Blob 3: Rose/Purple/Amber (Bottom-Left) */}
+        <div className="absolute bottom-[10%] left-[15%] w-[450px] h-[450px] sm:w-[650px] sm:h-[650px] rounded-full bg-gradient-to-tr from-purple-600/12 via-amber-600/14 to-transparent blur-[125px] animate-blob-3" />
+      </div>
+
       {/* 1. Top Header Navigation (3 Zones with Centered Logo & Social Bar) */}
       <Navbar
         searchQuery={filterState.searchQuery}
@@ -355,6 +380,8 @@ export default function App() {
         isOpen={isDonateOpen}
         onClose={() => setIsDonateOpen(false)}
       />
+
+      <AdminBadge />
 
     </div>
   );

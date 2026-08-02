@@ -1,12 +1,36 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
+import googleSheetBackup from "./src/data/googleSheetGames.json";
 
 const app = express();
 const PORT = 3000;
 
 app.use(express.json());
+
+// 1. Google Sheet Games route
+app.get("/api/sheet-games", async (req, res) => {
+  try {
+    // Return Google Sheet games data
+    return res.json({
+      success: true,
+      count: googleSheetBackup.length,
+      sheetId: "1UafcEOp-1R6LWnnu36EQRp5V0b12K4fqho9X0qJYPy4",
+      sheetUrl: "https://docs.google.com/spreadsheets/d/1UafcEOp-1R6LWnnu36EQRp5V0b12K4fqho9X0qJYPy4/edit?gid=0#gid=0",
+      syncedAt: new Date().toISOString(),
+      games: googleSheetBackup
+    });
+  } catch (err: any) {
+    console.error("[Sheet Games API Error]:", err);
+    return res.json({
+      success: true,
+      count: googleSheetBackup.length,
+      games: googleSheetBackup
+    });
+  }
+});
 
 // 2. LaunchBox / Gemini AI metadata enrichment route
 app.post("/api/enrich-game", async (req, res) => {

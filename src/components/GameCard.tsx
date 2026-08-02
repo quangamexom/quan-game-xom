@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { Camera, Gamepad2, RefreshCw } from 'lucide-react';
 import { GameItem } from '../types';
 import { useGameCover } from '../hooks/useGameCover';
+import { useAdminMode } from '../hooks/useAdminMode';
 
 interface GameCardProps {
   game: GameItem;
@@ -12,6 +13,7 @@ interface GameCardProps {
 }
 
 export const GameCard: React.FC<GameCardProps> = ({ game, onSelect }) => {
+  const { isAdmin } = useAdminMode();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imageError, setImageError] = useState<boolean>(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
@@ -61,7 +63,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelect }) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.25 }}
-      className="group relative bg-[#0C101D] border border-slate-800/90 hover:border-amber-400/80 rounded-2xl overflow-hidden shadow-xl hover:shadow-[0_8px_30px_rgba(245,158,11,0.22)] hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col h-full"
+      className="group relative glass-card rounded-2xl overflow-hidden hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col h-full"
       onClick={() => onSelect(game)}
     >
       {/* Hidden File Input for Custom Cover Upload */}
@@ -98,16 +100,18 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelect }) => {
         ) : !isLoading && (
           /* Placeholder state when no image is found or failed to load */
           <div
-            onClick={handleUploadClick}
-            className="w-full h-full bg-gradient-to-b from-[#0e1322] via-[#090d18] to-[#05070e] flex flex-col items-center justify-center p-3 text-center group/placeholder border border-slate-800/80 hover:border-amber-400/60 transition-colors cursor-pointer"
+            onClick={isAdmin ? handleUploadClick : undefined}
+            className={`w-full h-full bg-gradient-to-b from-[#0e1322] via-[#090d18] to-[#05070e] flex flex-col items-center justify-center p-3 text-center group/placeholder border border-slate-800/80 transition-colors ${isAdmin ? 'hover:border-amber-400/60 cursor-pointer' : ''}`}
           >
             <Gamepad2 className="w-8 h-8 text-slate-600/90 group-hover/placeholder:text-amber-400/90 transition-colors mb-1 stroke-[1.5]" />
             <span className="text-[11px] font-display font-medium text-slate-400 group-hover/placeholder:text-slate-200">
               Chưa có ảnh
             </span>
-            <span className="text-[9px] font-mono text-amber-400/80 underline mt-0.5">
-              Click để upload
-            </span>
+            {isAdmin && (
+              <span className="text-[9px] font-mono text-amber-400/80 underline mt-0.5">
+                Click để upload
+              </span>
+            )}
           </div>
         )}
 
@@ -121,34 +125,36 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelect }) => {
           </div>
         )}
 
-        {/* 3. Camera / Upload Button (Top-Right, Hover Only) */}
-        <div className="absolute top-2 right-2 z-30 flex items-center gap-1">
-          {isManual && (
-            <span
-              onClick={(e) => {
-                e.stopPropagation();
-                resetCover();
-                setImageError(false);
-              }}
-              title="Đặt lại ảnh mặc định"
-              className="px-1.5 py-0.5 rounded bg-cyan-950/90 hover:bg-red-600 text-cyan-300 hover:text-white border border-cyan-500/40 text-[9px] font-mono transition-all backdrop-blur-md"
+        {/* 3. Camera / Upload Button (Top-Right, Hover Only, Admin Only) */}
+        {isAdmin && (
+          <div className="absolute top-2 right-2 z-30 flex items-center gap-1">
+            {isManual && (
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  resetCover();
+                  setImageError(false);
+                }}
+                title="Đặt lại ảnh mặc định"
+                className="px-1.5 py-0.5 rounded bg-cyan-950/90 hover:bg-red-600 text-cyan-300 hover:text-white border border-cyan-500/40 text-[9px] font-mono transition-all backdrop-blur-md"
+              >
+                Custom
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={handleUploadClick}
+              title={isManual ? 'Thay đổi ảnh cover thủ công' : 'Upload ảnh cover thủ công'}
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-950/80 hover:bg-amber-500 hover:text-slate-950 border border-slate-700/80 text-slate-300 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95 shadow-md backdrop-blur-md cursor-pointer"
             >
-              Custom
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={handleUploadClick}
-            title={isManual ? 'Thay đổi ảnh cover thủ công' : 'Upload ảnh cover thủ công'}
-            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-950/80 hover:bg-amber-500 hover:text-slate-950 border border-slate-700/80 text-slate-300 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95 shadow-md backdrop-blur-md cursor-pointer"
-          >
-            <Camera className="w-3.5 h-3.5" />
-          </button>
-        </div>
+              <Camera className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 4. Dedicated Game Title Box Below Image (Clean, Steam/PlayStation Style) */}
-      <div className="p-3.5 sm:p-4 bg-[#090D18] border-t border-slate-800/60 flex-1 flex flex-col justify-center">
+      <div className="p-3.5 sm:p-4 bg-slate-950/40 backdrop-blur-sm border-t border-white/10 group-hover:bg-amber-500/10 group-hover:border-amber-500/30 transition-all duration-300 flex-1 flex flex-col justify-center">
         <h3 className="text-sm sm:text-base font-display font-bold text-slate-100 group-hover:text-amber-300 transition-colors leading-snug line-clamp-2 tracking-wide">
           {game.title}
         </h3>

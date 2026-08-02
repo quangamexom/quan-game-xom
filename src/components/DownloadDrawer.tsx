@@ -69,7 +69,7 @@ export const DownloadDrawer: React.FC<DownloadDrawerProps> = ({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 100 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="relative w-full max-w-2xl bg-slate-900 border border-amber-500/30 rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl z-10 overflow-hidden"
+          className="relative w-full max-w-2xl glass-modal rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl z-10 overflow-hidden"
         >
           {/* Top Decorative Line */}
           <div className="w-12 h-1.5 bg-slate-700 rounded-full mx-auto mb-4 sm:hidden" />

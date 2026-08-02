@@ -57,7 +57,7 @@ export const BentoGameUpdates: React.FC<BentoGameUpdatesProps> = ({
             <motion.div
               whileHover={{ y: -4 }}
               onClick={() => onSelectGame(featuredTall)}
-              className="relative h-[420px] lg:h-[480px] rounded-2xl overflow-hidden border border-slate-800 hover:border-indigo-500/60 transition-all cursor-pointer group shadow-2xl bg-slate-950"
+              className="relative h-[420px] lg:h-[480px] rounded-2xl overflow-hidden glass-card transition-all cursor-pointer group"
             >
               <img
                 src={featuredTall.coverArt}
@@ -118,7 +118,7 @@ export const BentoGameUpdates: React.FC<BentoGameUpdatesProps> = ({
                 key={game.id}
                 whileHover={{ y: -3 }}
                 onClick={() => onSelectGame(game)}
-                className="relative h-[200px] lg:h-[230px] rounded-2xl overflow-hidden border border-slate-800/80 hover:border-indigo-500/50 transition-all cursor-pointer group shadow-xl bg-slate-950"
+                className="relative h-[200px] lg:h-[230px] rounded-2xl overflow-hidden glass-card transition-all cursor-pointer group"
               >
                 <img
                   src={game.backdropArt || game.coverArt}

@@ -23,7 +23,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   totalResults
 }) => {
   return (
-    <div className="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl p-4 mb-6 shadow-xl">
+    <div className="glass-panel rounded-2xl p-4 mb-6">
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
         
         {/* Platform Pill Tabs */}

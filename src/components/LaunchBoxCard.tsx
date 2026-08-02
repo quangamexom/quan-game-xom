@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { GameItem } from '../types';
 import { Download, Star, HardDrive, Gamepad2, Info, Camera, Image as ImageIcon, RefreshCw } from 'lucide-react';
 import { useGameCover } from '../hooks/useGameCover';
+import { useAdminMode } from '../hooks/useAdminMode';
 
 interface LaunchBoxCardProps {
   game: GameItem;
@@ -11,6 +12,7 @@ interface LaunchBoxCardProps {
 }
 
 export const LaunchBoxCard: React.FC<LaunchBoxCardProps> = ({ game, onSelect, onOpenDownload }) => {
+  const { isAdmin } = useAdminMode();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imageError, setImageError] = useState<boolean>(false);
   const { coverUrl, isLoading, isManual, uploadFile } = useGameCover(game);
@@ -42,7 +44,7 @@ export const LaunchBoxCard: React.FC<LaunchBoxCardProps> = ({ game, onSelect, on
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0 }}
-      className="group relative bg-slate-950 border border-slate-800 hover:border-amber-500/60 rounded-2xl overflow-hidden shadow-2xl transition-all duration-300 flex flex-col sm:flex-row h-auto sm:h-52"
+      className="group relative glass-card rounded-2xl overflow-hidden hover:-translate-y-1 transition-all duration-300 flex flex-col sm:flex-row h-auto sm:h-52"
     >
       <input
         type="file"
@@ -72,24 +74,26 @@ export const LaunchBoxCard: React.FC<LaunchBoxCardProps> = ({ game, onSelect, on
           />
         ) : (
           <div
-            onClick={handleUploadClick}
-            className="w-full h-full bg-[#0B0F1C] flex flex-col items-center justify-center p-2 text-center group/placeholder border border-dashed border-slate-800 hover:border-amber-400/60 transition-colors"
+            onClick={isAdmin ? handleUploadClick : undefined}
+            className={`w-full h-full bg-[#0B0F1C] flex flex-col items-center justify-center p-2 text-center group/placeholder border border-slate-800 transition-colors ${isAdmin ? 'hover:border-amber-400/60 cursor-pointer' : ''}`}
           >
             <ImageIcon className="w-6 h-6 text-slate-600 group-hover/placeholder:text-amber-400 mb-1" />
             <span className="text-[10px] font-medium text-slate-400">Chưa có ảnh</span>
-            <span className="text-[8px] font-mono text-amber-400 underline">Upload</span>
+            {isAdmin && <span className="text-[8px] font-mono text-amber-400 underline">Upload</span>}
           </div>
         )}
 
-        {/* Upload Button */}
-        <button
-          type="button"
-          onClick={handleUploadClick}
-          title="Upload / Đổi ảnh cover"
-          className="absolute top-2 right-2 w-6 h-6 rounded-full bg-slate-950/80 hover:bg-amber-500 hover:text-slate-950 border border-slate-700/80 text-slate-300 flex items-center justify-center opacity-70 group-hover:opacity-100 transition-all cursor-pointer z-10"
-        >
-          <Camera className="w-3 h-3" />
-        </button>
+        {/* Upload Button (Admin Only) */}
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={handleUploadClick}
+            title="Upload / Đổi ảnh cover"
+            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-slate-950/80 hover:bg-amber-500 hover:text-slate-950 border border-slate-700/80 text-slate-300 flex items-center justify-center opacity-70 group-hover:opacity-100 transition-all cursor-pointer z-10"
+          >
+            <Camera className="w-3 h-3" />
+          </button>
+        )}
 
         <div className="absolute top-2 left-2 bg-slate-950/90 text-amber-400 font-mono text-[9px] font-bold px-1.5 py-0.5 rounded border border-amber-500/30">
           RAWG/LAUNCHBOX

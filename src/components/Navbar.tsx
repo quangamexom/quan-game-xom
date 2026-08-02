@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Logo } from './Logo';
+import { useAdminMode } from '../hooks/useAdminMode';
 import { 
   Search, RefreshCw, Database, Coffee, Sparkles, User, Download, 
   ChevronDown, ChevronRight, Facebook, Youtube, MessageSquare, Filter, Star
@@ -28,6 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectGenreFilter,
   onSelectVietHoaFilter
 }) => {
+  const { isAdmin } = useAdminMode();
   const [isGameDropdownOpen, setIsGameDropdownOpen] = useState(false);
   const [activeDropdownFilter, setActiveDropdownFilter] = useState<string>('');
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -70,7 +72,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-[#05070E]/98 backdrop-blur-xl border-b border-indigo-950/80 shadow-2xl">
+    <header className="sticky top-0 z-50 bg-[#05070E]/75 backdrop-blur-2xl backdrop-saturate-150 border-b border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
       
       {/* 1. TOP UTILITY BAR: Social Icons (Left) + Search & Quick Actions (Right) */}
       <div className="bg-[#030409] border-b border-slate-900/90 py-1.5 px-2 sm:px-6">
@@ -299,7 +301,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }}
               className="cursor-pointer transition-transform hover:scale-105 group"
             >
-              <Logo size="lg" showText={true} allowUpload={true} />
+              <Logo size="lg" showText={true} allowUpload={isAdmin} />
             </div>
           </div>
 

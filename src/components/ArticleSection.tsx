@@ -70,7 +70,7 @@ export const ArticleSection: React.FC<ArticleSectionProps> = ({ onReadArticle })
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
               onClick={() => onReadArticle(article)}
-              className="group relative bg-[#0F1424]/80 hover:bg-[#131A30] border border-white/10 hover:border-cyan-400/50 rounded-3xl overflow-hidden transition-all duration-300 shadow-xl cursor-pointer backdrop-blur-xl flex flex-col justify-between"
+              className="group relative glass-card rounded-3xl overflow-hidden transition-all duration-300 cursor-pointer flex flex-col justify-between hover:-translate-y-1.5"
             >
               {/* Glass subtle border effect */}
               <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />

@@ -28,7 +28,7 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
           initial={{ opacity: 0, scale: 0.95, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 30 }}
-          className="relative w-full max-w-4xl bg-[#090D18]/95 border border-cyan-500/30 rounded-3xl overflow-hidden shadow-[0_0_60px_rgba(6,182,212,0.15)] z-10 my-auto text-white"
+          className="relative w-full max-w-4xl glass-modal rounded-3xl overflow-hidden z-10 my-auto text-white"
         >
           {/* Top Banner Image with Overlay */}
           <div className="relative h-64 sm:h-80 w-full overflow-hidden">

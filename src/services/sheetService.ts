@@ -138,5 +138,17 @@ export function parseGoogleSheetCSV(csvText: string): GameItem[] {
 }
 
 export async function fetchSheetData(sheetUrlOrId: string, gid = '0'): Promise<GameItem[]> {
+  try {
+    const response = await fetch('/api/sheet-games');
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.games && Array.isArray(data.games) && data.games.length > 0) {
+        return data.games;
+      }
+    }
+  } catch (err) {
+    console.warn("Could not fetch from /api/sheet-games, using pre-loaded Google Sheet dataset.", err);
+  }
   return INITIAL_GAMES;
 }
+

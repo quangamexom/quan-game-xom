@@ -80,7 +80,7 @@ export const SocialCommunitySection: React.FC = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: idx * 0.1 }}
-              className={`relative bg-gradient-to-b ${item.gradient} bg-[#0A0E1A]/90 border ${item.borderColor} rounded-3xl p-6 sm:p-8 backdrop-blur-xl flex flex-col justify-between shadow-2xl transition-all duration-300 hover:scale-[1.02] group`}
+              className={`relative glass-card rounded-3xl p-6 sm:p-8 backdrop-blur-xl flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] group`}
             >
               <div>
                 <div className="flex items-center justify-between mb-6">
