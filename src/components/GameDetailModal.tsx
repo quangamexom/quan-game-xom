@@ -4,6 +4,7 @@ import { GameItem } from '../types';
 import { X, Download, Star, Monitor, Cpu, HardDrive, Gamepad2, ExternalLink, Image as ImageIcon, Sparkles, CheckCircle, Camera, RefreshCw } from 'lucide-react';
 import { useGameCover, useGameBanner } from '../hooks/useGameCover';
 import { useAdminMode } from '../hooks/useAdminMode';
+import { parseGameTitle } from '../utils/titleParser';
 
 interface GameDetailModalProps {
   game: GameItem | null;
@@ -33,6 +34,8 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
   const bannerState = useGameBanner(game || { id: '', title: '', coverArt: '', downloadLinks: [], platforms: [], isHot: false, hasVietHoa: false });
 
   if (!game) return null;
+
+  const { cleanTitle, subtitle } = parseGameTitle(game.title, game.subtitle);
 
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -247,11 +250,11 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                 </div>
 
                 <h2 className="text-xl sm:text-3xl font-black text-white leading-tight">
-                  {game.title}
+                  {cleanTitle}
                 </h2>
-                {game.subtitle && (
-                  <p className="text-xs sm:text-sm text-amber-400 font-medium line-clamp-1">
-                    {game.subtitle}
+                {subtitle && (
+                  <p className="text-xs sm:text-sm text-amber-400 font-medium tracking-wide mt-1 line-clamp-1">
+                    {subtitle}
                   </p>
                 )}
               </div>
@@ -344,28 +347,28 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                 </h4>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="p-3 bg-slate-900/60 rounded-xl border border-white/10 backdrop-blur-sm">
-                    <span className="text-slate-400 block mb-1">HỆ ĐIỀU HÀNH (OS)</span>
-                    <span className="text-slate-200">{game.systemReqs?.os || "Windows 10/11 64-bit"}</span>
+                  <div className="p-3.5 bg-white/[0.05] rounded-2xl border border-white/15 backdrop-blur-md shadow-md">
+                    <span className="text-slate-400 block mb-1 text-[10px] uppercase font-mono tracking-wider">HỆ ĐIỀU HÀNH (OS)</span>
+                    <span className="text-slate-100 font-semibold">{game.systemReqs?.os || "Windows 10/11 64-bit"}</span>
                   </div>
 
-                  <div className="p-3 bg-slate-900/60 rounded-xl border border-white/10 backdrop-blur-sm">
-                    <span className="text-slate-400 block mb-1">VI XỬ LÝ (CPU)</span>
-                    <span className="text-slate-200">{game.systemReqs?.cpu || "Intel Core i5-8400 / AMD Ryzen 5 2600"}</span>
+                  <div className="p-3.5 bg-white/[0.05] rounded-2xl border border-white/15 backdrop-blur-md shadow-md">
+                    <span className="text-slate-400 block mb-1 text-[10px] uppercase font-mono tracking-wider">VI XỬ LÝ (CPU)</span>
+                    <span className="text-slate-100 font-semibold">{game.systemReqs?.cpu || "Intel Core i5-8400 / AMD Ryzen 5 2600"}</span>
                   </div>
 
-                  <div className="p-3 bg-slate-900/60 rounded-xl border border-white/10 backdrop-blur-sm">
-                    <span className="text-slate-400 block mb-1">BỘ NHỚ (RAM)</span>
-                    <span className="text-slate-200">{game.systemReqs?.ram || "8 GB RAM hoặc 16 GB RAM (Khuyên dùng)"}</span>
+                  <div className="p-3.5 bg-white/[0.05] rounded-2xl border border-white/15 backdrop-blur-md shadow-md">
+                    <span className="text-slate-400 block mb-1 text-[10px] uppercase font-mono tracking-wider">BỘ NHỚ (RAM)</span>
+                    <span className="text-slate-100 font-semibold">{game.systemReqs?.ram || "8 GB RAM hoặc 16 GB RAM (Khuyên dùng)"}</span>
                   </div>
 
-                  <div className="p-3 bg-slate-900/60 rounded-xl border border-white/10 backdrop-blur-sm">
-                    <span className="text-slate-400 block mb-1">CARD ĐỒ HỌA (GPU)</span>
-                    <span className="text-slate-200">{game.systemReqs?.gpu || "NVIDIA GTX 1060 (6GB) / AMD Radeon RX 580"}</span>
+                  <div className="p-3.5 bg-white/[0.05] rounded-2xl border border-white/15 backdrop-blur-md shadow-md">
+                    <span className="text-slate-400 block mb-1 text-[10px] uppercase font-mono tracking-wider">CARD ĐỒ HỌA (GPU)</span>
+                    <span className="text-slate-100 font-semibold">{game.systemReqs?.gpu || "NVIDIA GTX 1060 (6GB) / AMD Radeon RX 580"}</span>
                   </div>
 
-                  <div className="p-3 bg-slate-900/60 rounded-xl border border-white/10 backdrop-blur-sm sm:col-span-2">
-                    <span className="text-slate-400 block mb-1">Ổ CỨNG TRỐNG (SSD)</span>
+                  <div className="p-3.5 bg-white/[0.05] rounded-2xl border border-white/15 backdrop-blur-md shadow-md sm:col-span-2">
+                    <span className="text-slate-400 block mb-1 text-[10px] uppercase font-mono tracking-wider">Ổ CỨNG TRỐNG (SSD)</span>
                     <span className="text-amber-300 font-bold">{game.systemReqs?.storage || game.fileSize || "Khuyên dùng cài trên ổ SSD"}</span>
                   </div>
                 </div>

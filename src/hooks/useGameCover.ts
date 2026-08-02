@@ -8,6 +8,7 @@ import {
   saveManualBanner,
   removeManualBanner,
   fetchRawgCover,
+  fetchRawgBanner,
   isStockPhotoUrl
 } from '../services/rawgService';
 
@@ -45,8 +46,8 @@ export function useGameCover(game: GameItem): UseGameCoverResult {
     fetchRawgCover(game.title)
       .then((res) => {
         if (!isMounted) return;
-        if (res && res.backgroundImage) {
-          setRawgCover(res.backgroundImage);
+        if (res && res.coverImage) {
+          setRawgCover(res.coverImage);
           if (res.rating) setRawgRating(res.rating);
         } else {
           setRawgCover(null);
@@ -68,7 +69,7 @@ export function useGameCover(game: GameItem): UseGameCoverResult {
   const uploadFile = (file: File): Promise<void> => {
     return new Promise((resolve, reject) => {
       if (!file.type.startsWith('image/')) {
-        reject(new Error('File không phải là định dạng hình ảnh valid.'));
+        reject(new Error('File không phải là định dạng hình ảnh hợp lệ.'));
         return;
       }
 
@@ -135,11 +136,11 @@ export function useGameBanner(game: GameItem): UseGameBannerResult {
 
     setIsLoading(true);
 
-    fetchRawgCover(game.title)
+    fetchRawgBanner(game.title)
       .then((res) => {
         if (!isMounted) return;
-        if (res && res.backgroundImage) {
-          setRawgBanner(res.backgroundImage);
+        if (res && res.bannerImage) {
+          setRawgBanner(res.bannerImage);
         } else {
           setRawgBanner(null);
         }
@@ -185,9 +186,8 @@ export function useGameBanner(game: GameItem): UseGameBannerResult {
     setManualBanner(null);
   };
 
-  const fallbackBanner = isStockPhotoUrl(game.backdropArt)
-    ? (isStockPhotoUrl(game.coverArt) ? null : game.coverArt)
-    : game.backdropArt;
+  // Banner strictly uses backdropArt or RAWG banner, never coverArt
+  const fallbackBanner = isStockPhotoUrl(game.backdropArt) ? null : game.backdropArt;
   const effectiveBanner = manualBanner || rawgBanner || fallbackBanner || null;
 
   return {
@@ -198,3 +198,4 @@ export function useGameBanner(game: GameItem): UseGameBannerResult {
     resetBanner
   };
 }
+

@@ -36,7 +36,7 @@ export const DonateModal: React.FC<DonateModalProps> = ({ isOpen, onClose }) => 
           initial={{ opacity: 0, scale: 0.92, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.92, y: 20 }}
-          className="relative w-full max-w-lg bg-[#0D1220]/95 border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-[0_0_50px_rgba(6,182,212,0.15)] z-10 text-center overflow-hidden backdrop-blur-2xl"
+          className="relative w-full max-w-lg glass-modal p-6 sm:p-8 z-10 text-center overflow-hidden"
         >
           {/* Ambient Glows */}
           <div className="absolute -top-24 -left-24 w-48 h-48 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none" />
@@ -149,7 +149,7 @@ export const DonateModal: React.FC<DonateModalProps> = ({ isOpen, onClose }) => 
           </p>
 
           {/* Account Information Card */}
-          <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-cyan-500/40 rounded-2xl p-4 my-5 text-left relative backdrop-blur-md">
+          <div className="glass-panel border border-cyan-500/40 p-4 my-5 text-left relative">
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[10px] font-mono font-bold uppercase text-cyan-400 flex items-center gap-1">
                 <Sparkles className="w-3 h-3 text-cyan-400" /> TECHCOMBANK (VIETQR)

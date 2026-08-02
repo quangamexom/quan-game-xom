@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { GameItem } from '../types';
 import { ArrowUpRight, Calendar, Star, Download, Flame, Eye } from 'lucide-react';
+import { parseGameTitle } from '../utils/titleParser';
 
 interface BentoGameUpdatesProps {
   games: GameItem[];
@@ -22,6 +23,8 @@ export const BentoGameUpdates: React.FC<BentoGameUpdatesProps> = ({
   const gridRight = latestGames.slice(1, 5);
 
   if (!featuredTall) return null;
+
+  const featuredTitleParsed = parseGameTitle(featuredTall.title, featuredTall.subtitle);
 
   return (
     <section className="py-12 lg:py-16 bg-[#0A0E17] border-b border-slate-900 text-white">
@@ -85,8 +88,13 @@ export const BentoGameUpdates: React.FC<BentoGameUpdatesProps> = ({
                   {featuredTall.addedDate || 'MARCH 14, 2026'}
                 </span>
                 <h3 className="text-xl sm:text-2xl font-black text-white group-hover:text-indigo-300 transition-colors line-clamp-2">
-                  {featuredTall.title}: {featuredTall.subtitle || 'Update Patch Revamp'}
+                  {featuredTitleParsed.cleanTitle}
                 </h3>
+                {featuredTitleParsed.subtitle && (
+                  <p className="text-xs text-amber-300 font-medium line-clamp-1 mt-1">
+                    {featuredTitleParsed.subtitle}
+                  </p>
+                )}
                 <p className="text-xs text-slate-300 line-clamp-2 mt-2 opacity-80 font-normal">
                   {featuredTall.description || 'Bản cập nhật mới nhất kèm đầy đủ DLC và sửa lỗi đồ họa mượt mà.'}
                 </p>
@@ -113,39 +121,44 @@ export const BentoGameUpdates: React.FC<BentoGameUpdatesProps> = ({
 
           {/* Right Column: 4 Wide Cards in a 2x2 Grid */}
           <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {gridRight.map((game) => (
-              <motion.div
-                key={game.id}
-                whileHover={{ y: -3 }}
-                onClick={() => onSelectGame(game)}
-                className="relative h-[200px] lg:h-[230px] rounded-2xl overflow-hidden glass-card transition-all cursor-pointer group"
-              >
-                <img
-                  src={game.backdropArt || game.coverArt}
-                  alt={game.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 filter brightness-85"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
+            {gridRight.map((game) => {
+              const { cleanTitle, subtitle } = parseGameTitle(game.title, game.subtitle);
+              return (
+                <motion.div
+                  key={game.id}
+                  whileHover={{ y: -3 }}
+                  onClick={() => onSelectGame(game)}
+                  className="relative h-[200px] lg:h-[230px] rounded-2xl overflow-hidden glass-card transition-all cursor-pointer group"
+                >
+                  <img
+                    src={game.backdropArt || game.coverArt}
+                    alt={game.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 filter brightness-85"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
 
-                <div className="absolute top-3 left-3">
-                  <span className="px-2 py-0.5 bg-slate-900/80 backdrop-blur-md border border-slate-700/80 text-[10px] font-mono font-bold text-slate-300 rounded">
-                    {game.platforms[0]}
-                  </span>
-                </div>
+                  <div className="absolute top-3 left-3">
+                    <span className="px-2 py-0.5 bg-slate-900/80 backdrop-blur-md border border-slate-700/80 text-[10px] font-mono font-bold text-slate-300 rounded">
+                      {game.platforms[0]}
+                    </span>
+                  </div>
 
-                <div className="absolute bottom-0 inset-x-0 p-4">
-                  <span className="text-[10px] font-mono text-indigo-400 font-semibold block mb-0.5">
-                    {game.addedDate || 'MARCH 11, 2026'}
-                  </span>
-                  <h4 className="text-sm font-bold text-white group-hover:text-indigo-300 transition-colors line-clamp-1">
-                    {game.title}
-                  </h4>
-                  <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
-                    {game.subtitle || 'Patch update & fixes'}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
+                  <div className="absolute bottom-0 inset-x-0 p-4">
+                    <span className="text-[10px] font-mono text-indigo-400 font-semibold block mb-0.5">
+                      {game.addedDate || 'MARCH 11, 2026'}
+                    </span>
+                    <h4 className="text-sm font-bold text-white group-hover:text-indigo-300 transition-colors line-clamp-1">
+                      {cleanTitle}
+                    </h4>
+                    {subtitle && (
+                      <p className="text-[11px] text-amber-300/90 font-medium line-clamp-1 mt-0.5">
+                        {subtitle}
+                      </p>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
 
         </div>

@@ -118,7 +118,7 @@ export const DownloadDrawer: React.FC<DownloadDrawerProps> = ({
           </div>
 
           {/* Password Quick-Copy Bar */}
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 mb-6 flex items-center justify-between gap-3">
+          <div className="glass-panel border border-amber-500/40 rounded-2xl p-3.5 mb-6 flex items-center justify-between gap-3 shadow-md">
             <div className="flex items-center gap-2">
               <Key className="w-5 h-5 text-amber-400 shrink-0" />
               <div>
@@ -207,7 +207,7 @@ export const DownloadDrawer: React.FC<DownloadDrawerProps> = ({
           </div>
 
           {/* Quick Notes & Instructions */}
-          <div className="bg-slate-950/60 rounded-2xl p-3 border border-slate-800 text-[11px] text-slate-400 space-y-1">
+          <div className="glass-panel p-3.5 border border-white/10 text-[11px] text-slate-300 space-y-1">
             <div className="flex items-center gap-1.5 text-amber-400 font-bold">
               <ShieldCheck className="w-4 h-4" />
               <span>LƯU Ý KHI CÀI ĐẶT GAME:</span>

@@ -4,6 +4,7 @@ import { Camera, Gamepad2, RefreshCw } from 'lucide-react';
 import { GameItem } from '../types';
 import { useGameCover } from '../hooks/useGameCover';
 import { useAdminMode } from '../hooks/useAdminMode';
+import { parseGameTitle } from '../utils/titleParser';
 
 interface GameCardProps {
   game: GameItem;
@@ -25,6 +26,8 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelect }) => {
     uploadFile,
     resetCover
   } = useGameCover(game);
+
+  const { cleanTitle, subtitle } = parseGameTitle(game.title, game.subtitle);
 
   // Trigger hidden file input
   const handleUploadClick = (e: React.MouseEvent) => {
@@ -154,10 +157,15 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelect }) => {
       </div>
 
       {/* 4. Dedicated Game Title Box Below Image (Clean, Steam/PlayStation Style) */}
-      <div className="p-3.5 sm:p-4 bg-slate-950/40 backdrop-blur-sm border-t border-white/10 group-hover:bg-amber-500/10 group-hover:border-amber-500/30 transition-all duration-300 flex-1 flex flex-col justify-center">
+      <div className="p-3.5 sm:p-4 bg-white/[0.04] backdrop-blur-md border-t border-white/10 group-hover:bg-amber-500/10 group-hover:border-amber-500/40 transition-all duration-300 flex-1 flex flex-col justify-center">
         <h3 className="text-sm sm:text-base font-display font-bold text-slate-100 group-hover:text-amber-300 transition-colors leading-snug line-clamp-2 tracking-wide">
-          {game.title}
+          {cleanTitle}
         </h3>
+        {subtitle && (
+          <p className="text-[11px] sm:text-xs text-amber-400/90 group-hover:text-amber-300 font-medium tracking-wide mt-1 line-clamp-1 flex items-center gap-1">
+            <span>{subtitle}</span>
+          </p>
+        )}
       </div>
     </motion.div>
   );

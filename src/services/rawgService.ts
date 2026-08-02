@@ -1,3 +1,5 @@
+import { parseGameTitle } from '../utils/titleParser';
+
 // RAWG API Service & Cover Art Manager
 // API Key provided by user: 290390ff53654730a48aa3e86f3ddf4f
 
@@ -51,38 +53,59 @@ export function isStockPhotoUrl(url: string | undefined | null): boolean {
 
 /**
  * Clean title to improve RAWG search accuracy.
- * Strips custom store/mod/edition suffixes, extra tags, emojis, brackets, etc.
- * E.g., "FINAL FANTASY VII — QUÁN GAME XÓM EDITION" -> "FINAL FANTASY VII"
+ * First extracts cleanTitle using parseGameTitle, then strips custom store/mod/edition suffixes, extra tags, emojis, brackets, etc.
+ * E.g., "🔥🔥 FINAL FANTASY VII — QUÁN GAME XÓM EDITION" -> "FINAL FANTASY VII"
  */
 export function cleanTitleForSearch(rawTitle: string): string {
   if (!rawTitle) return '';
-  let t = rawTitle;
+  // 1. Use titleParser to separate clean base title from subtitle/branding
+  const { cleanTitle } = parseGameTitle(rawTitle);
+  let t = cleanTitle || rawTitle;
 
-  // 1. Strip emojis and special symbols
+  // 2. Replace colons, dashes, slashes, and special punctuation with spaces
+  t = t.replace(/[:\-\—\–\/\_\.\,]/g, ' ');
+
+  // 3. Strip emojis and special symbols
   t = t.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[⭐🇻🇳🔥💥✦⚡✨🎮👑💎]/gu, ' ');
 
-  // 2. If title contains dashes, colons, bullets, or tildes, check if right part is a mod/edition suffix
-  const dashParts = t.split(/\s*[-—–:•·|~]\s*/);
-  if (dashParts.length > 1 && dashParts[0].trim().length >= 2) {
-    const mainCandidate = dashParts[0].trim();
-    const restText = dashParts.slice(1).join(' ').toLowerCase();
-    // Check if the rest of the title contains mod, store, or edition keywords
-    const isSuffix = /quán game xóm|qgx|edition|việt hóa|việt hoá|viethoa|collection|full|mod|dlc|fix|repack|version|build|update|ps1|ps2|ps3|ps4|ps5|pc|android/i.test(restText);
-    if (isSuffix) {
-      t = mainCandidate;
-    }
-  }
-
-  // 3. Remove content inside parentheses, brackets, or braces like (GTA 5), [PC], {Mod}
+  // 4. Remove content inside parentheses, brackets, or braces like (GTA 5), [PC], {Mod}
   t = t.replace(/[\(\[\{].*?[\)\]\}]/g, ' ');
 
-  // 4. Remove common Vietnamese/release/mod keywords
-  t = t.replace(/quán game xóm|qgx edition|edition|việt hóa|việt hoá|viethoa|vh|resynced|remastered|remake|repack|full iso|iso|crack|online|mobile|pc|android|ps1|ps2|ps3|ps4|ps5|switch|deluxe|gold|goty|ultimate|complete|definitive|enhanced|v\d+\.\d+(\.\d+)*/gi, ' ');
+  // 5. Remove common Vietnamese/release/mod keywords if still lingering
+  t = t.replace(/quán game xóm|qgx edition|edition|việt hóa|việt hoá|viethoa|resynced|remastered|re-?make|repack|full iso|iso|crack|online|mobile|pc|android|ps1|ps2|ps3|ps4|ps5|switch|deluxe|gold|goty|ultimate|complete|definitive|enhanced|v\d+\.\d+(\.\d+)*/gi, ' ');
 
-  // 5. Replace multiple spaces and trim
+  // 6. Replace multiple spaces and trim
   t = t.replace(/\s+/g, ' ').trim();
 
-  return t || rawTitle.trim();
+  return t || cleanTitle || rawTitle.trim();
+}
+
+/**
+ * Helper to match best result from RAWG search response
+ */
+function findBestGameMatch(results: any[], cleanedTitle: string): any {
+  if (!results || results.length === 0) return null;
+  const targetLower = cleanedTitle.toLowerCase().trim();
+  const targetSlug = targetLower.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+  // 1. Exact name match
+  const exactName = results.find((r: any) => r.name && r.name.toLowerCase().trim() === targetLower);
+  if (exactName) return exactName;
+
+  // 2. Exact or leading slug match
+  const exactSlug = results.find((r: any) => r.slug === targetSlug || r.slug?.startsWith(targetSlug));
+  if (exactSlug) return exactSlug;
+
+  // 3. Name starts with cleanedTitle
+  const nameStartsWith = results.find((r: any) => r.name && r.name.toLowerCase().startsWith(targetLower));
+  if (nameStartsWith) return nameStartsWith;
+
+  // 4. Name contains cleanedTitle
+  const nameContains = results.find((r: any) => r.name && r.name.toLowerCase().includes(targetLower));
+  if (nameContains) return nameContains;
+
+  // 5. Fallback to first result
+  return results[0];
 }
 
 /**
@@ -167,91 +190,238 @@ export function removeManualBanner(gameId: string, title: string): void {
   }
 }
 
-export interface RawgGameResult {
-  backgroundImage: string | null;
+export interface RawgCoverResult {
+  coverImage: string | null;
   rating: number | null;
   genres: string[];
 }
 
+export interface RawgBannerResult {
+  bannerImage: string | null;
+  rating: number | null;
+}
+
 /**
- * Fetch game cover art from RAWG.io API with caching & queueing
+ * Robust helper to fetch RAWG API results trying direct connection first, then CORS proxy fallbacks.
  */
-export async function fetchRawgCover(title: string): Promise<RawgGameResult | null> {
+async function queryRawgSearchResults(cleanedTitle: string): Promise<any[] | null> {
+  const primaryUrl = `${RAWG_BASE_URL}?key=${RAWG_API_KEY}&search=${encodeURIComponent(cleanedTitle)}&page_size=5`;
+
+  // 1. Direct fetch
+  try {
+    const res = await fetch(primaryUrl);
+    if (res.ok) {
+      const text = await res.text();
+      if (text.startsWith('{')) {
+        const data = JSON.parse(text);
+        if (data && Array.isArray(data.results) && data.results.length > 0) {
+          return data.results;
+        }
+      }
+    }
+  } catch (e) {
+    // direct fetch failed
+  }
+
+  // 2. AllOrigins proxy fallback
+  try {
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(primaryUrl)}`;
+    const res = await fetch(proxyUrl);
+    if (res.ok) {
+      const text = await res.text();
+      if (text.startsWith('{')) {
+        const data = JSON.parse(text);
+        if (data && Array.isArray(data.results) && data.results.length > 0) {
+          return data.results;
+        }
+      }
+    }
+  } catch (e) {
+    // proxy fetch failed
+  }
+
+  // 3. Corsproxy.io fallback
+  try {
+    const proxyUrl2 = `https://corsproxy.io/?${encodeURIComponent(primaryUrl)}`;
+    const res = await fetch(proxyUrl2);
+    if (res.ok) {
+      const text = await res.text();
+      if (text.startsWith('{')) {
+        const data = JSON.parse(text);
+        if (data && Array.isArray(data.results) && data.results.length > 0) {
+          return data.results;
+        }
+      }
+    }
+  } catch (e) {
+    // corsproxy failed
+  }
+
+  return null;
+}
+
+/**
+ * Clear failed RAWG cache entries from localStorage to unblock fetches
+ */
+export function clearFailedRawgCache(): void {
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('rawg_cover_failed_') || key.startsWith('rawg_banner_failed_'))) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+  } catch (e) {}
+}
+
+// Automatically clear failed caches on load
+clearFailedRawgCache();
+
+/**
+ * Fetch game avatar/cover image from RAWG.io API with dedicated cache key rawg_cover_[cleanTitle]
+ */
+export async function fetchRawgCover(title: string): Promise<RawgCoverResult | null> {
   const cleanedTitle = cleanTitleForSearch(title);
   if (!cleanedTitle) return null;
 
-  const cacheKey = `rawg_cache_${cleanedTitle.toLowerCase()}`;
-  const failKey = `rawg_failed_${cleanedTitle.toLowerCase()}`;
+  const cacheKey = `rawg_cover_${cleanedTitle.toLowerCase()}`;
+  const failKey = `rawg_cover_failed_${cleanedTitle.toLowerCase()}`;
 
   // Check localStorage cache first
   try {
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
       const parsed = JSON.parse(cached);
-      return {
-        backgroundImage: parsed.backgroundImage || null,
-        rating: parsed.rating || null,
-        genres: parsed.genres || []
-      };
+      if (parsed && parsed.coverImage) {
+        return {
+          coverImage: parsed.coverImage,
+          rating: parsed.rating || null,
+          genres: parsed.genres || []
+        };
+      }
     }
 
     const failed = localStorage.getItem(failKey);
     if (failed) {
-      // Failed cache valid for 24h
       const failTime = parseInt(failed, 10);
-      if (Date.now() - failTime < 24 * 60 * 60 * 1000) {
+      if (Date.now() - failTime < 5 * 60 * 1000) { // 5 minutes max fail cache
         return null;
+      } else {
+        localStorage.removeItem(failKey);
       }
     }
   } catch (e) {
     // ignore cache read errors
   }
 
-  // Queue request to prevent exceeding RAWG rate limits
   return enqueueRequest(async () => {
     try {
-      const url = `${RAWG_BASE_URL}?key=${RAWG_API_KEY}&search=${encodeURIComponent(cleanedTitle)}&page_size=1`;
-      const response = await fetch(url);
+      const results = await queryRawgSearchResults(cleanedTitle);
 
-      if (!response.ok) {
-        throw new Error(`RAWG API error HTTP ${response.status}`);
-      }
+      if (results && results.length > 0) {
+        const matched = findBestGameMatch(results, cleanedTitle);
+        // Prefer background_image or screenshot for cover art
+        const coverImg = matched.background_image || matched.background_image_additional || matched.short_screenshots?.[0]?.image || null;
+        const rating = matched.rating ? Math.round(matched.rating * 20) : null;
+        const genres = matched.genres ? matched.genres.map((g: any) => g.name) : [];
 
-      const data = await response.json();
+        if (coverImg) {
+          const resultObj: RawgCoverResult = {
+            coverImage: coverImg,
+            rating: rating,
+            genres: genres
+          };
 
-      if (data && data.results && data.results.length > 0) {
-        const first = data.results[0];
-        const bgImage = first.background_image || null;
-        const rating = first.rating ? Math.round(first.rating * 20) : null;
-        const genres = first.genres ? first.genres.map((g: any) => g.name) : [];
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify(resultObj));
+          } catch (e) {}
 
-        const resultObj: RawgGameResult = {
-          backgroundImage: bgImage,
-          rating: rating,
-          genres: genres
-        };
-
-        // Store in cache
-        try {
-          localStorage.setItem(cacheKey, JSON.stringify(resultObj));
-        } catch (e) {
-          // localStorage might be full
+          return resultObj;
         }
-
-        return resultObj;
-      } else {
-        // Mark failed search in cache
-        try {
-          localStorage.setItem(failKey, Date.now().toString());
-        } catch (e) {}
-        return null;
       }
-    } catch (error) {
-      console.warn(`RAWG API fetch failed for "${title}" (${cleanedTitle}):`, error);
+
+      // Record failure only if API responded with empty results
       try {
         localStorage.setItem(failKey, Date.now().toString());
       } catch (e) {}
       return null;
+    } catch (error) {
+      console.warn(`RAWG cover fetch error for "${title}" (${cleanedTitle}):`, error);
+      return null;
     }
   });
 }
+
+/**
+ * Fetch game wide top hero banner image from RAWG.io API with dedicated cache key rawg_banner_[cleanTitle]
+ */
+export async function fetchRawgBanner(title: string): Promise<RawgBannerResult | null> {
+  const cleanedTitle = cleanTitleForSearch(title);
+  if (!cleanedTitle) return null;
+
+  const cacheKey = `rawg_banner_${cleanedTitle.toLowerCase()}`;
+  const failKey = `rawg_banner_failed_${cleanedTitle.toLowerCase()}`;
+
+  // Check localStorage cache first
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed && parsed.bannerImage) {
+        return {
+          bannerImage: parsed.bannerImage,
+          rating: parsed.rating || null
+        };
+      }
+    }
+
+    const failed = localStorage.getItem(failKey);
+    if (failed) {
+      const failTime = parseInt(failed, 10);
+      if (Date.now() - failTime < 5 * 60 * 1000) {
+        return null;
+      } else {
+        localStorage.removeItem(failKey);
+      }
+    }
+  } catch (e) {
+    // ignore cache read errors
+  }
+
+  return enqueueRequest(async () => {
+    try {
+      const results = await queryRawgSearchResults(cleanedTitle);
+
+      if (results && results.length > 0) {
+        const matched = findBestGameMatch(results, cleanedTitle);
+        // Primary choice for top banner is background_image (wide wallpaper/art)
+        const bannerImg = matched.background_image || matched.background_image_additional || matched.short_screenshots?.[0]?.image || null;
+        const rating = matched.rating ? Math.round(matched.rating * 20) : null;
+
+        if (bannerImg) {
+          const resultObj: RawgBannerResult = {
+            bannerImage: bannerImg,
+            rating: rating
+          };
+
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify(resultObj));
+          } catch (e) {}
+
+          return resultObj;
+        }
+      }
+
+      try {
+        localStorage.setItem(failKey, Date.now().toString());
+      } catch (e) {}
+      return null;
+    } catch (error) {
+      console.warn(`RAWG banner fetch error for "${title}" (${cleanedTitle}):`, error);
+      return null;
+    }
+  });
+}
+

@@ -4,6 +4,7 @@ import { GameItem } from '../types';
 import { Download, Star, HardDrive, Gamepad2, Info, Camera, Image as ImageIcon, RefreshCw } from 'lucide-react';
 import { useGameCover } from '../hooks/useGameCover';
 import { useAdminMode } from '../hooks/useAdminMode';
+import { parseGameTitle } from '../utils/titleParser';
 
 interface LaunchBoxCardProps {
   game: GameItem;
@@ -16,6 +17,7 @@ export const LaunchBoxCard: React.FC<LaunchBoxCardProps> = ({ game, onSelect, on
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imageError, setImageError] = useState<boolean>(false);
   const { coverUrl, isLoading, isManual, uploadFile } = useGameCover(game);
+  const { cleanTitle, subtitle } = parseGameTitle(game.title, game.subtitle);
 
   const handleUploadClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -107,7 +109,7 @@ export const LaunchBoxCard: React.FC<LaunchBoxCardProps> = ({ game, onSelect, on
       </div>
 
       {/* Right Content */}
-      <div className="p-4 flex-1 flex flex-col justify-between bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950">
+      <div className="p-4 flex-1 flex flex-col justify-between bg-white/[0.04] backdrop-blur-md border-t sm:border-t-0 sm:border-l border-white/10 group-hover:bg-amber-500/10 transition-all duration-300">
         <div>
           <div className="flex items-center justify-between gap-2 mb-1">
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -131,12 +133,11 @@ export const LaunchBoxCard: React.FC<LaunchBoxCardProps> = ({ game, onSelect, on
             onClick={() => onSelect(game)}
             className="text-lg font-bold text-white group-hover:text-amber-300 transition-colors line-clamp-1 cursor-pointer"
           >
-            {game.title}
+            {cleanTitle}
           </h4>
-
-          {game.subtitle && (
-            <p className="text-xs text-amber-400/90 font-medium line-clamp-1 mb-1">
-              {game.subtitle}
+          {subtitle && (
+            <p className="text-xs text-amber-400/90 font-medium tracking-wide mt-0.5 line-clamp-1">
+              {subtitle}
             </p>
           )}
 

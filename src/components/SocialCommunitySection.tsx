@@ -118,7 +118,7 @@ export const SocialCommunitySection: React.FC = () => {
         </div>
 
         {/* Guarantee Banner */}
-        <div className="mt-12 bg-gradient-to-r from-[#090D1A]/95 via-emerald-950/20 to-[#090D1A]/95 border border-emerald-500/30 hover:border-emerald-400/50 rounded-2xl p-5 backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left shadow-[0_0_30px_rgba(16,185,129,0.1)] transition-all">
+        <div className="mt-12 glass-panel border border-emerald-500/40 hover:border-emerald-400/60 p-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left shadow-[0_0_30px_rgba(16,185,129,0.12)] transition-all">
           <div className="flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-xl bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center text-emerald-300 shrink-0 shadow-[0_0_15px_rgba(16,185,129,0.25)]">
               <ShieldCheck className="w-6 h-6 animate-pulse" />

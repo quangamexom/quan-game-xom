@@ -94,7 +94,7 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
             </div>
 
             {/* Excerpt Lead */}
-            <p className="text-base sm:text-lg text-amber-200 font-body font-medium leading-relaxed italic bg-indigo-950/40 p-5 rounded-2xl border-l-4 border-cyan-400 shadow-inner">
+            <p className="text-base sm:text-lg text-amber-200 font-body font-medium leading-relaxed italic bg-white/[0.05] backdrop-blur-md p-5 rounded-2xl border-l-4 border-cyan-400 shadow-inner">
               "{article.excerpt}"
             </p>
 

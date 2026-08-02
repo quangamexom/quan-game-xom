@@ -1,6 +1,7 @@
 import React from 'react';
 import { GameItem } from '../types';
 import { Download, Star, ExternalLink, Gamepad2, Radio, CheckCircle, Eye } from 'lucide-react';
+import { parseGameTitle } from '../utils/titleParser';
 
 interface GameListRowProps {
   game: GameItem;
@@ -11,6 +12,7 @@ interface GameListRowProps {
 
 export const GameListRow: React.FC<GameListRowProps> = ({ game, index, onSelect, onOpenDownload }) => {
   const isEven = index % 2 === 0;
+  const { cleanTitle, subtitle } = parseGameTitle(game.title, game.subtitle);
 
   return (
     <tr
@@ -61,7 +63,7 @@ export const GameListRow: React.FC<GameListRowProps> = ({ game, index, onSelect,
           onClick={() => onSelect(game)}
           className="font-bold text-sm text-white hover:text-amber-300 transition-colors cursor-pointer flex items-center gap-1.5 flex-wrap"
         >
-          <span>{game.title}</span>
+          <span>{cleanTitle}</span>
           {game.hasVietHoa && (
             <span className="text-amber-400" title="Đã Việt Hóa">
               ⭐
@@ -69,9 +71,9 @@ export const GameListRow: React.FC<GameListRowProps> = ({ game, index, onSelect,
           )}
         </div>
 
-        {game.subtitle && (
+        {subtitle && (
           <p className="text-[11px] text-amber-400/90 font-medium italic mt-0.5">
-            {game.subtitle}
+            {subtitle}
           </p>
         )}
 

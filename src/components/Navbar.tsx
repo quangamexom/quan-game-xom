@@ -48,31 +48,22 @@ export const Navbar: React.FC<NavbarProps> = ({
   const handleSelectFilter = (type: 'platform' | 'genre' | 'viethoa' | 'all', value: any, filterLabel: string) => {
     setActiveDropdownFilter(filterLabel);
     if (type === 'all') {
-      onCategoryChange('GAMES');
       if (onSelectPlatformFilter) onSelectPlatformFilter('ALL');
       if (onSelectVietHoaFilter) onSelectVietHoaFilter(false);
     } else if (type === 'platform') {
-      onCategoryChange('GAMES');
       if (onSelectPlatformFilter) onSelectPlatformFilter(value);
     } else if (type === 'genre') {
-      onCategoryChange('GAMES');
       if (onSelectGenreFilter) onSelectGenreFilter(value);
     } else if (type === 'viethoa') {
-      onCategoryChange('GAMES');
       if (onSelectVietHoaFilter) onSelectVietHoaFilter(true);
     }
 
     setIsGameDropdownOpen(false);
-    
-    // Scroll to game catalog
-    const catalogEl = document.getElementById('game-catalog');
-    if (catalogEl) {
-      catalogEl.scrollIntoView({ behavior: 'smooth' });
-    }
+    onCategoryChange('GAMES');
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-[#05070E]/75 backdrop-blur-2xl backdrop-saturate-150 border-b border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+    <header className="sticky top-0 z-50 glass-header">
       
       {/* 1. TOP UTILITY BAR: Social Icons (Left) + Search & Quick Actions (Right) */}
       <div className="bg-[#030409] border-b border-slate-900/90 py-1.5 px-2 sm:px-6">
@@ -164,10 +155,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             
             {/* TRANG CHỦ */}
             <button
-              onClick={() => {
-                onCategoryChange('HOME');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
+              onClick={() => onCategoryChange('HOME')}
               className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all cursor-pointer font-display text-[10px] xs:text-xs sm:text-sm font-black tracking-wider uppercase whitespace-nowrap ${
                 activeCategory === 'HOME'
                   ? 'text-amber-300 bg-amber-500/10 border border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.25)] text-glow-amber' 
@@ -202,7 +190,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               {/* DROPDOWN MENU */}
               {isGameDropdownOpen && (
-                <div className="absolute top-full left-0 mt-2 w-[320px] sm:w-[580px] bg-[#04060D]/98 backdrop-blur-2xl border border-indigo-900/80 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.95)] p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="absolute top-full left-0 mt-2 w-[320px] sm:w-[580px] glass-modal p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                   
                   {/* GROUP 1: TRẠNG THÁI */}
                   <div className="space-y-2">
@@ -295,10 +283,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* ZONE 2: CENTER LOGO (DISPLAYED LARGER + CLICK TO CHANGE IMAGE) */}
           <div className="flex flex-col items-center justify-center shrink-0 px-2 sm:px-4">
             <div 
-              onClick={() => {
-                onCategoryChange('HOME');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
+              onClick={() => onCategoryChange('HOME')}
               className="cursor-pointer transition-transform hover:scale-105 group"
             >
               <Logo size="lg" showText={true} allowUpload={isAdmin} />
@@ -310,11 +295,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             
             {/* BÀI VIẾT */}
             <button
-              onClick={() => {
-                onCategoryChange('ARTICLES');
-                const articlesEl = document.getElementById('articles-section');
-                if (articlesEl) articlesEl.scrollIntoView({ behavior: 'smooth' });
-              }}
+              onClick={() => onCategoryChange('ARTICLES')}
               className={`hidden md:block px-3 sm:px-4 py-2 rounded-xl transition-all cursor-pointer font-display text-xs sm:text-sm font-black tracking-wider uppercase ${
                 activeCategory === 'ARTICLES'
                   ? 'text-cyan-300 bg-indigo-600/30 border border-indigo-500/50 shadow-[0_0_12px_rgba(99,102,241,0.3)] text-glow-cyan' 
@@ -335,11 +316,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* LIÊN HỆ */}
             <button
-              onClick={() => {
-                onCategoryChange('COMMUNITY');
-                const commEl = document.getElementById('community-section');
-                if (commEl) commEl.scrollIntoView({ behavior: 'smooth' });
-              }}
+              onClick={() => onCategoryChange('COMMUNITY')}
               className={`hidden md:block px-3 sm:px-4 py-2 rounded-xl transition-all cursor-pointer font-display text-xs sm:text-sm font-black tracking-wider uppercase ${
                 activeCategory === 'COMMUNITY'
                   ? 'text-cyan-300 bg-indigo-600/30 border border-indigo-500/50 shadow-[0_0_12px_rgba(99,102,241,0.3)] text-glow-cyan' 
