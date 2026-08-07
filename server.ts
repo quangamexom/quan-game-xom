@@ -32,6 +32,49 @@ app.get("/api/sheet-games", async (req, res) => {
   }
 });
 
+// 2. Steam Store Search Proxy route (Bypasses browser CORS & provides high quality posters)
+app.get("/api/steam-search", async (req, res) => {
+  try {
+    const term = req.query.term as string;
+    if (!term || typeof term !== 'string' || term.trim().length === 0) {
+      return res.status(400).json({ success: false, error: "Search term required" });
+    }
+
+    const cleanedTerm = term.trim();
+    const steamUrl = `https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(cleanedTerm)}&l=english&cc=US`;
+    
+    const response = await fetch(steamUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      }
+    });
+
+    if (!response.ok) {
+      return res.status(502).json({ success: false, error: "Steam API HTTP error" });
+    }
+
+    const data = await response.json();
+    if (data && Array.isArray(data.items) && data.items.length > 0) {
+      const item = data.items[0];
+      const appId = item.id;
+      return res.json({
+        success: true,
+        appId: String(appId),
+        name: item.name,
+        coverImage: `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/library_600x900.jpg`,
+        bannerImage: `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`,
+        rating: 95,
+        genres: item.genres ? item.genres.map((g: any) => g.name || g) : ['Game PC']
+      });
+    }
+
+    return res.json({ success: false, message: "No Steam game found" });
+  } catch (err: any) {
+    console.error("[Steam Search API Error]:", err);
+    return res.status(500).json({ success: false, error: err.message || "Steam search failed" });
+  }
+});
+
 // 2. LaunchBox / Gemini AI metadata enrichment route
 app.post("/api/enrich-game", async (req, res) => {
   try {

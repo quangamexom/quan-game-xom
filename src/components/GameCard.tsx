@@ -27,7 +27,32 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelect }) => {
     resetCover
   } = useGameCover(game);
 
+  const [currentImgSrc, setCurrentImgSrc] = useState<string | null>(coverUrl);
+
+  // Sync image source whenever coverUrl changes
+  React.useEffect(() => {
+    setCurrentImgSrc(coverUrl);
+    setImageError(false);
+  }, [coverUrl]);
+
   const { cleanTitle, subtitle } = parseGameTitle(game.title, game.subtitle);
+
+  // Multi-tier image fallback handler
+  const handleImageError = () => {
+    if (currentImgSrc && currentImgSrc.includes('library_600x900.jpg')) {
+      // 1. Steam library_600x900 -> Fallback to Steam header.jpg (100% reliable on all Steam games)
+      setCurrentImgSrc(currentImgSrc.replace('library_600x900.jpg', 'header.jpg'));
+    } else if (currentImgSrc && game.backdropArt && !game.backdropArt.includes('unsplash') && currentImgSrc !== game.backdropArt) {
+      // 2. Fallback to game's backdrop art
+      setCurrentImgSrc(game.backdropArt);
+    } else if (currentImgSrc && game.coverArt && !game.coverArt.includes('unsplash') && currentImgSrc !== game.coverArt) {
+      // 3. Fallback to game's cover art
+      setCurrentImgSrc(game.coverArt);
+    } else {
+      // 4. Mark image as failed to display fallback gaming badge
+      setImageError(true);
+    }
+  };
 
   // Trigger hidden file input
   const handleUploadClick = (e: React.MouseEvent) => {
@@ -57,7 +82,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelect }) => {
     }
   };
 
-  const hasValidImage = coverUrl && !imageError;
+  const hasValidImage = currentImgSrc && !imageError;
 
   return (
     <motion.div
@@ -66,7 +91,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelect }) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.25 }}
-      className="group relative glass-card rounded-2xl overflow-hidden hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col h-full"
+      className="group relative glass-card rounded-2xl overflow-hidden hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col h-full border border-slate-800/80 hover:border-amber-500/50 hover:shadow-2xl hover:shadow-amber-500/10"
       onClick={() => onSelect(game)}
     >
       {/* Hidden File Input for Custom Cover Upload */}
@@ -86,7 +111,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelect }) => {
           <div className="absolute inset-0 bg-slate-900 animate-pulse flex flex-col items-center justify-center text-slate-600 gap-2 z-10">
             <RefreshCw className="w-6 h-6 animate-spin text-amber-500/80" />
             <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
-              {isUploading ? 'Đang lưu ảnh...' : 'RAWG.io Cover...'}
+              {isUploading ? 'Đang lưu ảnh...' : 'Đang tải cover...'}
             </span>
           </div>
         )}
@@ -94,25 +119,30 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelect }) => {
         {/* Cover Image Display */}
         {hasValidImage ? (
           <img
-            src={coverUrl}
+            src={currentImgSrc}
             alt={game.title}
-            onError={() => setImageError(true)}
+            onError={handleImageError}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
             loading="lazy"
           />
         ) : !isLoading && (
-          /* Placeholder state when no image is found or failed to load */
+          /* Custom Styled Retro Gaming Badge Placeholder */
           <div
             onClick={isAdmin ? handleUploadClick : undefined}
-            className={`w-full h-full bg-gradient-to-b from-[#0e1322] via-[#090d18] to-[#05070e] flex flex-col items-center justify-center p-3 text-center group/placeholder border border-slate-800/80 transition-colors ${isAdmin ? 'hover:border-amber-400/60 cursor-pointer' : ''}`}
+            className={`w-full h-full bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/40 flex flex-col items-center justify-center p-3 text-center group/placeholder border border-slate-800/80 transition-all ${isAdmin ? 'hover:border-amber-400/60 cursor-pointer' : ''}`}
           >
-            <Gamepad2 className="w-8 h-8 text-slate-600/90 group-hover/placeholder:text-amber-400/90 transition-colors mb-1 stroke-[1.5]" />
-            <span className="text-[11px] font-display font-medium text-slate-400 group-hover/placeholder:text-slate-200">
-              Chưa có ảnh
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-1.5 shadow-inner">
+              <Gamepad2 className="w-5 h-5" />
+            </div>
+            <span className="text-xs font-display font-bold text-amber-300 line-clamp-1 max-w-[90%]">
+              {cleanTitle}
+            </span>
+            <span className="text-[9px] font-mono text-slate-400 mt-0.5 uppercase tracking-widest">
+              Quán Game Xóm Edition
             </span>
             {isAdmin && (
-              <span className="text-[9px] font-mono text-amber-400/80 underline mt-0.5">
-                Click để upload
+              <span className="text-[9px] font-mono text-amber-400/90 underline mt-1">
+                + Upload ảnh
               </span>
             )}
           </div>

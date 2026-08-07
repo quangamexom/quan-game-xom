@@ -23,15 +23,48 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
+  // Hook for avatar / cover art
+  const coverState = useGameCover(game || { id: '', title: '', coverArt: '', downloadLinks: [], platforms: [], isHot: false, hasVietHoa: false });
+  // Hook for top hero banner
+  const bannerState = useGameBanner(game || { id: '', title: '', coverArt: '', downloadLinks: [], platforms: [], isHot: false, hasVietHoa: false });
+
   const [bannerError, setBannerError] = useState<boolean>(false);
   const [avatarError, setAvatarError] = useState<boolean>(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState<boolean>(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState<boolean>(false);
 
-  // Hook for avatar / cover art
-  const coverState = useGameCover(game || { id: '', title: '', coverArt: '', downloadLinks: [], platforms: [], isHot: false, hasVietHoa: false });
-  // Hook for top hero banner
-  const bannerState = useGameBanner(game || { id: '', title: '', coverArt: '', downloadLinks: [], platforms: [], isHot: false, hasVietHoa: false });
+  const [bannerImgSrc, setBannerImgSrc] = useState<string | null>(bannerState.bannerUrl);
+  const [avatarImgSrc, setAvatarImgSrc] = useState<string | null>(coverState.coverUrl);
+
+  React.useEffect(() => {
+    setBannerImgSrc(bannerState.bannerUrl);
+    setBannerError(false);
+  }, [bannerState.bannerUrl]);
+
+  React.useEffect(() => {
+    setAvatarImgSrc(coverState.coverUrl);
+    setAvatarError(false);
+  }, [coverState.coverUrl]);
+
+  const handleBannerImgError = () => {
+    if (bannerImgSrc && bannerImgSrc.includes('library_600x900.jpg')) {
+      setBannerImgSrc(bannerImgSrc.replace('library_600x900.jpg', 'header.jpg'));
+    } else if (game?.backdropArt && bannerImgSrc !== game.backdropArt) {
+      setBannerImgSrc(game.backdropArt);
+    } else {
+      setBannerError(true);
+    }
+  };
+
+  const handleAvatarImgError = () => {
+    if (avatarImgSrc && avatarImgSrc.includes('library_600x900.jpg')) {
+      setAvatarImgSrc(avatarImgSrc.replace('library_600x900.jpg', 'header.jpg'));
+    } else if (game?.coverArt && avatarImgSrc !== game.coverArt) {
+      setAvatarImgSrc(game.coverArt);
+    } else {
+      setAvatarError(true);
+    }
+  };
 
   if (!game) return null;
 
@@ -126,11 +159,11 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
             )}
 
             {/* Banner Image Display */}
-            {hasBannerImage ? (
+            {bannerImgSrc && !bannerError ? (
               <img
-                src={bannerState.bannerUrl!}
+                src={bannerImgSrc}
                 alt={game.title}
-                onError={() => setBannerError(true)}
+                onError={handleBannerImgError}
                 className="w-full h-full object-cover filter brightness-75 blur-[1px]"
               />
             ) : !bannerState.isLoading && (
@@ -195,11 +228,11 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                   </div>
                 )}
 
-                {hasAvatarImage ? (
+                {avatarImgSrc && !avatarError ? (
                   <img
-                    src={coverState.coverUrl!}
+                    src={avatarImgSrc}
                     alt={game.title}
-                    onError={() => setAvatarError(true)}
+                    onError={handleAvatarImgError}
                     className="w-full h-full object-cover"
                   />
                 ) : !coverState.isLoading && (

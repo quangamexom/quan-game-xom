@@ -289,27 +289,22 @@ async function queryGameArtFromProviders(cleanedTitle: string): Promise<{ coverI
     }
   }
 
-  // 2. Query Steam Store Search API (100% open CORS, fast 2:3 vertical covers)
+  // 2. Query Server Steam Search API (Bypasses CORS & fetches official 600x900 poster)
   try {
-    const steamUrl = `https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(cleanedTitle)}&l=english&cc=US`;
-    const res = await fetch(steamUrl);
+    const res = await fetch(`/api/steam-search?term=${encodeURIComponent(cleanedTitle)}`);
     if (res.ok) {
       const data = await res.json();
-      if (data && Array.isArray(data.items) && data.items.length > 0) {
-        const item = data.items[0];
-        const appId = item.id;
-        const coverImage = `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/library_600x900.jpg`;
-        const bannerImage = `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`;
+      if (data && data.success && data.coverImage) {
         return {
-          coverImage,
-          bannerImage,
-          rating: 94,
-          genres: item.genres ? item.genres.map((g: any) => g.name || g) : ['Game PC']
+          coverImage: data.coverImage,
+          bannerImage: data.bannerImage,
+          rating: data.rating || 95,
+          genres: data.genres || ['Game PC']
         };
       }
     }
   } catch (e) {
-    // Steam search failed
+    // Steam backend search failed
   }
 
   // 3. Fallback to RAWG API

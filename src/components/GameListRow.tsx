@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { GameItem } from '../types';
 import { Download, Star, ExternalLink, Gamepad2, Radio, CheckCircle, Eye } from 'lucide-react';
 import { parseGameTitle } from '../utils/titleParser';
+import { useGameCover } from '../hooks/useGameCover';
 
 interface GameListRowProps {
   game: GameItem;
@@ -13,6 +14,25 @@ interface GameListRowProps {
 export const GameListRow: React.FC<GameListRowProps> = ({ game, index, onSelect, onOpenDownload }) => {
   const isEven = index % 2 === 0;
   const { cleanTitle, subtitle } = parseGameTitle(game.title, game.subtitle);
+  const { coverUrl } = useGameCover(game);
+
+  const [currentImgSrc, setCurrentImgSrc] = useState<string | null>(coverUrl);
+  const [imgError, setImgError] = useState<boolean>(false);
+
+  useEffect(() => {
+    setCurrentImgSrc(coverUrl);
+    setImgError(false);
+  }, [coverUrl]);
+
+  const handleImgError = () => {
+    if (currentImgSrc && currentImgSrc.includes('library_600x900.jpg')) {
+      setCurrentImgSrc(currentImgSrc.replace('library_600x900.jpg', 'header.jpg'));
+    } else if (currentImgSrc && game.backdropArt && currentImgSrc !== game.backdropArt) {
+      setCurrentImgSrc(game.backdropArt);
+    } else {
+      setImgError(true);
+    }
+  };
 
   return (
     <tr
@@ -24,14 +44,21 @@ export const GameListRow: React.FC<GameListRowProps> = ({ game, index, onSelect,
       <td className="p-2 sm:p-3 text-center align-middle w-16 sm:w-20 shrink-0">
         <div
           onClick={() => onSelect(game)}
-          className="w-12 h-16 sm:w-14 sm:h-20 rounded-md overflow-hidden bg-slate-950 border border-slate-700/80 mx-auto cursor-pointer hover:scale-105 transition-transform shadow-md"
+          className="w-12 h-16 sm:w-14 sm:h-20 rounded-md overflow-hidden bg-slate-950 border border-slate-700/80 mx-auto cursor-pointer hover:scale-105 transition-transform shadow-md flex items-center justify-center"
         >
-          <img
-            src={game.coverArt}
-            alt={game.title}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
+          {currentImgSrc && !imgError ? (
+            <img
+              src={currentImgSrc}
+              alt={game.title}
+              onError={handleImgError}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-full h-full bg-slate-900 flex flex-col items-center justify-center p-1 text-center">
+              <Gamepad2 className="w-5 h-5 text-amber-400/80" />
+            </div>
+          )}
         </div>
       </td>
 

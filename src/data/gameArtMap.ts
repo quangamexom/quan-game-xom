@@ -277,5 +277,257 @@ export const KNOWN_GAME_ART: Record<string, StaticGameArt> = {
     bannerImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop',
     rating: 90,
     genres: ['Thẻ Bài', 'Giả Lập PS1']
+  },
+  'yu gi oh': {
+    coverImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop',
+    rating: 91,
+    genres: ['Thẻ Bài', 'Quán Game Xóm']
+  },
+  // Eggsucker
+  'eggsucker': {
+    coverImage: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1200&auto=format&fit=crop',
+    rating: 92,
+    genres: ['Arcade', 'Quán Game Xóm']
+  },
+  // Chocobo Racing
+  'chocobo racing': {
+    coverImage: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1200&auto=format&fit=crop',
+    rating: 95,
+    genres: ['Đua Xe', 'Giả Lập PS1']
+  },
+  // Goemon
+  'ganbare goemon': {
+    coverImage: 'https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?q=80&w=1200&auto=format&fit=crop',
+    rating: 90,
+    genres: ['Hành Động', 'Giả Lập SNES']
+  },
+  // Legend of Dragoon
+  'legend of dragoon': {
+    coverImage: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop',
+    rating: 94,
+    genres: ['JRPG', 'Giả Lập PS1']
+  },
+  // Power Rangers
+  'mighty morphin power rangers': {
+    coverImage: 'https://images.unsplash.com/photo-1563089145-599997674d42?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1563089145-599997674d42?q=80&w=1200&auto=format&fit=crop',
+    rating: 89,
+    genres: ['Đối Kháng', 'Giả Lập SNES']
+  },
+  // Tiny Toon
+  'tiny toon adventures': {
+    coverImage: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?q=80&w=1200&auto=format&fit=crop',
+    rating: 88,
+    genres: ['Thể Thao', 'Giả Lập SNES']
+  },
+  // Contra
+  'contra': {
+    coverImage: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1200&auto=format&fit=crop',
+    rating: 96,
+    genres: ['Bắn Súng', 'Giả Lập NES']
+  },
+  // Super Robot Taisen
+  'super robot taisen': {
+    coverImage: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1200&auto=format&fit=crop',
+    rating: 93,
+    genres: ['Chiến Thuật', 'Mecha', 'Giả Lập SNES']
+  },
+  // Road Rash
+  'road rash': {
+    coverImage: 'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?q=80&w=1200&auto=format&fit=crop',
+    rating: 95,
+    genres: ['Đua Xe', 'Hành Động', 'Kinh Điển']
+  },
+  // Dragon Ball
+  'dragon ball': {
+    coverImage: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=1200&auto=format&fit=crop',
+    rating: 92,
+    genres: ['Đối Kháng', 'Giả Lập GBA']
+  },
+  // Commandos
+  'commandos': {
+    steamId: '6830',
+    coverImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/6830/library_600x900.jpg',
+    bannerImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/6830/header.jpg',
+    rating: 94,
+    genres: ['Chiến Thuật', 'Lén Lút']
+  },
+  // Fire Emblem
+  'fire emblem': {
+    coverImage: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1200&auto=format&fit=crop',
+    rating: 95,
+    genres: ['Chiến Thuật Theo Lượt', 'Giả Lập GBA']
+  },
+  // Harvest Moon
+  'harvest moon': {
+    coverImage: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=1200&auto=format&fit=crop',
+    rating: 96,
+    genres: ['Nông Trại', 'Giả Lập PS1']
+  },
+  // Captain Tsubasa
+  'captain tsubasa': {
+    coverImage: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=1200&auto=format&fit=crop',
+    rating: 91,
+    genres: ['Bóng Đá', 'Giả Lập SNES']
+  },
+  // Diablo II
+  'diablo ii': {
+    coverImage: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop',
+    rating: 98,
+    genres: ['Hành Động', 'RPG', 'Kinh Điển']
+  },
+  // Zoo Tycoon
+  'zoo tycoon': {
+    coverImage: 'https://images.unsplash.com/photo-1534567153574-2b12153a87f0?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1534567153574-2b12153a87f0?q=80&w=1200&auto=format&fit=crop',
+    rating: 92,
+    genres: ['Mô Phỏng', 'Quản Lý']
+  },
+  // Tearring Saga
+  'tearring saga': {
+    coverImage: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1200&auto=format&fit=crop',
+    rating: 94,
+    genres: ['Chiến Thuật', 'Giả Lập PS1']
+  },
+  // PopCap Games
+  'popcap': {
+    coverImage: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1200&auto=format&fit=crop',
+    rating: 90,
+    genres: ['Giải Đố', 'Mini Game']
+  },
+  // Kyatto Ninden / Pizza Cats
+  'kyatto ninden teyandee': {
+    coverImage: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?q=80&w=1200&auto=format&fit=crop',
+    rating: 89,
+    genres: ['Đi Màn', 'Giả Lập NES']
+  },
+  // Yu Yu Hakusho
+  'yu yu hakusho': {
+    coverImage: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=1200&auto=format&fit=crop',
+    rating: 91,
+    genres: ['Đối Kháng', 'Giả Lập MegaDrive']
+  },
+  // Tenchu
+  'tenchu': {
+    coverImage: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1200&auto=format&fit=crop',
+    rating: 93,
+    genres: ['Lén Lút', 'Ninja', 'Giả Lập PS1']
+  },
+  // Mitsume Ga Tooru
+  'mitsume ga tooru': {
+    coverImage: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1200&auto=format&fit=crop',
+    rating: 92,
+    genres: ['Hành Động', 'Giả Lập NES']
+  },
+  // Cossacks
+  'cossacks': {
+    steamId: '4880',
+    coverImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/4880/library_600x900.jpg',
+    bannerImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/4880/header.jpg',
+    rating: 93,
+    genres: ['RTS', 'Chiến Thuật']
+  },
+  // Neighbours from Hell
+  'neighbours from hell': {
+    steamId: '260730',
+    coverImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/260730/library_600x900.jpg',
+    bannerImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/260730/header.jpg',
+    rating: 95,
+    genres: ['Vui Nhộn', 'Giải Đố']
+  },
+  // Gamehouse 150
+  'gamehouse': {
+    coverImage: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1200&auto=format&fit=crop',
+    rating: 90,
+    genres: ['Gamehouse', 'Mini Game']
+  },
+  // Chaos Legion
+  'chaos legion': {
+    coverImage: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop',
+    rating: 91,
+    genres: ['Chặt Chém', 'Hành Động']
+  },
+  // Bomberman
+  'bomberman': {
+    coverImage: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1200&auto=format&fit=crop',
+    rating: 94,
+    genres: ['Đặt Bom', 'Vui Nhộn']
+  },
+  // RollerCoaster Tycoon
+  'rollercoaster tycoon': {
+    steamId: '285330',
+    coverImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/285330/library_600x900.jpg',
+    bannerImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/285330/header.jpg',
+    rating: 95,
+    genres: ['Quản Lý', 'Mô Phỏng']
+  },
+  // Dynasty Warriors
+  'dynasty warriors': {
+    steamId: '278080',
+    coverImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/278080/library_600x900.jpg',
+    bannerImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/278080/header.jpg',
+    rating: 93,
+    genres: ['Chặt Chém', 'Tam Quốc']
+  },
+  'dynasty warrior': {
+    steamId: '278080',
+    coverImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/278080/library_600x900.jpg',
+    bannerImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/278080/header.jpg',
+    rating: 93,
+    genres: ['Chặt Chém', 'Tam Quốc']
+  },
+  // Samurai Warriors
+  'samurai warriors': {
+    steamId: '348490',
+    coverImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/348490/library_600x900.jpg',
+    bannerImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/348490/header.jpg',
+    rating: 92,
+    genres: ['Chặt Chém', 'Samurai']
+  },
+  // Warriors Orochi
+  'warriors orochi': {
+    steamId: '838010',
+    coverImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/838010/library_600x900.jpg',
+    bannerImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/838010/header.jpg',
+    rating: 94,
+    genres: ['Chặt Chém', 'Hành Động']
+  },
+  'musou orochi': {
+    steamId: '838010',
+    coverImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/838010/library_600x900.jpg',
+    bannerImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/838010/header.jpg',
+    rating: 94,
+    genres: ['Chặt Chém', 'Hành Động']
+  },
+  // Hitman Absolution
+  'hitman absolution': {
+    steamId: '203140',
+    coverImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/203140/library_600x900.jpg',
+    bannerImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/203140/header.jpg',
+    rating: 92,
+    genres: ['Lén Lút', 'Hành Động']
   }
 };
