@@ -22,6 +22,7 @@ import { DonateModal } from './components/DonateModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { Footer } from './components/Footer';
 import { AdminBadge } from './components/AdminBadge';
+import { AdminAuthModal } from './components/AdminAuthModal';
 
 const SECTIONS = [
   { id: 'home-section', category: 'HOME' },
@@ -56,6 +57,7 @@ export default function App() {
   const [downloadGame, setDownloadGame] = useState<GameItem | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [isDonateOpen, setIsDonateOpen] = useState<boolean>(false);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState<boolean>(false);
 
   // Filters State
   const [filterState, setFilterState] = useState<FilterState>({
@@ -136,6 +138,7 @@ export default function App() {
         searchQuery={filterState.searchQuery}
         onSearchChange={(q) => handleFilterChange({ searchQuery: q })}
         onOpenDonate={() => setIsDonateOpen(true)}
+        onOpenAdminModal={() => setIsAdminModalOpen(true)}
         gameCount={games.length}
         activeCategory={activeCategory}
         onCategoryChange={handleCategoryChange}
@@ -311,6 +314,7 @@ export default function App() {
       {/* 6. Footer */}
       <Footer
         onOpenDonate={() => setIsDonateOpen(true)}
+        onOpenAdminModal={() => setIsAdminModalOpen(true)}
         defaultPassword={defaultPassword}
         featuredGames={games.slice(0, 10)}
         onSelectGame={(g) => {
@@ -347,6 +351,11 @@ export default function App() {
       <DonateModal
         isOpen={isDonateOpen}
         onClose={() => setIsDonateOpen(false)}
+      />
+
+      <AdminAuthModal
+        isOpen={isAdminModalOpen}
+        onClose={() => setIsAdminModalOpen(false)}
       />
 
       <AdminBadge />

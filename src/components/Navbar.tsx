@@ -10,6 +10,7 @@ interface NavbarProps {
   searchQuery: string;
   onSearchChange: (q: string) => void;
   onOpenDonate: () => void;
+  onOpenAdminModal?: () => void;
   gameCount: number;
   activeCategory: string;
   onCategoryChange: (cat: string) => void;
@@ -22,6 +23,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   searchQuery,
   onSearchChange,
   onOpenDonate,
+  onOpenAdminModal,
   gameCount,
   activeCategory,
   onCategoryChange,
@@ -29,7 +31,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectGenreFilter,
   onSelectVietHoaFilter
 }) => {
-  const { isAdmin, enableAdmin, disableAdmin } = useAdminMode();
+  const { isAdmin, disableAdmin } = useAdminMode();
   const [isGameDropdownOpen, setIsGameDropdownOpen] = useState(false);
   const [activeDropdownFilter, setActiveDropdownFilter] = useState<string>('');
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -141,23 +143,28 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
             </div>
 
-            {/* Admin Upload Mode Toggle Button */}
-            <button
-              type="button"
-              onClick={() => {
-                if (isAdmin) disableAdmin();
-                else enableAdmin();
-              }}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-mono font-bold transition-all cursor-pointer ${
-                isAdmin
-                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
-                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'
-              }`}
-              title="Bật/Tắt Chế Độ Upload & Sửa Ảnh Game"
-            >
-              <span className={`w-2 h-2 rounded-full ${isAdmin ? 'bg-amber-400 animate-pulse' : 'bg-slate-600'}`} />
-              <span>{isAdmin ? '📸 Upload: BẬT' : '📸 Upload: TẮT'}</span>
-            </button>
+            {/* Admin Upload Mode Button */}
+            {isAdmin ? (
+              <button
+                type="button"
+                onClick={disableAdmin}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-mono font-bold transition-all cursor-pointer bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.2)]"
+                title="Bấm để thoát quyền Admin"
+              >
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                <span>ADMIN MODE: BẬT</span>
+              </button>
+            ) : onOpenAdminModal ? (
+              <button
+                type="button"
+                onClick={onOpenAdminModal}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-mono font-bold transition-all cursor-pointer bg-slate-900 text-slate-400 border-slate-800 hover:text-amber-300 hover:border-amber-500/40"
+                title="Mở khóa quyền Chủ Quán"
+              >
+                <span className="w-2 h-2 rounded-full bg-slate-600" />
+                <span>CHỦ QUÁN</span>
+              </button>
+            ) : null}
 
           </div>
 

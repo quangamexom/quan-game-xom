@@ -10,6 +10,22 @@ const PORT = 3000;
 
 app.use(express.json());
 
+// 0. Secure Admin Password Verification Route
+app.post("/api/admin/verify", (req, res) => {
+  try {
+    const { password } = req.body;
+    const expectedPassword = process.env.ADMIN_PASSWORD || "20266Namm$$@";
+    
+    if (password === expectedPassword) {
+      return res.json({ success: true, token: "qgx_admin_authenticated" });
+    }
+    return res.status(401).json({ success: false, error: "Mật khẩu Admin không chính xác!" });
+  } catch (err: any) {
+    console.error("[Admin Verify Error]:", err);
+    return res.status(500).json({ success: false, error: "Lỗi hệ thống khi xác thực Admin" });
+  }
+});
+
 // 1. Google Sheet Games route
 app.get("/api/sheet-games", async (req, res) => {
   try {

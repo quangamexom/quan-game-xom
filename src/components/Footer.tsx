@@ -4,6 +4,7 @@ import { GameItem } from '../types';
 
 interface FooterProps {
   onOpenDonate: () => void;
+  onOpenAdminModal?: () => void;
   defaultPassword?: string;
   featuredGames?: GameItem[];
   onSelectGame?: (game: GameItem) => void;
@@ -11,6 +12,7 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({ 
   onOpenDonate, 
+  onOpenAdminModal,
   defaultPassword = "quangamexom",
   featuredGames = [],
   onSelectGame 
@@ -110,8 +112,17 @@ export const Footer: React.FC<FooterProps> = ({
         </div>
 
         {/* 4. BOTTOM LINE CREDIT */}
-        <div className="pt-4 text-[10px] font-mono text-slate-600 tracking-widest uppercase">
-          CODE & DESIGN BY QUÁN GAME XÓM
+        <div className="pt-4 text-[10px] font-mono text-slate-600 tracking-widest uppercase flex items-center justify-center gap-3">
+          <span>CODE & DESIGN BY QUÁN GAME XÓM</span>
+          {onOpenAdminModal && (
+            <button
+              onClick={onOpenAdminModal}
+              className="text-slate-600 hover:text-amber-400 transition-colors cursor-pointer underline text-[10px]"
+              title="Mở khóa quyền Admin"
+            >
+              [ CHỦ QUÁN ]
+            </button>
+          )}
         </div>
 
       </div>
