@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload } from 'lucide-react';
+import { Upload, Link as LinkIcon, Camera } from 'lucide-react';
+import { useAdminMode } from '../hooks/useAdminMode';
 
 interface LogoProps {
   className?: string;
@@ -14,15 +15,55 @@ export const Logo: React.FC<LogoProps> = ({
   showText = true,
   allowUpload = false
 }) => {
+  const { isAdmin } = useAdminMode();
   const [customImage, setCustomImage] = useState<string | null>(null);
+  const [isUrlModalOpen, setIsUrlModalOpen] = useState(false);
+  const [urlInput, setUrlInput] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const savedLogo = localStorage.getItem('quan_game_xom_custom_logo');
-    if (savedLogo) {
-      setCustomImage(savedLogo);
-    }
+    const updateLogo = () => {
+      const savedLogo = localStorage.getItem('quan_game_xom_custom_logo');
+      if (savedLogo) {
+        setCustomImage(savedLogo);
+      }
+    };
+
+    const handleCustomLogoEvent = (e: any) => {
+      if (e.detail?.logoUrl) {
+        setCustomImage(e.detail.logoUrl);
+      }
+    };
+
+    updateLogo();
+    window.addEventListener('custom-logo-updated', handleCustomLogoEvent);
+    window.addEventListener('storage', updateLogo);
+    return () => {
+      window.removeEventListener('custom-logo-updated', handleCustomLogoEvent);
+      window.removeEventListener('storage', updateLogo);
+    };
   }, []);
+
+  const saveLogoToServerAndLocal = async (logoUrlOrData: string) => {
+    setIsSaving(true);
+    try {
+      setCustomImage(logoUrlOrData);
+      localStorage.setItem('quan_game_xom_custom_logo', logoUrlOrData);
+      window.dispatchEvent(new CustomEvent('custom-logo-updated', { detail: { logoUrl: logoUrlOrData } }));
+
+      // Save to server & GitHub repository
+      await fetch('/api/save-logo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ logoUrl: logoUrlOrData })
+      });
+    } catch (err) {
+      console.warn('Save logo warning:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -31,11 +72,19 @@ export const Logo: React.FC<LogoProps> = ({
       reader.onload = (event) => {
         const dataUrl = event.target?.result as string;
         if (dataUrl) {
-          setCustomImage(dataUrl);
-          localStorage.setItem('quan_game_xom_custom_logo', dataUrl);
+          saveLogoToServerAndLocal(dataUrl);
         }
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePasteUrlSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (urlInput.trim()) {
+      saveLogoToServerAndLocal(urlInput.trim());
+      setIsUrlModalOpen(false);
+      setUrlInput('');
     }
   };
 
@@ -308,29 +357,130 @@ export const Logo: React.FC<LogoProps> = ({
           </svg>
         )}
 
-        {allowUpload && (
-          <div className="absolute inset-0 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-xs font-bold text-center p-1">
-            <Upload className="w-4 h-4 text-cyan-400" />
+        {/* Admin Overlay Camera Icon (If hovered) */}
+        {isAdmin && (
+          <div 
+            onClick={(e) => {
+              e.stopPropagation();
+              fileInputRef.current?.click();
+            }}
+            className="absolute inset-0 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-xs font-bold text-center p-1 cursor-pointer"
+            title="Đổi logo"
+          >
+            <Camera className="w-4 h-4 text-amber-400" />
           </div>
         )}
       </div>
 
-      {/* Brand Title Text */}
-      {showText && (
-        <div className="flex flex-col min-w-0">
-          <div className="flex items-center gap-1 sm:gap-1.5">
-            <h1 className={`font-black tracking-tight text-white ${dimensions.text} flex items-center shrink-0`}>
-              <span className="bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-200 bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(245,158,11,0.4)] font-black whitespace-nowrap">
-                QUÁN GAME XÓM
+      {/* Brand Title Text & Admin Logo Buttons */}
+      <div className="flex flex-col min-w-0">
+        {showText && (
+          <>
+            <div className="flex items-center gap-1 sm:gap-1.5">
+              <h1 className={`font-black tracking-tight text-white ${dimensions.text} flex items-center shrink-0`}>
+                <span className="bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-200 bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(245,158,11,0.4)] font-black whitespace-nowrap">
+                  QUÁN GAME XÓM
+                </span>
+              </h1>
+              <span className="hidden xs:inline-block px-1 py-0.2 text-[9px] sm:text-[10px] font-mono font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded shadow-sm shrink-0">
+                UX/UI
               </span>
-            </h1>
-            <span className="hidden xs:inline-block px-1 py-0.2 text-[9px] sm:text-[10px] font-mono font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded shadow-sm shrink-0">
-              UX/UI
-            </span>
+            </div>
+            <p className="hidden sm:block text-[10px] lg:text-[11px] text-slate-400 font-medium truncate">
+              Cổng Game Việt Hóa & Giả Lập Đỉnh Cao
+            </p>
+          </>
+        )}
+
+        {/* 2 Admin Logo Action Buttons - STRICTLY RENDERED ONLY FOR ADMIN */}
+        {isAdmin && (
+          <div className="flex items-center gap-1.5 mt-1 z-30">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                fileInputRef.current?.click();
+              }}
+              className="px-2 py-0.5 bg-amber-500/20 hover:bg-amber-400 hover:text-slate-950 text-amber-300 border border-amber-500/50 rounded-md text-[9px] font-mono font-bold transition-all flex items-center gap-1 cursor-pointer shadow"
+              title="Upload file ảnh logo cố định từ máy tính"
+            >
+              <Upload className="w-2.5 h-2.5" />
+              <span>a) Upload Ảnh</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsUrlModalOpen(true);
+              }}
+              className="px-2 py-0.5 bg-cyan-500/20 hover:bg-cyan-400 hover:text-slate-950 text-cyan-300 border border-cyan-500/50 rounded-md text-[9px] font-mono font-bold transition-all flex items-center gap-1 cursor-pointer shadow"
+              title="Dán link URL ảnh logo ngoài"
+            >
+              <LinkIcon className="w-2.5 h-2.5" />
+              <span>b) Dán Link</span>
+            </button>
           </div>
-          <p className="hidden sm:block text-[10px] lg:text-[11px] text-slate-400 font-medium truncate">
-            Cổng Game Việt Hóa & Giả Lập Đỉnh Cao
-          </p>
+        )}
+      </div>
+
+      {/* Paste URL Modal for Admin */}
+      {isAdmin && isUrlModalOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsUrlModalOpen(false);
+          }}
+        >
+          <div 
+            className="bg-slate-900 border border-amber-500/50 rounded-2xl p-5 max-w-md w-full shadow-2xl text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-3 border-b border-slate-800 pb-2">
+              <h3 className="text-sm font-bold text-amber-300 font-display flex items-center gap-2">
+                <LinkIcon className="w-4 h-4 text-cyan-400" />
+                <span>DÁN LINK URL LOGO MỚI</span>
+              </h3>
+              <button 
+                onClick={() => setIsUrlModalOpen(false)}
+                className="text-slate-400 hover:text-white text-xs font-bold"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <form onSubmit={handlePasteUrlSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-mono text-slate-300 mb-1">URL Ảnh Logo:</label>
+                <input 
+                  type="url" 
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  placeholder="https://example.com/logo.png"
+                  required
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400 font-mono"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsUrlModalOpen(false)}
+                  className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-medium hover:bg-slate-700"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs shadow-lg transition-all"
+                >
+                  {isSaving ? 'Đang lưu...' : 'Cập Nhật Logo'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

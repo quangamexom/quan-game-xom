@@ -154,6 +154,29 @@ export const EmulatorZone: React.FC = () => {
     (window as any).EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
     (window as any).EJS_startOnLoaded = true;
     (window as any).EJS_color = '#f59e0b'; // Amber theme
+    (window as any).EJS_fps = 60; // Ép cố định 60 FPS tối ưu độ mượt
+    (window as any).EJS_targetFps = 60;
+
+    // Phím điều khiển mặc định (Default Keybindings)
+    // Di chuyển: W = Lên, A = Trái, S = Xuống, D = Phải
+    // NES: K = A, L = B, C = Start, V = Select
+    // SNES: J = Y, K = B, I = X, L = A, Q = L (shoulder), O = R (shoulder), C = Start, V = Select
+    (window as any).EJS_defaultControls = {
+      0: {
+        0: 'KeyW',   // Up (W)
+        1: 'KeyS',   // Down (S)
+        2: 'KeyA',   // Left (A)
+        3: 'KeyD',   // Right (D)
+        4: 'KeyK',   // A / B
+        5: 'KeyL',   // B / A
+        6: 'KeyV',   // Select (V)
+        7: 'KeyC',   // Start (C)
+        8: 'KeyJ',   // Y (SNES)
+        9: 'KeyI',   // X (SNES)
+        10: 'KeyQ',  // L Shoulder (SNES)
+        11: 'KeyO'   // R Shoulder (SNES)
+      }
+    };
 
     if (netplayRoom.trim()) {
       (window as any).EJS_room = netplayRoom.trim();
@@ -401,13 +424,36 @@ export const EmulatorZone: React.FC = () => {
             <div id="ejs-game-container" className="w-full h-full" />
           </div>
 
-          {/* Quick Control Hints */}
-          <div className="p-4 glass-modal rounded-2xl border border-slate-800 text-xs text-slate-300 flex flex-wrap items-center justify-between gap-4 font-mono">
-            <div className="flex items-center gap-2">
-              <Info className="w-4 h-4 text-amber-400" />
-              <span>Phím điều khiển mặc định: Bàn phím mũi tên / Z (A), X (B), Enter (Start), Shift (Select).</span>
+          {/* Quick Control Hints & Keybindings Guide */}
+          <div className="p-5 glass-modal rounded-2xl border border-slate-800 text-xs text-slate-300 space-y-3 font-mono shadow-xl">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+              <div className="flex items-center gap-2 font-bold text-amber-300">
+                <Info className="w-4 h-4 text-amber-400" />
+                <span>CẤU HÌNH PHÍM MẶC ĐỊNH & TỐC ĐỘ KhUNG HÌNH (60 FPS)</span>
+              </div>
+              <span className="text-[10px] text-amber-400/90 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
+                ⚡ FPS: 60 FPS Locked
+              </span>
             </div>
-            <span className="text-amber-300">Bấm nút Cài Đặt (Menu) góc dưới màn hình game để đổi nút hoặc cắm Gamepad USB!</span>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px] leading-relaxed">
+              <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+                <span className="text-amber-400 font-bold block mb-1">🎮 Di Chuyển (D-Pad):</span>
+                <span>W = Lên | A = Trái | S = Xuống | D = Phải</span>
+              </div>
+              <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+                <span className="text-red-400 font-bold block mb-1">🔴 Hệ NES (8-bit):</span>
+                <span>K = Nút A | L = Nút B | C = Start | V = Select</span>
+              </div>
+              <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+                <span className="text-indigo-400 font-bold block mb-1">🟣 Hệ SNES (16-bit):</span>
+                <span>J = Y | K = B | I = X | L = A | Q = L | O = R | C = Start | V = Select</span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-400 font-sans italic text-right">
+              * Bạn vẫn có thể tùy chỉnh lại phím điều khiển theo sở thích cá nhân trong menu Cài Đặt góc dưới EmulatorJS.
+            </p>
           </div>
         </div>
       )}

@@ -24,31 +24,16 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 }) => {
   return (
     <div className="glass-panel rounded-2xl p-4 mb-6">
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         
-        {/* Platform Pill Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-2 lg:pb-0 scrollbar-none font-display">
-          {PLATFORMS.map((p) => {
-            const isActive = filterState.selectedPlatform === p.id;
-            return (
-              <button
-                key={p.id}
-                onClick={() => onFilterChange({ selectedPlatform: p.id })}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold tracking-tag uppercase transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                  isActive
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-500/20 font-black'
-                    : 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 border border-slate-700/60'
-                }`}
-              >
-                {p.id === 'ALL' && <Sparkles className="w-3.5 h-3.5" />}
-                {p.label}
-              </button>
-            );
-          })}
+        {/* Left Side Info / Quick Tag */}
+        <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
+          <Sparkles className="w-4 h-4 text-amber-400" />
+          <span>Tổng số game khả dụng: <strong className="text-amber-300 font-bold">{totalResults}</strong></span>
         </div>
 
         {/* Filters & View Switches */}
-        <div className="flex items-center gap-3 flex-wrap justify-between lg:justify-end">
+        <div className="flex items-center gap-3 flex-wrap justify-between sm:justify-end">
           
           {/* Viet Hoa Only Checkbox Pill */}
           <button

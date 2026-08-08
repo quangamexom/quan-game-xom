@@ -264,6 +264,76 @@ app.post("/api/save-game-art", async (req, res) => {
   }
 });
 
+// Save Custom Logo & Commit to GitHub
+app.post("/api/save-logo", async (req, res) => {
+  try {
+    const { logoUrl, fileData } = req.body;
+    const finalLogo = fileData || logoUrl;
+    if (!finalLogo) {
+      return res.status(400).json({ success: false, error: "Logo URL or file data is required" });
+    }
+
+    let savedToGithub = false;
+    const githubToken = process.env.GITHUB_TOKEN;
+    const githubRepo = process.env.GITHUB_REPO;
+
+    if (githubToken && githubRepo) {
+      try {
+        const ghUrl = `https://api.github.com/repos/${githubRepo}/contents/src/data/customLogo.ts`;
+        let sha: string | undefined;
+
+        const getRes = await fetch(ghUrl, {
+          headers: {
+            Authorization: `Bearer ${githubToken}`,
+            Accept: "application/vnd.github.v3+json",
+            "User-Agent": "QuanGameXom-App"
+          }
+        });
+
+        if (getRes.ok) {
+          const fileDataGh = await getRes.json();
+          sha = fileDataGh.sha;
+        }
+
+        const logoFileContent = `export const CUSTOM_LOGO_URL = '${finalLogo.replace(/'/g, "\\'")}';\n`;
+
+        const putRes = await fetch(ghUrl, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${githubToken}`,
+            Accept: "application/vnd.github.v3+json",
+            "Content-Type": "application/json",
+            "User-Agent": "QuanGameXom-App"
+          },
+          body: JSON.stringify({
+            message: "chore(logo): update custom logo",
+            content: Buffer.from(logoFileContent).toString("base64"),
+            ...(sha ? { sha } : {})
+          })
+        });
+
+        if (putRes.ok) {
+          savedToGithub = true;
+        }
+      } catch (ghErr) {
+        console.warn("[GitHub Logo Commit Warning]:", ghErr);
+      }
+    }
+
+    return res.json({
+      success: true,
+      savedToGithub,
+      logoUrl: finalLogo,
+      message: savedToGithub
+        ? "Đã lưu logo và commit lên GitHub thành công!"
+        : "Đã cập nhật logo thành công!"
+    });
+  } catch (err: any) {
+    console.error("[Save Logo Error]:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to save logo" });
+  }
+});
+
 // 4. Health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });

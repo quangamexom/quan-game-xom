@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, Facebook, Youtube, MessageSquare } from 'lucide-react';
+import { ChevronRight, Facebook, Send, MessageSquare } from 'lucide-react';
 import { GameItem } from '../types';
 
 interface FooterProps {
@@ -72,10 +72,10 @@ export const Footer: React.FC<FooterProps> = ({
           <span>© 2026 QUÁN GAME XÓM</span>
         </div>
 
-        {/* 3. CENTER SOCIAL ICONS (Facebook, Youtube, Discord) */}
+        {/* 3. CENTER SOCIAL ICONS (Facebook, Telegram, Discord) */}
         <div className="flex items-center justify-center gap-4 pt-1">
           <a
-            href="https://facebook.com"
+            href="https://www.facebook.com/quangamexomreboot/"
             target="_blank"
             rel="noopener noreferrer"
             className="w-10 h-10 rounded-full bg-slate-900/90 hover:bg-blue-600 hover:text-white border border-slate-800 text-slate-300 flex items-center justify-center transition-all shadow-md cursor-pointer hover:scale-110"
@@ -85,22 +85,22 @@ export const Footer: React.FC<FooterProps> = ({
             <Facebook className="w-4 h-4" />
           </a>
           <a
-            href="https://youtube.com"
+            href="https://t.me/quangamexomofficial"
             target="_blank"
             rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-slate-900/90 hover:bg-red-600 hover:text-white border border-slate-800 text-slate-300 flex items-center justify-center transition-all shadow-md cursor-pointer hover:scale-110"
-            aria-label="YouTube"
-            title="YouTube"
+            className="w-10 h-10 rounded-full bg-slate-900/90 hover:bg-sky-500 hover:text-white border border-slate-800 text-slate-300 flex items-center justify-center transition-all shadow-md cursor-pointer hover:scale-110"
+            aria-label="Telegram"
+            title="Telegram Quán Game Xóm"
           >
-            <Youtube className="w-4 h-4" />
+            <Send className="w-4 h-4" />
           </a>
           <a
-            href="https://discord.com"
+            href="https://discord.gg/4XG76eeXWp"
             target="_blank"
             rel="noopener noreferrer"
             className="w-10 h-10 rounded-full bg-slate-900/90 hover:bg-indigo-600 hover:text-white border border-slate-800 text-slate-300 flex items-center justify-center transition-all shadow-md cursor-pointer hover:scale-110"
             aria-label="Discord"
-            title="Discord"
+            title="Discord Quán Game Xóm"
           >
             <MessageSquare className="w-4 h-4" />
           </a>

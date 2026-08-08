@@ -3,7 +3,7 @@ import { Logo } from './Logo';
 import { useAdminMode } from '../hooks/useAdminMode';
 import { 
   Search, RefreshCw, Database, Coffee, Sparkles, User, Download, 
-  ChevronDown, ChevronRight, Facebook, Youtube, MessageSquare, Filter, Star
+  ChevronDown, ChevronRight, Facebook, Send, MessageSquare, Filter, Star
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -77,7 +77,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               COMMUNITY:
             </span>
             <a
-              href="https://facebook.com"
+              href="https://www.facebook.com/quangamexomreboot/"
               target="_blank"
               rel="noreferrer"
               className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-slate-900 hover:bg-blue-600 hover:text-white border border-slate-800 text-slate-400 flex items-center justify-center transition-all cursor-pointer"
@@ -86,16 +86,16 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Facebook className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             </a>
             <a
-              href="https://youtube.com"
+              href="https://t.me/quangamexomofficial"
               target="_blank"
               rel="noreferrer"
-              className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-slate-900 hover:bg-red-600 hover:text-white border border-slate-800 text-slate-400 flex items-center justify-center transition-all cursor-pointer"
-              title="YouTube Channel"
+              className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-slate-900 hover:bg-sky-500 hover:text-white border border-slate-800 text-slate-400 flex items-center justify-center transition-all cursor-pointer"
+              title="Telegram Quán Game Xóm"
             >
-              <Youtube className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <Send className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             </a>
             <a
-              href="https://discord.com"
+              href="https://discord.gg/4XG76eeXWp"
               target="_blank"
               rel="noreferrer"
               className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-slate-900 hover:bg-indigo-600 hover:text-white border border-slate-800 text-slate-400 flex items-center justify-center transition-all cursor-pointer"

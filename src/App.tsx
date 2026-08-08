@@ -74,6 +74,20 @@ export default function App() {
   };
 
   const handleCategoryChange = (cat: string) => {
+    if (cat === 'HOME') {
+      setFilterState({
+        searchQuery: '',
+        selectedPlatform: 'ALL',
+        vietHoaOnly: false,
+        selectedGenre: 'ALL',
+        sortBy: 'latest',
+        viewMode: 'grid'
+      });
+      setSelectedGame(null);
+      setDownloadGame(null);
+      setSelectedArticle(null);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     scrollToCategory(cat);
   };
 
@@ -166,7 +180,7 @@ export default function App() {
           <div>
             <h2 className="text-2xl sm:text-4xl font-display font-black text-white uppercase tracking-tight flex items-center gap-2">
               <span className="bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-200 bg-clip-text text-transparent text-glow-amber">
-                DANH SÁCH VIỆT HOÁ
+                DANH SÁCH GAME
               </span>
             </h2>
             <p className="text-xs sm:text-sm font-body text-slate-400 mt-1">
