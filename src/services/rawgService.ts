@@ -131,6 +131,9 @@ export function saveManualCover(gameId: string, title: string, base64DataUrl: st
     const keyByTitle = `manual_cover_title_${cleanTitleForSearch(title).toLowerCase()}`;
     localStorage.setItem(keyById, base64DataUrl);
     localStorage.setItem(keyByTitle, base64DataUrl);
+    window.dispatchEvent(new CustomEvent('game-cover-updated', {
+      detail: { gameId, title, coverUrl: base64DataUrl }
+    }));
   } catch (e) {
     console.warn('Failed to save manual cover to localStorage:', e);
   }
@@ -145,6 +148,9 @@ export function removeManualCover(gameId: string, title: string): void {
     const keyByTitle = `manual_cover_title_${cleanTitleForSearch(title).toLowerCase()}`;
     localStorage.removeItem(keyById);
     localStorage.removeItem(keyByTitle);
+    window.dispatchEvent(new CustomEvent('game-cover-updated', {
+      detail: { gameId, title, coverUrl: null }
+    }));
   } catch (e) {
     console.warn('Failed to remove manual cover:', e);
   }
@@ -172,6 +178,9 @@ export function saveManualBanner(gameId: string, title: string, base64DataUrl: s
     const keyByTitle = `manual_banner_title_${cleanTitleForSearch(title).toLowerCase()}`;
     localStorage.setItem(keyById, base64DataUrl);
     localStorage.setItem(keyByTitle, base64DataUrl);
+    window.dispatchEvent(new CustomEvent('game-banner-updated', {
+      detail: { gameId, title, bannerUrl: base64DataUrl }
+    }));
   } catch (e) {
     console.warn('Failed to save manual banner to localStorage:', e);
   }
@@ -186,6 +195,9 @@ export function removeManualBanner(gameId: string, title: string): void {
     const keyByTitle = `manual_banner_title_${cleanTitleForSearch(title).toLowerCase()}`;
     localStorage.removeItem(keyById);
     localStorage.removeItem(keyByTitle);
+    window.dispatchEvent(new CustomEvent('game-banner-updated', {
+      detail: { gameId, title, bannerUrl: null }
+    }));
   } catch (e) {
     console.warn('Failed to remove manual banner:', e);
   }

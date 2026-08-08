@@ -5,6 +5,7 @@ import { X, Download, Star, Monitor, Cpu, HardDrive, Gamepad2, ExternalLink, Ima
 import { useGameCover, useGameBanner } from '../hooks/useGameCover';
 import { useAdminMode } from '../hooks/useAdminMode';
 import { parseGameTitle } from '../utils/titleParser';
+import { ImageUploadModal } from './ImageUploadModal';
 
 interface GameDetailModalProps {
   game: GameItem | null;
@@ -19,6 +20,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
 }) => {
   const { isAdmin } = useAdminMode();
   const [activeTab, setActiveTab] = useState<'overview' | 'reqs' | 'screenshots'>('overview');
+  const [uploadModalType, setUploadModalType] = useState<'cover' | 'banner' | null>(null);
 
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -164,16 +166,16 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                 src={bannerImgSrc}
                 alt={game.title}
                 onError={handleBannerImgError}
-                className="w-full h-full object-cover filter brightness-75 blur-[1px]"
+                className="w-full h-full object-cover object-center filter brightness-90 group-hover:scale-105 transition-transform duration-500"
               />
             ) : !bannerState.isLoading && (
               <div
-                onClick={isAdmin ? () => bannerInputRef.current?.click() : undefined}
+                onClick={isAdmin ? () => setUploadModalType('banner') : undefined}
                 className={`w-full h-full bg-gradient-to-b from-[#0e1322] via-[#090d18] to-[#05070e] flex flex-col items-center justify-center p-4 text-center border border-slate-800/80 transition-colors ${isAdmin ? 'hover:border-amber-400/60 cursor-pointer' : ''}`}
               >
                 <Gamepad2 className="w-10 h-10 text-slate-600/90 mb-1.5 stroke-[1.5]" />
                 <span className="text-xs font-display font-medium text-slate-400">Chưa có ảnh banner</span>
-                {isAdmin && <span className="text-[10px] font-mono text-amber-400 underline mt-1">Click để upload banner</span>}
+                {isAdmin && <span className="text-[10px] font-mono text-amber-400 underline mt-1">Upload / Dán Link URL Banner</span>}
               </div>
             )}
 
@@ -195,16 +197,16 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                 </button>
               )}
 
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() => bannerInputRef.current?.click()}
-                  className="p-2 text-slate-200 hover:text-slate-950 bg-slate-950/80 hover:bg-amber-500 rounded-full border border-slate-700 transition-all opacity-80 group-hover/banner:opacity-100 cursor-pointer backdrop-blur-md"
-                  title="Upload / Thay đổi ảnh Banner nền"
-                >
-                  <Camera className="w-4 h-4" />
-                </button>
-              )}
+              {/* Explicit Upload Banner Button */}
+              <button
+                type="button"
+                onClick={() => setUploadModalType('banner')}
+                className="px-3 py-1.5 text-xs font-bold font-mono text-amber-300 hover:text-slate-950 bg-slate-950/80 hover:bg-amber-400 border border-amber-500/50 rounded-xl transition-all shadow-lg flex items-center gap-1.5 cursor-pointer backdrop-blur-md"
+                title="Upload hoặc Dán link URL ảnh Banner nền"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span className="hidden xs:inline">📸 Sửa Banner</span>
+              </button>
 
               <button
                 onClick={onClose}
@@ -233,11 +235,11 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                     src={avatarImgSrc}
                     alt={game.title}
                     onError={handleAvatarImgError}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover object-center"
                   />
                 ) : !coverState.isLoading && (
                   <div
-                    onClick={isAdmin ? () => avatarInputRef.current?.click() : undefined}
+                    onClick={isAdmin ? () => setUploadModalType('cover') : undefined}
                     className={`w-full h-full bg-gradient-to-b from-[#0e1322] via-[#090d18] to-[#05070e] flex flex-col items-center justify-center p-2 text-center border border-slate-800/80 transition-colors ${isAdmin ? 'hover:border-amber-400/60 cursor-pointer' : ''}`}
                   >
                     <Gamepad2 className="w-6 h-6 text-slate-600/90 mb-1 stroke-[1.5]" />
@@ -247,19 +249,18 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                 )}
 
                 {/* Avatar Camera Upload Icon Overlay */}
-                {isAdmin && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      avatarInputRef.current?.click();
-                    }}
-                    className="absolute bottom-1 right-1 p-1.5 rounded-full bg-slate-950/90 hover:bg-amber-500 text-slate-300 hover:text-slate-950 border border-slate-700 opacity-70 group-hover/avatar:opacity-100 transition-all cursor-pointer z-20 shadow"
-                    title="Upload / Thay đổi ảnh Avatar vuông"
-                  >
-                    <Camera className="w-3 h-3" />
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setUploadModalType('cover');
+                  }}
+                  className="absolute bottom-1 right-1 px-2 py-1 rounded-lg bg-slate-950/90 hover:bg-amber-400 text-amber-300 hover:text-slate-950 border border-amber-500/60 font-mono text-[9px] font-bold flex items-center gap-1 transition-all cursor-pointer z-20 shadow-lg backdrop-blur-md"
+                  title="Upload hoặc Dán link ảnh Cover Art"
+                >
+                  <Camera className="w-3 h-3" />
+                  <span>Sửa Cover</span>
+                </button>
               </div>
 
               <div className="mb-1">
@@ -427,6 +428,16 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setUploadModalType('cover')}
+                className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-amber-200 border border-amber-500/40 rounded-xl text-xs font-bold font-mono transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+                title="Tải lên hoặc dán link URL ảnh bìa game"
+              >
+                <Camera className="w-4 h-4 text-amber-400" />
+                <span>Upload Ảnh</span>
+              </button>
+
               {game.fbPreviewUrl && (
                 <a
                   href={game.fbPreviewUrl}
@@ -453,6 +464,25 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
 
         </motion.div>
       </div>
+
+      {/* Admin Image Upload Modal (Cover or Banner) */}
+      {isAdmin && uploadModalType && (
+        <ImageUploadModal
+          game={game}
+          imageType={uploadModalType}
+          isOpen={true}
+          onClose={() => setUploadModalType(null)}
+          onSuccess={(newUrl) => {
+            if (uploadModalType === 'cover') {
+              setAvatarImgSrc(newUrl);
+              setAvatarError(false);
+            } else {
+              setBannerImgSrc(newUrl);
+              setBannerError(false);
+            }
+          }}
+        />
+      )}
     </AnimatePresence>
   );
 };

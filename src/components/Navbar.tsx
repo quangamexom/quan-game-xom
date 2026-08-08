@@ -29,7 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectGenreFilter,
   onSelectVietHoaFilter
 }) => {
-  const { isAdmin } = useAdminMode();
+  const { isAdmin, enableAdmin, disableAdmin } = useAdminMode();
   const [isGameDropdownOpen, setIsGameDropdownOpen] = useState(false);
   const [activeDropdownFilter, setActiveDropdownFilter] = useState<string>('');
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -141,6 +141,24 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
             </div>
 
+            {/* Admin Upload Mode Toggle Button */}
+            <button
+              type="button"
+              onClick={() => {
+                if (isAdmin) disableAdmin();
+                else enableAdmin();
+              }}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-mono font-bold transition-all cursor-pointer ${
+                isAdmin
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
+                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'
+              }`}
+              title="Bật/Tắt Chế Độ Upload & Sửa Ảnh Game"
+            >
+              <span className={`w-2 h-2 rounded-full ${isAdmin ? 'bg-amber-400 animate-pulse' : 'bg-slate-600'}`} />
+              <span>{isAdmin ? '📸 Upload: BẬT' : '📸 Upload: TẮT'}</span>
+            </button>
+
           </div>
 
         </div>
@@ -150,7 +168,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto px-2 sm:px-6 py-2 sm:py-3">
         <div className="flex items-center justify-between gap-1 sm:gap-4">
           
-          {/* ZONE 1: LEFT MENU (TRANG CHỦ | DANH SÁCH GAME) */}
+          {/* ZONE 1: LEFT MENU (TRANG CHỦ | THƯ VIỆN GAME | KHU VỰC GIẢ LẬP) */}
           <div className="flex items-center gap-1 sm:gap-2 flex-1 justify-start">
             
             {/* TRANG CHỦ */}
@@ -165,118 +183,31 @@ export const Navbar: React.FC<NavbarProps> = ({
               TRANG CHỦ
             </button>
 
-            {/* DANH SÁCH GAME (WITH MEGA DROPDOWN) */}
-            <div 
-              className="relative" 
-              ref={dropdownRef}
-              onMouseEnter={() => setIsGameDropdownOpen(true)}
-              onMouseLeave={() => setIsGameDropdownOpen(false)}
+            {/* THƯ VIỆN GAME (NO DROPDOWN, DIRECT NAVIGATION) */}
+            <button
+              onClick={() => onCategoryChange('GAMES')}
+              className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all cursor-pointer font-display text-[10px] xs:text-xs sm:text-sm font-black tracking-wider uppercase whitespace-nowrap ${
+                activeCategory === 'GAMES'
+                  ? 'text-amber-300 bg-amber-500/10 border border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.25)] text-glow-amber' 
+                  : 'text-slate-300 hover:text-white hover:bg-slate-900/80'
+              }`}
             >
-              <button
-                onClick={() => {
-                  onCategoryChange('GAMES');
-                  setIsGameDropdownOpen(!isGameDropdownOpen);
-                }}
-                className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all cursor-pointer font-display text-[10px] xs:text-xs sm:text-sm font-black tracking-wider uppercase flex items-center gap-1 whitespace-nowrap ${
-                  activeCategory === 'GAMES' || isGameDropdownOpen
-                    ? 'text-amber-300 bg-amber-500/10 border border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.25)] text-glow-amber' 
-                    : 'text-slate-300 hover:text-white hover:bg-slate-900/80'
-                }`}
-              >
-                <span className="hidden sm:inline">DANH SÁCH GAME</span>
-                <span className="sm:hidden">DANH SÁCH</span>
-                <ChevronDown className={`w-3 h-3 text-amber-400 transition-transform duration-200 ${isGameDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
+              <span className="hidden sm:inline">THƯ VIỆN GAME</span>
+              <span className="sm:hidden">THƯ VIỆN</span>
+            </button>
 
-              {/* DROPDOWN MENU */}
-              {isGameDropdownOpen && (
-                <div className="absolute top-full left-0 mt-2 w-[320px] sm:w-[580px] glass-modal p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                  
-                  {/* GROUP 1: TRẠNG THÁI */}
-                  <div className="space-y-2">
-                    <div className="text-[11px] font-display font-black text-amber-400 uppercase tracking-widest pb-1.5 border-b border-amber-500/20 flex items-center gap-1.5">
-                      <Sparkles className="w-3 h-3 text-amber-400" />
-                      <span>TRẠNG THÁI</span>
-                    </div>
-                    <ul className="space-y-1 text-xs font-body">
-                      {[
-                        { label: 'Tất Cả Game', type: 'all', val: 'ALL' },
-                        { label: 'Game Việt Hóa ⭐', type: 'viethoa', val: true },
-                        { label: 'Mới Cập Nhật 2026', type: 'all', val: 'ALL' },
-                        { label: 'Game Top Đánh Giá', type: 'all', val: 'ALL' }
-                      ].map((item, idx) => (
-                        <li key={idx}>
-                          <button
-                            onClick={() => handleSelectFilter(item.type as any, item.val, item.label)}
-                            className="w-full text-left py-1.5 px-2 rounded-lg text-slate-300 hover:text-amber-300 hover:bg-amber-500/10 flex items-center justify-between transition-all cursor-pointer"
-                          >
-                            <span>{item.label}</span>
-                            <ChevronRight className="w-3 h-3 text-slate-500" />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* GROUP 2: THỂ LOẠI */}
-                  <div className="space-y-2">
-                    <div className="text-[11px] font-display font-black text-cyan-400 uppercase tracking-widest pb-1.5 border-b border-cyan-500/20 flex items-center gap-1.5">
-                      <Filter className="w-3 h-3 text-cyan-400" />
-                      <span>THỂ LOẠI</span>
-                    </div>
-                    <ul className="space-y-1 text-xs font-body">
-                      {[
-                        'Hành động',
-                        'Nhập vai (RPG)',
-                        'Chiến thuật',
-                        'Bắn súng',
-                        'Kinh dị',
-                        'Giả lập PS1/PS2'
-                      ].map((genre, idx) => (
-                        <li key={idx}>
-                          <button
-                            onClick={() => handleSelectFilter('genre', genre, genre)}
-                            className="w-full text-left py-1.5 px-2 rounded-lg text-slate-300 hover:text-cyan-300 hover:bg-cyan-500/10 flex items-center justify-between transition-all cursor-pointer"
-                          >
-                            <span>{genre}</span>
-                            <ChevronRight className="w-3 h-3 text-slate-500" />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* GROUP 3: NỀN TẢNG */}
-                  <div className="space-y-2">
-                    <div className="text-[11px] font-display font-black text-indigo-400 uppercase tracking-widest pb-1.5 border-b border-indigo-500/20 flex items-center gap-1.5">
-                      <Download className="w-3 h-3 text-indigo-400" />
-                      <span>NỀN TẢNG</span>
-                    </div>
-                    <ul className="space-y-1 text-xs font-body">
-                      {[
-                        { label: 'Game PC Windows', val: 'PC' },
-                        { label: 'PlayStation 1 (PS1)', val: 'PS1' },
-                        { label: 'PlayStation 2 (PS2)', val: 'PS2' },
-                        { label: 'PlayStation 4/5', val: 'PS4' },
-                        { label: 'Nintendo Switch', val: 'Switch' },
-                        { label: 'Android Mobile', val: 'Android' }
-                      ].map((plat, idx) => (
-                        <li key={idx}>
-                          <button
-                            onClick={() => handleSelectFilter('platform', plat.val, plat.label)}
-                            className="w-full text-left py-1.5 px-2 rounded-lg text-slate-300 hover:text-indigo-300 hover:bg-indigo-500/10 flex items-center justify-between transition-all cursor-pointer"
-                          >
-                            <span>{plat.label}</span>
-                            <ChevronRight className="w-3 h-3 text-slate-500" />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                </div>
-              )}
-            </div>
+            {/* KHU VỰC GIẢ LẬP */}
+            <button
+              onClick={() => onCategoryChange('EMULATOR')}
+              className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all cursor-pointer font-display text-[10px] xs:text-xs sm:text-sm font-black tracking-wider uppercase whitespace-nowrap ${
+                activeCategory === 'EMULATOR'
+                  ? 'text-amber-300 bg-amber-500/10 border border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.25)] text-glow-amber' 
+                  : 'text-slate-300 hover:text-white hover:bg-slate-900/80'
+              }`}
+            >
+              <span className="hidden sm:inline">KHU VỰC GIẢ LẬP</span>
+              <span className="sm:hidden">GIẢ LẬP</span>
+            </button>
 
           </div>
 

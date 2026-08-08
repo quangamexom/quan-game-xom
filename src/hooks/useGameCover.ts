@@ -32,37 +32,64 @@ export function useGameCover(game: GameItem): UseGameCoverResult {
   useEffect(() => {
     let isMounted = true;
 
+    const syncManualCover = () => {
+      const existingManual = getManualCover(game.id, game.title);
+      if (existingManual) {
+        setManualUrl(existingManual);
+        setIsLoading(false);
+      } else {
+        setManualUrl(null);
+      }
+    };
+
     // Check manual upload first
-    const existingManual = getManualCover(game.id, game.title);
-    if (existingManual) {
-      setManualUrl(existingManual);
-      setIsLoading(false);
-      return;
-    }
+    syncManualCover();
 
-    // Otherwise fetch from RAWG
-    setIsLoading(true);
-
-    fetchRawgCover(game.title)
-      .then((res) => {
-        if (!isMounted) return;
-        if (res && res.coverImage) {
-          setRawgCover(res.coverImage);
-          if (res.rating) setRawgRating(res.rating);
-        } else {
-          setRawgCover(null);
+    const handleCoverEvent = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail) {
+        const { gameId, title } = customEvent.detail;
+        if (
+          gameId === game.id ||
+          cleanTitleForSearch(title).toLowerCase() === cleanTitleForSearch(game.title).toLowerCase()
+        ) {
+          syncManualCover();
         }
-      })
-      .catch((err) => {
-        console.warn('RAWG load error for:', game.title, err);
-        if (isMounted) setRawgCover(null);
-      })
-      .finally(() => {
-        if (isMounted) setIsLoading(false);
-      });
+      } else {
+        syncManualCover();
+      }
+    };
+
+    window.addEventListener('game-cover-updated', handleCoverEvent);
+    window.addEventListener('storage', syncManualCover);
+
+    const existingManual = getManualCover(game.id, game.title);
+    if (!existingManual) {
+      setIsLoading(true);
+
+      fetchRawgCover(game.title)
+        .then((res) => {
+          if (!isMounted) return;
+          if (res && res.coverImage) {
+            setRawgCover(res.coverImage);
+            if (res.rating) setRawgRating(res.rating);
+          } else {
+            setRawgCover(null);
+          }
+        })
+        .catch((err) => {
+          console.warn('RAWG load error for:', game.title, err);
+          if (isMounted) setRawgCover(null);
+        })
+        .finally(() => {
+          if (isMounted) setIsLoading(false);
+        });
+    }
 
     return () => {
       isMounted = false;
+      window.removeEventListener('game-cover-updated', handleCoverEvent);
+      window.removeEventListener('storage', syncManualCover);
     };
   }, [game.id, game.title]);
 
@@ -94,9 +121,10 @@ export function useGameCover(game: GameItem): UseGameCoverResult {
     setManualUrl(null);
   };
 
-  // Determine active coverUrl: Manual > RAWG/Steam > game.coverArt > game.backdropArt > null
-  const fallbackCover = isStockPhotoUrl(game.coverArt) ? null : game.coverArt;
-  const effectiveCover = manualUrl || rawgCover || fallbackCover || game.coverArt || game.backdropArt || null;
+  // Determine active coverUrl: Manual > RAWG/Steam > game.coverArt (if valid) > game.backdropArt (if valid) > null
+  const validCoverArt = isStockPhotoUrl(game.coverArt) ? null : game.coverArt;
+  const validBackdropArt = isStockPhotoUrl(game.backdropArt) ? null : game.backdropArt;
+  const effectiveCover = manualUrl || rawgCover || validCoverArt || validBackdropArt || null;
 
   return {
     coverUrl: effectiveCover,
@@ -126,35 +154,63 @@ export function useGameBanner(game: GameItem): UseGameBannerResult {
   useEffect(() => {
     let isMounted = true;
 
+    const syncManualBanner = () => {
+      const existingManual = getManualBanner(game.id, game.title);
+      if (existingManual) {
+        setManualBanner(existingManual);
+        setIsLoading(false);
+      } else {
+        setManualBanner(null);
+      }
+    };
+
     // Check manual upload first
-    const existingManual = getManualBanner(game.id, game.title);
-    if (existingManual) {
-      setManualBanner(existingManual);
-      setIsLoading(false);
-      return;
-    }
+    syncManualBanner();
 
-    setIsLoading(true);
-
-    fetchRawgBanner(game.title)
-      .then((res) => {
-        if (!isMounted) return;
-        if (res && res.bannerImage) {
-          setRawgBanner(res.bannerImage);
-        } else {
-          setRawgBanner(null);
+    const handleBannerEvent = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail) {
+        const { gameId, title } = customEvent.detail;
+        if (
+          gameId === game.id ||
+          cleanTitleForSearch(title).toLowerCase() === cleanTitleForSearch(game.title).toLowerCase()
+        ) {
+          syncManualBanner();
         }
-      })
-      .catch((err) => {
-        console.warn('RAWG banner load error for:', game.title, err);
-        if (isMounted) setRawgBanner(null);
-      })
-      .finally(() => {
-        if (isMounted) setIsLoading(false);
-      });
+      } else {
+        syncManualBanner();
+      }
+    };
+
+    window.addEventListener('game-banner-updated', handleBannerEvent);
+    window.addEventListener('storage', syncManualBanner);
+
+    const existingManual = getManualBanner(game.id, game.title);
+    if (!existingManual) {
+      setIsLoading(true);
+
+      fetchRawgBanner(game.title)
+        .then((res) => {
+          if (!isMounted) return;
+          if (res && res.bannerImage) {
+            setRawgBanner(res.bannerImage);
+          } else {
+            setRawgBanner(null);
+          }
+        })
+        .catch((err) => {
+          console.warn('RAWG banner load error for:', game.title, err);
+          if (isMounted) setRawgBanner(null);
+        })
+        .finally(() => {
+          if (isMounted) setIsLoading(false);
+        });
+    }
 
     return () => {
       isMounted = false;
+      window.removeEventListener('game-banner-updated', handleBannerEvent);
+      window.removeEventListener('storage', syncManualBanner);
     };
   }, [game.id, game.title]);
 
@@ -186,9 +242,10 @@ export function useGameBanner(game: GameItem): UseGameBannerResult {
     setManualBanner(null);
   };
 
-  // Banner strictly uses backdropArt or RAWG banner, never coverArt
-  const fallbackBanner = isStockPhotoUrl(game.backdropArt) ? null : game.backdropArt;
-  const effectiveBanner = manualBanner || rawgBanner || fallbackBanner || game.backdropArt || game.coverArt || null;
+  // Banner strictly uses backdropArt or RAWG banner, never stock photos
+  const validBackdropArt = isStockPhotoUrl(game.backdropArt) ? null : game.backdropArt;
+  const validCoverArt = isStockPhotoUrl(game.coverArt) ? null : game.coverArt;
+  const effectiveBanner = manualBanner || rawgBanner || validBackdropArt || validCoverArt || null;
 
   return {
     bannerUrl: effectiveBanner,

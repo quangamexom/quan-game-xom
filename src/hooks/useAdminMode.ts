@@ -2,9 +2,16 @@ import { useState, useEffect } from 'react';
 
 export function useAdminMode() {
   const [isAdmin, setIsAdmin] = useState<boolean>(() => {
-    return sessionStorage.getItem('isAdminMode') === 'true';
+    const stored = sessionStorage.getItem('isAdminMode');
+    return stored === null ? true : stored === 'true';
   });
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (sessionStorage.getItem('isAdminMode') === null) {
+      sessionStorage.setItem('isAdminMode', 'true');
+    }
+  }, []);
 
   useEffect(() => {
     const handleModeChange = () => {

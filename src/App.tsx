@@ -17,6 +17,7 @@ import { LaunchBoxCard } from './components/LaunchBoxCard';
 import { GameListRow } from './components/GameListRow';
 import { GameDetailModal } from './components/GameDetailModal';
 import { DownloadDrawer } from './components/DownloadDrawer';
+import { EmulatorZone } from './components/EmulatorZone';
 import { DonateModal } from './components/DonateModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { Footer } from './components/Footer';
@@ -25,6 +26,7 @@ import { AdminBadge } from './components/AdminBadge';
 const SECTIONS = [
   { id: 'home-section', category: 'HOME' },
   { id: 'game-catalog', category: 'GAMES' },
+  { id: 'emulator-zone', category: 'EMULATOR' },
   { id: 'articles-section', category: 'ARTICLES' },
   { id: 'community-section', category: 'COMMUNITY' }
 ];
@@ -291,7 +293,12 @@ export default function App() {
 
       </main>
 
-      {/* 4. SECTION 3: ARTICLES SECTION */}
+      {/* 4. SECTION: EMULATOR ZONE */}
+      <div id="emulator-zone" className="border-t border-slate-900/60">
+        <EmulatorZone />
+      </div>
+
+      {/* 5. SECTION: ARTICLES SECTION */}
       <div id="articles-section" className="max-w-7xl mx-auto px-4 sm:px-6 py-8 border-t border-slate-900/60">
         <ArticleSection onReadArticle={(article) => setSelectedArticle(article)} />
       </div>

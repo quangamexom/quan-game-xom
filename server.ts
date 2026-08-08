@@ -140,7 +140,115 @@ JSON schema ONLY:
   }
 });
 
-// 3. Health check
+// 3. Save Game Cover Art to gameArtMap.ts & Commit to GitHub (if GITHUB_TOKEN configured)
+app.post("/api/save-game-art", async (req, res) => {
+  try {
+    const { gameId, title, imageType, imageUrl, fileData } = req.body;
+    if (!title) {
+      return res.status(400).json({ success: false, error: "Title is required" });
+    }
+
+    const cleanKey = title.split('\n')[0]
+      .replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[⭐🇻🇳🔥💥✦⚡✨🎮👑💎]/gu, ' ')
+      .replace(/[\(\[\{].*?[\)\]\}]/g, ' ')
+      .replace(/quán game xóm|qgx edition|edition|việt hóa|việt hoá|viethoa|resynced|remastered|re-?make|repack|full iso|iso|crack/gi, ' ')
+      .replace(/[:\-\—\–\/\_\.\,]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+
+    const finalImageSrc = fileData || imageUrl;
+
+    // A. Update local gameArtMap.ts on disk
+    const artMapPath = path.join(process.cwd(), "src", "data", "gameArtMap.ts");
+    let fileContent = "";
+    if (fs.existsSync(artMapPath)) {
+      fileContent = fs.readFileSync(artMapPath, "utf-8");
+    }
+
+    const keyEntry = `'${cleanKey}':`;
+    const isBanner = imageType === "banner";
+
+    if (fileContent.includes(keyEntry)) {
+      const coverProp = isBanner ? "bannerImage" : "coverImage";
+      const propRegex = new RegExp(`('${cleanKey}':\\s*\\{[^}]*?${coverProp}:\\s*['"])([^'"]+)(['"])`, "s");
+      if (propRegex.test(fileContent)) {
+        fileContent = fileContent.replace(propRegex, `$1${finalImageSrc}$3`);
+      } else {
+        fileContent = fileContent.replace(
+          new RegExp(`('${cleanKey}':\\s*\\{)`),
+          `$1\n    ${coverProp}: '${finalImageSrc}',`
+        );
+      }
+    } else {
+      const newEntry = `\n  '${cleanKey}': {\n    coverImage: '${finalImageSrc}',\n    bannerImage: '${finalImageSrc}',\n    rating: 95,\n    genres: ['Game Quán Xóm']\n  },`;
+      fileContent = fileContent.replace(
+        "export const KNOWN_GAME_ART: Record<string, StaticGameArt> = {",
+        `export const KNOWN_GAME_ART: Record<string, StaticGameArt> = {${newEntry}`
+      );
+    }
+
+    fs.writeFileSync(artMapPath, fileContent, "utf-8");
+
+    // B. Attempt GitHub API Commit if GITHUB_TOKEN & GITHUB_REPO present
+    let savedToGithub = false;
+    const githubToken = process.env.GITHUB_TOKEN;
+    const githubRepo = process.env.GITHUB_REPO;
+
+    if (githubToken && githubRepo) {
+      try {
+        const ghUrl = `https://api.github.com/repos/${githubRepo}/contents/src/data/gameArtMap.ts`;
+        const getRes = await fetch(ghUrl, {
+          headers: {
+            Authorization: `Bearer ${githubToken}`,
+            Accept: "application/vnd.github.v3+json",
+            "User-Agent": "QuanGameXom-App"
+          }
+        });
+
+        if (getRes.ok) {
+          const fileDataGh = await getRes.json();
+          const sha = fileDataGh.sha;
+
+          const putRes = await fetch(ghUrl, {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${githubToken}`,
+              Accept: "application/vnd.github.v3+json",
+              "Content-Type": "application/json",
+              "User-Agent": "QuanGameXom-App"
+            },
+            body: JSON.stringify({
+              message: `chore(art): update ${imageType} for "${title}"`,
+              content: Buffer.from(fileContent).toString("base64"),
+              sha
+            })
+          });
+
+          if (putRes.ok) {
+            savedToGithub = true;
+          }
+        }
+      } catch (ghErr) {
+        console.warn("[GitHub Commit Warning]:", ghErr);
+      }
+    }
+
+    return res.json({
+      success: true,
+      cleanKey,
+      savedToGithub,
+      message: savedToGithub
+        ? "Đã lưu ảnh và commit thành công lên GitHub Repository!"
+        : "Đã lưu ảnh thành công vào gameArtMap!"
+    });
+  } catch (err: any) {
+    console.error("[Save Game Art Error]:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to save game art" });
+  }
+});
+
+// 4. Health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });

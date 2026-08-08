@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GameItem } from '../types';
-import { X, Download, Key, Copy, Check, ShieldCheck, Zap, HardDrive, ExternalLink, HelpCircle, FileCheck } from 'lucide-react';
+import { X, Download, Key, Copy, Check, ShieldCheck, Zap, HardDrive, ExternalLink, Gamepad2 } from 'lucide-react';
+import { useGameCover } from '../hooks/useGameCover';
+import { parseGameTitle } from '../utils/titleParser';
 
 interface DownloadDrawerProps {
   game: GameItem | null;
@@ -18,10 +20,14 @@ export const DownloadDrawer: React.FC<DownloadDrawerProps> = ({
   const [countdown, setCountdown] = useState(3);
   const [isReady, setIsReady] = useState(false);
 
+  const coverState = useGameCover(game || { id: '', title: '', coverArt: '', downloadLinks: [], platforms: [], isHot: false, hasVietHoa: false });
+  const [imgError, setImgError] = useState(false);
+
   useEffect(() => {
     if (!game) return;
     setCountdown(3);
     setIsReady(false);
+    setImgError(false);
 
     const timer = setInterval(() => {
       setCountdown((prev) => {
@@ -39,6 +45,9 @@ export const DownloadDrawer: React.FC<DownloadDrawerProps> = ({
 
   if (!game) return null;
 
+  const { cleanTitle, subtitle } = parseGameTitle(game.title, game.subtitle);
+  const displayCover = coverState.coverUrl;
+
   const handleCopyPass = () => {
     navigator.clipboard.writeText(defaultPassword);
     setCopiedPass(true);
@@ -52,7 +61,7 @@ export const DownloadDrawer: React.FC<DownloadDrawerProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-md">
+      <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-md">
         
         {/* Backdrop Click */}
         <motion.div
@@ -69,7 +78,7 @@ export const DownloadDrawer: React.FC<DownloadDrawerProps> = ({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 100 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="relative w-full max-w-2xl glass-modal rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl z-10 overflow-hidden"
+          className="relative w-full max-w-2xl glass-modal rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl z-10 overflow-hidden border border-amber-500/30 text-slate-100"
         >
           {/* Top Decorative Line */}
           <div className="w-12 h-1.5 bg-slate-700 rounded-full mx-auto mb-4 sm:hidden" />
@@ -77,37 +86,47 @@ export const DownloadDrawer: React.FC<DownloadDrawerProps> = ({
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white bg-slate-800 rounded-full transition-colors"
+            className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white bg-slate-800 rounded-full transition-colors cursor-pointer z-20"
           >
             <X className="w-5 h-5" />
           </button>
 
           {/* Header Info */}
           <div className="flex items-start gap-4 mb-6">
-            <img
-              src={game.coverArt}
-              alt={game.title}
-              className="w-16 h-20 sm:w-20 sm:h-24 object-cover rounded-xl border border-amber-500/30 shrink-0 shadow-lg"
-            />
+            <div className="relative w-16 h-20 sm:w-20 sm:h-24 rounded-xl border border-amber-500/40 shrink-0 overflow-hidden bg-slate-950 shadow-lg flex items-center justify-center">
+              {displayCover && !imgError ? (
+                <img
+                  src={displayCover}
+                  alt={game.title}
+                  onError={() => setImgError(true)}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-slate-900 flex flex-col items-center justify-center p-1 text-center">
+                  <Gamepad2 className="w-6 h-6 text-amber-400 mb-1" />
+                  <span className="text-[8px] font-mono text-slate-400">Quán Game Xóm</span>
+                </div>
+              )}
+            </div>
 
             <div>
               <div className="flex items-center gap-2 flex-wrap mb-1">
-                <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 font-mono text-[10px] font-bold rounded">
+                <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 font-mono text-[10px] font-bold rounded border border-amber-500/30">
                   {game.platforms.join(' • ')}
                 </span>
                 {game.hasVietHoa && (
-                  <span className="text-[11px] font-bold text-amber-400">
-                    Việt Hóa ⭐
+                  <span className="px-2 py-0.5 bg-red-600/30 text-red-300 border border-red-500/40 text-[10px] font-bold rounded flex items-center gap-1">
+                    🇻🇳 Việt Hóa ⭐
                   </span>
                 )}
               </div>
 
               <h3 className="text-lg sm:text-xl font-black text-white leading-snug">
-                {game.title}
+                {cleanTitle}
               </h3>
-              {game.subtitle && (
+              {(subtitle || game.subtitle) && (
                 <p className="text-xs text-amber-400/90 font-medium">
-                  {game.subtitle}
+                  {subtitle || game.subtitle}
                 </p>
               )}
 
