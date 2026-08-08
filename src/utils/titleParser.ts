@@ -98,3 +98,9 @@ export function parseGameTitle(rawTitle: string, existingSubtitle?: string): Par
     originalTitle
   };
 }
+
+export function cleanTitleForSearch(title: string): string {
+  if (!title) return '';
+  const parsed = parseGameTitle(title);
+  return parsed.cleanTitle || title;
+}

@@ -264,14 +264,68 @@ app.post("/api/save-game-art", async (req, res) => {
   }
 });
 
-// Save Custom Logo & Commit to GitHub
+// Get Current Custom Logo
+app.get("/api/get-logo", (req, res) => {
+  try {
+    const customLogoPath = path.join(process.cwd(), "src/data/customLogo.ts");
+    const defaultLogoUrl = "/assets/logo/logo-qgx-default.png";
+    let logoUrl = defaultLogoUrl;
+
+    if (fs.existsSync(customLogoPath)) {
+      const content = fs.readFileSync(customLogoPath, "utf-8");
+      const match = content.match(/CUSTOM_LOGO_URL\s*=\s*['"]([^'"]+)['"]/);
+      if (match && match[1]) {
+        logoUrl = match[1];
+      }
+    }
+
+    return res.json({ success: true, logoUrl, defaultLogoUrl });
+  } catch (err: any) {
+    return res.json({ success: true, logoUrl: "/assets/logo/logo-qgx-default.png" });
+  }
+});
+
+// Save Custom Logo & Commit to Local Disk & GitHub
 app.post("/api/save-logo", async (req, res) => {
   try {
     const { logoUrl, fileData } = req.body;
-    const finalLogo = fileData || logoUrl;
-    if (!finalLogo) {
+    const rawLogo = fileData || logoUrl;
+    if (!rawLogo) {
       return res.status(400).json({ success: false, error: "Logo URL or file data is required" });
     }
+
+    let finalLogoUrl = rawLogo;
+
+    // Handle base64 image saving to disk
+    if (rawLogo.startsWith("data:image/")) {
+      try {
+        const matches = rawLogo.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
+        if (matches && matches[2]) {
+          const ext = matches[1] === "svg+xml" ? "svg" : matches[1] || "png";
+          const buffer = Buffer.from(matches[2], "base64");
+          
+          const publicLogoDir = path.join(process.cwd(), "public/assets/logo");
+          const srcLogoDir = path.join(process.cwd(), "src/assets/logo");
+          
+          if (!fs.existsSync(publicLogoDir)) fs.mkdirSync(publicLogoDir, { recursive: true });
+          if (!fs.existsSync(srcLogoDir)) fs.mkdirSync(srcLogoDir, { recursive: true });
+
+          const filename = `logo-uploaded.${ext}`;
+          fs.writeFileSync(path.join(publicLogoDir, filename), buffer);
+          fs.writeFileSync(path.join(srcLogoDir, filename), buffer);
+
+          finalLogoUrl = `/assets/logo/${filename}?t=${Date.now()}`;
+        }
+      } catch (fileWriteErr) {
+        console.warn("[Save Logo File Disk Warning]:", fileWriteErr);
+      }
+    }
+
+    // Always update local src/data/customLogo.ts
+    const customLogoFilePath = path.join(process.cwd(), "src/data/customLogo.ts");
+    const logoFileContent = `export const DEFAULT_LOGO_URL = '/assets/logo/logo-qgx-default.png';\nexport const CUSTOM_LOGO_URL = '${finalLogoUrl.replace(/'/g, "\\'")}';\n`;
+    
+    fs.writeFileSync(customLogoFilePath, logoFileContent, "utf-8");
 
     let savedToGithub = false;
     const githubToken = process.env.GITHUB_TOKEN;
@@ -294,8 +348,6 @@ app.post("/api/save-logo", async (req, res) => {
           const fileDataGh = await getRes.json();
           sha = fileDataGh.sha;
         }
-
-        const logoFileContent = `export const CUSTOM_LOGO_URL = '${finalLogo.replace(/'/g, "\\'")}';\n`;
 
         const putRes = await fetch(ghUrl, {
           method: "PUT",
@@ -323,10 +375,10 @@ app.post("/api/save-logo", async (req, res) => {
     return res.json({
       success: true,
       savedToGithub,
-      logoUrl: finalLogo,
+      logoUrl: finalLogoUrl,
       message: savedToGithub
         ? "Đã lưu logo và commit lên GitHub thành công!"
-        : "Đã cập nhật logo thành công!"
+        : "Đã cập nhật logo thành công trên server!"
     });
   } catch (err: any) {
     console.error("[Save Logo Error]:", err);

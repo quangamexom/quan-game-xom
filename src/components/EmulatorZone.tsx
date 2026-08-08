@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Gamepad2,
@@ -136,66 +136,47 @@ export const EmulatorZone: React.FC = () => {
     launchRom(objectUrl, cleanName, detectedCore);
   };
 
-  // Effect to load EmulatorJS scripts dynamically
-  useEffect(() => {
-    if (!isPlaying || !currentRomUrl) return;
+  // Generate isolated clean HTML for EmulatorJS iframe with default controls
+  const iframeSrcDoc = useMemo(() => {
+    if (!isPlaying || !currentRomUrl) return '';
 
-    // Clean up existing instance if any
-    const container = document.getElementById('ejs-game-container');
-    if (container) {
-      container.innerHTML = '';
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${currentRomName || 'Emulator'}</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #000;
+      overflow: hidden;
     }
-
-    // Configure EmulatorJS globals on window
-    (window as any).EJS_player = '#ejs-game-container';
-    (window as any).EJS_core = selectedCore;
-    (window as any).EJS_gameName = currentRomName || 'Quán Game Xóm ROM';
-    (window as any).EJS_gameUrl = currentRomUrl;
-    (window as any).EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
-    (window as any).EJS_startOnLoaded = true;
-    (window as any).EJS_color = '#f59e0b'; // Amber theme
-    (window as any).EJS_fps = 60; // Ép cố định 60 FPS tối ưu độ mượt
-    (window as any).EJS_targetFps = 60;
-
-    // Phím điều khiển mặc định (Default Keybindings)
-    // Di chuyển: W = Lên, A = Trái, S = Xuống, D = Phải
-    // NES: K = A, L = B, C = Start, V = Select
-    // SNES: J = Y, K = B, I = X, L = A, Q = L (shoulder), O = R (shoulder), C = Start, V = Select
-    (window as any).EJS_defaultControls = {
-      0: {
-        0: 'KeyW',   // Up (W)
-        1: 'KeyS',   // Down (S)
-        2: 'KeyA',   // Left (A)
-        3: 'KeyD',   // Right (D)
-        4: 'KeyK',   // A / B
-        5: 'KeyL',   // B / A
-        6: 'KeyV',   // Select (V)
-        7: 'KeyC',   // Start (C)
-        8: 'KeyJ',   // Y (SNES)
-        9: 'KeyI',   // X (SNES)
-        10: 'KeyQ',  // L Shoulder (SNES)
-        11: 'KeyO'   // R Shoulder (SNES)
-      }
-    };
-
-    if (netplayRoom.trim()) {
-      (window as any).EJS_room = netplayRoom.trim();
+    #ejs-game-container {
+      width: 100%;
+      height: 100%;
     }
-
-    // Inject EmulatorJS loader script
-    const script = document.createElement('script');
-    script.id = 'emulatorjs-loader-script';
-    script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
-    script.async = true;
-
-    document.body.appendChild(script);
-
-    return () => {
-      const existingScript = document.getElementById('emulatorjs-loader-script');
-      if (existingScript) existingScript.remove();
-      if (container) container.innerHTML = '';
-    };
-  }, [isPlaying, currentRomUrl, selectedCore, netplayRoom]);
+  </style>
+</head>
+<body>
+  <div id="ejs-game-container"></div>
+  <script>
+    window.EJS_player = '#ejs-game-container';
+    window.EJS_core = ${JSON.stringify(selectedCore)};
+    window.EJS_gameName = ${JSON.stringify(currentRomName || 'Quán Game Xóm ROM')};
+    window.EJS_gameUrl = ${JSON.stringify(currentRomUrl)};
+    window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+    window.EJS_startOnLoaded = true;
+    window.EJS_color = '#f59e0b';
+    ${netplayRoom.trim() ? `window.EJS_room = ${JSON.stringify(netplayRoom.trim())};` : ''}
+  </script>
+  <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
+</body>
+</html>`;
+  }, [isPlaying, currentRomUrl, selectedCore, currentRomName, netplayRoom]);
 
   const handleCreateRoom = () => {
     const randomRoom = 'QGX-' + Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -419,9 +400,21 @@ export const EmulatorZone: React.FC = () => {
             </button>
           </div>
 
-          {/* EMULATORJS CONTAINER CONTAINER */}
+          {/* EMULATORJS IFRAME CONTAINER */}
           <div className="relative w-full aspect-[4/3] max-h-[720px] bg-black rounded-3xl border border-amber-500/30 overflow-hidden shadow-2xl flex items-center justify-center">
-            <div id="ejs-game-container" className="w-full h-full" />
+            {isPlaying && currentRomUrl ? (
+              <iframe
+                key={`${currentRomUrl}-${selectedCore}`}
+                srcDoc={iframeSrcDoc}
+                className="w-full h-full border-0"
+                allow="autoplay; gamepad; fullscreen; microphone"
+                title="Retro Emulator Engine"
+              />
+            ) : (
+              <div className="text-center p-8 text-slate-500 font-mono text-xs">
+                Vui lòng chọn một trò chơi từ thư viện hoặc tải ROM từ máy để bắt đầu.
+              </div>
+            )}
           </div>
 
           {/* Quick Control Hints & Keybindings Guide */}
@@ -429,7 +422,7 @@ export const EmulatorZone: React.FC = () => {
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
               <div className="flex items-center gap-2 font-bold text-amber-300">
                 <Info className="w-4 h-4 text-amber-400" />
-                <span>CẤU HÌNH PHÍM MẶC ĐỊNH & TỐC ĐỘ KhUNG HÌNH (60 FPS)</span>
+                <span>CẤU HÌNH PHÍM MẶC ĐỊNH EMULATORJS & TỐC ĐỘ 60 FPS</span>
               </div>
               <span className="text-[10px] text-amber-400/90 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
                 ⚡ FPS: 60 FPS Locked
@@ -438,22 +431,18 @@ export const EmulatorZone: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px] leading-relaxed">
               <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-                <span className="text-amber-400 font-bold block mb-1">🎮 Di Chuyển (D-Pad):</span>
-                <span>W = Lên | A = Trái | S = Xuống | D = Phải</span>
+                <span className="text-amber-400 font-bold block mb-1">🎮 Phím Mặc Định Chuẩn:</span>
+                <span>Mũi tên = Di chuyển | Z / X = Nút A / B | Shift = Select | Enter = Start</span>
               </div>
               <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-                <span className="text-red-400 font-bold block mb-1">🔴 Hệ NES (8-bit):</span>
-                <span>K = Nút A | L = Nút B | C = Start | V = Select</span>
+                <span className="text-red-400 font-bold block mb-1">🔴 Tay Cầm Gamepad:</span>
+                <span>Tự động nhận diện tay cầm USB / Bluetooth cắm vào máy tính.</span>
               </div>
               <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-                <span className="text-indigo-400 font-bold block mb-1">🟣 Hệ SNES (16-bit):</span>
-                <span>J = Y | K = B | I = X | L = A | Q = L | O = R | C = Start | V = Select</span>
+                <span className="text-indigo-400 font-bold block mb-1">🟣 Đổi Phím Theo Ý Thích:</span>
+                <span>Bấm nút Cài đặt (Hình bánh răng) ở góc giao diện giả lập để đổi phím bất cứ lúc nào.</span>
               </div>
             </div>
-
-            <p className="text-[11px] text-slate-400 font-sans italic text-right">
-              * Bạn vẫn có thể tùy chỉnh lại phím điều khiển theo sở thích cá nhân trong menu Cài Đặt góc dưới EmulatorJS.
-            </p>
           </div>
         </div>
       )}

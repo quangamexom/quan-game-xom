@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Upload, Link as LinkIcon, Camera } from 'lucide-react';
 import { useAdminMode } from '../hooks/useAdminMode';
+import { DEFAULT_LOGO_URL, CUSTOM_LOGO_URL } from '../data/customLogo';
 
 interface LogoProps {
   className?: string;
@@ -16,53 +17,81 @@ export const Logo: React.FC<LogoProps> = ({
   allowUpload = false
 }) => {
   const { isAdmin } = useAdminMode();
-  const [customImage, setCustomImage] = useState<string | null>(null);
+  const [customImage, setCustomImage] = useState<string>(CUSTOM_LOGO_URL || DEFAULT_LOGO_URL);
+  const [imgError, setImgError] = useState(false);
   const [isUrlModalOpen, setIsUrlModalOpen] = useState(false);
   const [urlInput, setUrlInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const updateLogo = () => {
+    // 1. Fetch current official logo from server
+    fetch('/api/get-logo')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.logoUrl) {
+          setCustomImage(data.logoUrl);
+          setImgError(false);
+          localStorage.setItem('quan_game_xom_custom_logo', data.logoUrl);
+        }
+      })
+      .catch((err) => console.warn('Get logo API error:', err));
+
+    const updateLogoFromStorage = () => {
       const savedLogo = localStorage.getItem('quan_game_xom_custom_logo');
       if (savedLogo) {
         setCustomImage(savedLogo);
+        setImgError(false);
       }
     };
 
     const handleCustomLogoEvent = (e: any) => {
       if (e.detail?.logoUrl) {
         setCustomImage(e.detail.logoUrl);
+        setImgError(false);
       }
     };
 
-    updateLogo();
     window.addEventListener('custom-logo-updated', handleCustomLogoEvent);
-    window.addEventListener('storage', updateLogo);
+    window.addEventListener('storage', updateLogoFromStorage);
     return () => {
       window.removeEventListener('custom-logo-updated', handleCustomLogoEvent);
-      window.removeEventListener('storage', updateLogo);
+      window.removeEventListener('storage', updateLogoFromStorage);
     };
   }, []);
 
   const saveLogoToServerAndLocal = async (logoUrlOrData: string) => {
     setIsSaving(true);
+    setImgError(false);
     try {
       setCustomImage(logoUrlOrData);
       localStorage.setItem('quan_game_xom_custom_logo', logoUrlOrData);
       window.dispatchEvent(new CustomEvent('custom-logo-updated', { detail: { logoUrl: logoUrlOrData } }));
 
       // Save to server & GitHub repository
-      await fetch('/api/save-logo', {
+      const res = await fetch('/api/save-logo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ logoUrl: logoUrlOrData })
       });
+      const data = await res.json();
+      if (data.success && data.logoUrl) {
+        setCustomImage(data.logoUrl);
+        setImgError(false);
+        localStorage.setItem('quan_game_xom_custom_logo', data.logoUrl);
+        window.dispatchEvent(new CustomEvent('custom-logo-updated', { detail: { logoUrl: data.logoUrl } }));
+      }
     } catch (err) {
       console.warn('Save logo warning:', err);
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const resetToDefaultLogo = () => {
+    const defaultUrl = DEFAULT_LOGO_URL || '/assets/logo/logo-qgx-default.png';
+    localStorage.removeItem('quan_game_xom_custom_logo');
+    saveLogoToServerAndLocal(defaultUrl);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -115,12 +144,16 @@ export const Logo: React.FC<LogoProps> = ({
         {/* Ambient Cyan/Purple Outer Glow Effect */}
         <div className="absolute -inset-1 bg-gradient-to-tr from-cyan-400 via-fuchsia-500 to-purple-600 rounded-full blur-md opacity-80 group-hover:opacity-100 group-hover:blur-lg transition-all duration-300 animate-pulse" />
         
-        {customImage ? (
-          <div className="relative w-full h-full rounded-full overflow-hidden border-2 border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.7)] group-hover:scale-105 transition-transform duration-300">
+        {customImage && !imgError ? (
+          <div className="relative w-full h-full rounded-full overflow-hidden border-2 border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.7)] group-hover:scale-105 transition-transform duration-300 bg-slate-950">
             <img 
               src={customImage} 
               alt="QUÁN GAME XÓM Logo" 
               className="w-full h-full object-cover"
+              onError={() => {
+                console.warn('Image failed to load, falling back to SVG vector logo');
+                setImgError(true);
+              }}
             />
           </div>
         ) : (
@@ -392,9 +425,9 @@ export const Logo: React.FC<LogoProps> = ({
           </>
         )}
 
-        {/* 2 Admin Logo Action Buttons - STRICTLY RENDERED ONLY FOR ADMIN */}
+        {/* 3 Admin Logo Action Buttons - STRICTLY RENDERED ONLY FOR ADMIN */}
         {isAdmin && (
-          <div className="flex items-center gap-1.5 mt-1 z-30">
+          <div className="flex items-center gap-1.5 mt-1 z-30 flex-wrap">
             <button
               type="button"
               onClick={(e) => {
@@ -419,6 +452,18 @@ export const Logo: React.FC<LogoProps> = ({
             >
               <LinkIcon className="w-2.5 h-2.5" />
               <span>b) Dán Link</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                resetToDefaultLogo();
+              }}
+              className="px-2 py-0.5 bg-purple-500/20 hover:bg-purple-400 hover:text-slate-950 text-purple-300 border border-purple-500/50 rounded-md text-[9px] font-mono font-bold transition-all flex items-center gap-1 cursor-pointer shadow"
+              title="Reset về Logo Gốc mặc định"
+            >
+              <span>c) Reset Gốc</span>
             </button>
           </div>
         )}

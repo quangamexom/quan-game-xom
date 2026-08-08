@@ -1,0 +1,399 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Master Clip Path for Full Circular Badge -->
+    <clipPath id="circleClip">
+      <circle cx="512" cy="512" r="500" />
+    </clipPath>
+
+    <!-- Background Circuit Board Radial Gradient -->
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="50%" stop-color="#0f172a" />
+      <stop offset="85%" stop-color="#020617" />
+      <stop offset="100%" stop-color="#000000" />
+    </radialGradient>
+
+    <!-- Outer Aura Glow Gradient -->
+    <radialGradient id="auraGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="60%" stop-color="#00f0ff" stop-opacity="0" />
+      <stop offset="80%" stop-color="#00f0ff" stop-opacity="0.35" />
+      <stop offset="92%" stop-color="#a855f7" stop-opacity="0.45" />
+      <stop offset="100%" stop-color="#ec4899" stop-opacity="0.6" />
+    </radialGradient>
+
+    <!-- Shield Neon Outline Gradient -->
+    <linearGradient id="shieldBorderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f0ff" />
+      <stop offset="30%" stop-color="#3b82f6" />
+      <stop offset="70%" stop-color="#a855f7" />
+      <stop offset="100%" stop-color="#ec4899" />
+    </linearGradient>
+
+    <!-- Shield Body Dark Metallic Gradient -->
+    <linearGradient id="shieldBodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="50%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+
+    <!-- Gold Text "QUÁN" Gradient -->
+    <linearGradient id="goldFontGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="20%" stop-color="#fef08a" />
+      <stop offset="50%" stop-color="#eab308" />
+      <stop offset="80%" stop-color="#ca8a04" />
+      <stop offset="100%" stop-color="#854d0e" />
+    </linearGradient>
+
+    <!-- Gold Banner Bevel Gradient -->
+    <linearGradient id="goldBannerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#78350f" />
+      <stop offset="15%" stop-color="#b45309" />
+      <stop offset="50%" stop-color="#1e1b18" />
+      <stop offset="85%" stop-color="#78350f" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+
+    <!-- GAME XÓM Text Metallic Cyan Gradient -->
+    <linearGradient id="cyanFontGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="30%" stop-color="#e0f2fe" />
+      <stop offset="70%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    
+    <filter id="intenseGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="16" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Enclosed in Circular Mask -->
+  <g clip-path="url(#circleClip)">
+    <!-- 1. Dark Cyber Circuit Background -->
+    <circle cx="512" cy="512" r="500" fill="url(#bgGrad)" />
+
+    <!-- Cyber Circuit Grid Overlay -->
+    <g stroke="#1e293b" stroke-width="3" opacity="0.7">
+      <!-- Vertical Grid Lines -->
+      <line x1="112" y1="0" x2="112" y2="1024" />
+      <line x1="212" y1="0" x2="212" y2="1024" />
+      <line x1="312" y1="0" x2="312" y2="1024" />
+      <line x1="712" y1="0" x2="712" y2="1024" />
+      <line x1="812" y1="0" x2="812" y2="1024" />
+      <line x1="912" y1="0" x2="912" y2="1024" />
+      <!-- Horizontal Grid Lines -->
+      <line x1="0" y1="150" x2="1024" y2="150" />
+      <line x1="0" y1="300" x2="1024" y2="300" />
+      <line x1="0" y1="720" x2="1024" y2="720" />
+      <line x1="0" y1="870" x2="1024" y2="870" />
+    </g>
+
+    <!-- Glowing Circuit Traces -->
+    <g opacity="0.6" stroke-width="4" stroke-linecap="round">
+      <path d="M 100 250 L 220 250 L 280 310 L 280 450" fill="none" stroke="#00f0ff" filter="url(#glow)" />
+      <circle cx="100" cy="250" r="8" fill="#00f0ff" />
+      <circle cx="280" cy="450" r="8" fill="#00f0ff" />
+
+      <path d="M 924 250 L 804 250 L 744 310 L 744 450" fill="none" stroke="#ec4899" filter="url(#glow)" />
+      <circle cx="924" cy="250" r="8" fill="#ec4899" />
+      <circle cx="744" cy="450" r="8" fill="#ec4899" />
+
+      <path d="M 120 780 L 250 780 L 320 710" fill="none" stroke="#3b82f6" />
+      <circle cx="120" cy="780" r="8" fill="#3b82f6" />
+
+      <path d="M 904 780 L 774 780 L 704 710" fill="none" stroke="#a855f7" />
+      <circle cx="904" cy="780" r="8" fill="#a855f7" />
+    </g>
+
+    <!-- 2. Outer Cosmic Aura Glow -->
+    <circle cx="512" cy="512" r="500" fill="url(#auraGlow)" />
+
+    <!-- 3. Central Dark Cyber Shield -->
+    <!-- Outer Shield Glow -->
+    <path 
+      d="M 512 120 Q 760 120, 830 240 Q 830 580, 512 870 Q 194 580, 194 240 Q 264 120, 512 120 Z" 
+      fill="none" 
+      stroke="url(#shieldBorderGrad)" 
+      stroke-width="18" 
+      filter="url(#intenseGlow)"
+      opacity="0.85"
+    />
+
+    <!-- Shield Solid Base -->
+    <path 
+      d="M 512 130 Q 750 130, 820 245 Q 820 570, 512 855 Q 204 570, 204 245 Q 274 130, 512 130 Z" 
+      fill="url(#shieldBodyGrad)" 
+      stroke="url(#shieldBorderGrad)" 
+      stroke-width="8"
+    />
+
+    <!-- Shield Inner Bevel Line -->
+    <path 
+      d="M 512 165 Q 710 165, 775 260 Q 775 535, 512 795 Q 249 535, 249 260 Q 314 165, 512 165 Z" 
+      fill="none" 
+      stroke="#00f0ff" 
+      stroke-width="3" 
+      opacity="0.7"
+      filter="url(#glow)"
+    />
+
+    <!-- 4. MASCOT CHARACTER (Anime Guy with Spiky Hair, Sunglasses, Smiling Teeth & Stubble) -->
+    <g transform="translate(0, 10)">
+      <!-- Spiky Hair Layer - Back Spikes -->
+      <path 
+        d="M 330 280 L 300 200 L 370 210 L 390 140 L 460 170 L 512 80 L 564 170 L 634 140 L 654 210 L 724 200 L 694 280 L 730 350 L 670 360 L 680 430 L 610 400 Z" 
+        fill="#2e1908" 
+        stroke="#0f172a" 
+        stroke-width="8" 
+      />
+
+      <!-- Spiky Hair Main Body -->
+      <path 
+        d="M 340 285 L 320 215 L 380 225 L 410 160 L 470 185 L 512 105 L 554 185 L 614 160 L 644 225 L 704 215 L 684 285 L 710 345 L 650 355 M 340 285 L 314 345 L 374 355" 
+        fill="#543113" 
+        stroke="#1a0d03" 
+        stroke-width="6" 
+      />
+
+      <!-- Golden Brown Hair Top Highlights -->
+      <path 
+        d="M 420 180 L 465 200 L 512 135 L 559 200 L 604 180 L 580 230 L 512 170 L 444 230 Z" 
+        fill="#d97706" 
+      />
+      <path 
+        d="M 480 160 L 512 120 L 544 160 L 512 145 Z" 
+        fill="#fef08a" 
+      />
+
+      <!-- Face Base Shape -->
+      <path 
+        d="M 360 300 C 360 300, 360 450, 512 475 C 664 450, 664 300, 664 300 Z" 
+        fill="#fbcfe8" 
+      />
+      <!-- Face Skin Main Layer -->
+      <path 
+        d="M 365 295 C 365 295, 365 440, 512 465 C 659 440, 659 295, 659 295 Z" 
+        fill="#fed7aa" 
+        stroke="#451a03" 
+        stroke-width="6" 
+      />
+
+      <!-- Ears -->
+      <ellipse cx="355" cy="350" rx="22" ry="32" fill="#fed7aa" stroke="#451a03" stroke-width="5" />
+      <ellipse cx="669" cy="350" rx="22" ry="32" fill="#fed7aa" stroke="#451a03" stroke-width="5" />
+      <path d="M 355 338 Q 363 350, 355 362" fill="none" stroke="#ea580c" stroke-width="3" />
+      <path d="M 669 338 Q 661 350, 669 362" fill="none" stroke="#ea580c" stroke-width="3" />
+
+      <!-- Hair Front Bangs Overlay -->
+      <path 
+        d="M 360 290 L 390 320 L 420 280 L 460 310 L 490 270 L 512 290 L 534 270 L 564 310 L 604 280 L 634 320 L 664 290 Q 512 230, 360 290 Z" 
+        fill="#783d19" 
+        stroke="#2e1908" 
+        stroke-width="4" 
+      />
+
+      <!-- COOL DARK SUNGLASSES -->
+      <!-- Frame Base -->
+      <path 
+        d="M 365 305 L 495 315 L 512 325 L 529 315 L 659 305 L 649 380 C 635 405, 535 410, 520 380 L 512 340 L 504 380 C 489 410, 389 405, 375 380 Z" 
+        fill="#020617" 
+        stroke="#00f0ff" 
+        stroke-width="8" 
+        filter="url(#glow)"
+      />
+      <!-- Lenses Solid Black -->
+      <path 
+        d="M 375 315 L 490 322 L 480 375 C 470 395, 395 395, 383 375 Z" 
+        fill="#0f172a" 
+      />
+      <path 
+        d="M 649 315 L 534 322 L 544 375 C 554 395, 629 395, 641 375 Z" 
+        fill="#0f172a" 
+      />
+      <!-- Lens Glare Slashes -->
+      <path d="M 390 325 L 430 380 M 410 325 L 445 375" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.8" />
+      <path d="M 634 325 L 594 380 M 614 325 L 579 375" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.8" />
+
+      <!-- CONFIDENT OPEN SMILE WITH WHITE TEETH -->
+      <!-- Mouth Cavity -->
+      <path 
+        d="M 435 415 Q 512 475, 589 415 Z" 
+        fill="#7f1d1d" 
+        stroke="#451a03" 
+        stroke-width="5" 
+      />
+      <!-- White Top Teeth Bar -->
+      <path 
+        d="M 440 417 Q 512 428, 584 417 L 579 432 Q 512 442, 445 432 Z" 
+        fill="#ffffff" 
+      />
+      <!-- Tongue -->
+      <path 
+        d="M 470 450 Q 512 440, 554 450 Q 512 472, 470 450 Z" 
+        fill="#f43f5e" 
+      />
+
+      <!-- STUBBLE / GOATEE -->
+      <!-- Chin Stubble Patch -->
+      <path 
+        d="M 482 455 Q 512 468, 542 455 Q 512 472, 482 455 Z" 
+        fill="#451a03" 
+        opacity="0.85" 
+      />
+      <path d="M 492 448 Q 512 453, 532 448" stroke="#2e1908" stroke-width="3" stroke-linecap="round" />
+    </g>
+
+    <!-- 5. BOLD 3D METALLIC GOLD BANNER WITH "QUÁN" -->
+    <g transform="translate(0, 30)">
+      <!-- Banner Shadow & Outer Frame -->
+      <path 
+        d="M 160 490 L 864 490 L 894 530 L 844 630 L 180 630 L 130 530 Z" 
+        fill="#020617" 
+        stroke="#f59e0b" 
+        stroke-width="8" 
+        filter="url(#glow)"
+      />
+      
+      <!-- Banner 3D Gold Body -->
+      <path 
+        d="M 170 500 L 854 500 L 878 535 L 834 620 L 190 620 L 146 535 Z" 
+        fill="url(#goldBannerGrad)" 
+        stroke="#fef08a" 
+        stroke-width="4" 
+      />
+
+      <!-- Inner Gold Ribbon Inset -->
+      <path 
+        d="M 185 510 L 839 510 L 858 538 L 822 610 L 202 610 L 166 538 Z" 
+        fill="#180e04" 
+        stroke="#f59e0b" 
+        stroke-width="2" 
+      />
+
+      <!-- "QUÁN" 3D Gold Typography -->
+      <!-- Shadow 3D Text Offset -->
+      <text 
+        x="512" 
+        y="592" 
+        text-anchor="middle" 
+        font-family="Impact, Arial Black, sans-serif" 
+        font-weight="900" 
+        font-size="96" 
+        letter-spacing="12" 
+        fill="#000000" 
+        stroke="#451a03" 
+        stroke-width="12" 
+      >
+        QUÁN
+      </text>
+      <!-- Main Metallic Gold Text -->
+      <text 
+        x="512" 
+        y="585" 
+        text-anchor="middle" 
+        font-family="Impact, Arial Black, sans-serif" 
+        font-weight="900" 
+        font-size="96" 
+        letter-spacing="12" 
+        fill="url(#goldFontGrad)" 
+        stroke="#78350f" 
+        stroke-width="3" 
+        filter="url(#glow)"
+      >
+        QUÁN
+      </text>
+    </g>
+
+    <!-- 6. CYBER METALLIC CONTAINER WITH "GAME XÓM" -->
+    <g transform="translate(0, 20)">
+      <!-- Container Outer Box -->
+      <rect 
+        x="212" 
+        y="650" 
+        width="600" 
+        height="125" 
+        rx="18" 
+        fill="#020617" 
+        stroke="url(#shieldBorderGrad)" 
+        stroke-width="8" 
+        filter="url(#glow)"
+      />
+      <!-- Inner Dark Plate -->
+      <rect 
+        x="222" 
+        y="660" 
+        width="580" 
+        height="105" 
+        rx="12" 
+        fill="#0f172a" 
+        stroke="#00f0ff" 
+        stroke-width="3" 
+      />
+
+      <!-- "GAME XÓM" Metallic Cyan Text -->
+      <!-- 3D Shadow -->
+      <text 
+        x="512" 
+        y="738" 
+        text-anchor="middle" 
+        font-family="Impact, Arial Black, sans-serif" 
+        font-weight="900" 
+        font-size="62" 
+        letter-spacing="8" 
+        fill="#020617" 
+        stroke="#0284c7" 
+        stroke-width="8" 
+      >
+        GAME XÓM
+      </text>
+      <!-- Front Cyan Gradient Text -->
+      <text 
+        x="512" 
+        y="732" 
+        text-anchor="middle" 
+        font-family="Impact, Arial Black, sans-serif" 
+        font-weight="900" 
+        font-size="62" 
+        letter-spacing="8" 
+        fill="url(#cyanFontGrad)" 
+        stroke="#00f0ff" 
+        stroke-width="2" 
+        filter="url(#glow)"
+      >
+        GAME XÓM
+      </text>
+    </g>
+
+    <!-- 7. Outer Circular Metallic Ring & Neon Glow Edge -->
+    <circle 
+      cx="512" 
+      cy="512" 
+      r="492" 
+      fill="none" 
+      stroke="url(#shieldBorderGrad)" 
+      stroke-width="16" 
+      filter="url(#glow)"
+    />
+    <circle 
+      cx="512" 
+      cy="512" 
+      r="482" 
+      fill="none" 
+      stroke="#0f172a" 
+      stroke-width="6" 
+    />
+  </g>
+</svg>

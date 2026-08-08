@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { GameItem } from '../types';
+import { cleanTitleForSearch } from '../utils/titleParser';
 import {
   getManualCover,
   saveManualCover,
