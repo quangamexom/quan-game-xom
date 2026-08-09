@@ -127,10 +127,14 @@ export function getManualCover(gameId: string, title: string): string | null {
  */
 export function saveManualCover(gameId: string, title: string, base64DataUrl: string): void {
   try {
+    const cleaned = cleanTitleForSearch(title).toLowerCase();
     const keyById = `manual_cover_id_${gameId}`;
-    const keyByTitle = `manual_cover_title_${cleanTitleForSearch(title).toLowerCase()}`;
+    const keyByTitle = `manual_cover_title_${cleaned}`;
     localStorage.setItem(keyById, base64DataUrl);
     localStorage.setItem(keyByTitle, base64DataUrl);
+    localStorage.removeItem(`rawg_cover_${cleaned}`);
+    localStorage.removeItem(`rawg_cover_failed_${cleaned}`);
+
     window.dispatchEvent(new CustomEvent('game-cover-updated', {
       detail: { gameId, title, coverUrl: base64DataUrl }
     }));
@@ -145,7 +149,9 @@ export function saveManualCover(gameId: string, title: string, base64DataUrl: st
         imageType: 'cover',
         fileData: base64DataUrl
       })
-    }).catch((err) => console.warn('Failed to post manual cover to server:', err));
+    })
+      .then(() => loadServerArtMap())
+      .catch((err) => console.warn('Failed to post manual cover to server:', err));
   } catch (e) {
     console.warn('Failed to save manual cover to localStorage:', e);
   }
@@ -186,10 +192,14 @@ export function getManualBanner(gameId: string, title: string): string | null {
  */
 export function saveManualBanner(gameId: string, title: string, base64DataUrl: string): void {
   try {
+    const cleaned = cleanTitleForSearch(title).toLowerCase();
     const keyById = `manual_banner_id_${gameId}`;
-    const keyByTitle = `manual_banner_title_${cleanTitleForSearch(title).toLowerCase()}`;
+    const keyByTitle = `manual_banner_title_${cleaned}`;
     localStorage.setItem(keyById, base64DataUrl);
     localStorage.setItem(keyByTitle, base64DataUrl);
+    localStorage.removeItem(`rawg_banner_${cleaned}`);
+    localStorage.removeItem(`rawg_banner_failed_${cleaned}`);
+
     window.dispatchEvent(new CustomEvent('game-banner-updated', {
       detail: { gameId, title, bannerUrl: base64DataUrl }
     }));
@@ -204,7 +214,9 @@ export function saveManualBanner(gameId: string, title: string, base64DataUrl: s
         imageType: 'banner',
         fileData: base64DataUrl
       })
-    }).catch((err) => console.warn('Failed to post manual banner to server:', err));
+    })
+      .then(() => loadServerArtMap())
+      .catch((err) => console.warn('Failed to post manual banner to server:', err));
   } catch (e) {
     console.warn('Failed to save manual banner to localStorage:', e);
   }
@@ -212,6 +224,89 @@ export function saveManualBanner(gameId: string, title: string, base64DataUrl: s
 
 // Dynamic Server Art Map fetched from backend API
 export let DYNAMIC_SERVER_ART_MAP: Record<string, { coverImage?: string; bannerImage?: string; rating?: number; genres?: string[] }> = {};
+
+/**
+ * Synchronously check DYNAMIC_SERVER_ART_MAP and KNOWN_GAME_ART using multiple candidate title keys
+ */
+export function getGameArtFromLocalOrServerMap(title: string): { coverImage: string | null; bannerImage: string | null; rating: number | null; genres: string[] } | null {
+  if (!title) return null;
+  const cleanedTitle = cleanTitleForSearch(title);
+
+  const normKey1 = title.toLowerCase().replace(/[:\-\—\–\/\_\.\,]/g, ' ').replace(/\s+/g, ' ').trim();
+  const normKey2 = cleanedTitle.toLowerCase().replace(/[:\-\—\–\/\_\.\,]/g, ' ').replace(/\s+/g, ' ').trim();
+  const normKey3 = title.split('\n')[0]
+    .replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[⭐🇻🇳🔥💥✦⚡✨🎮👑💎]/gu, ' ')
+    .replace(/[\(\[\{].*?[\)\]\}]/g, ' ')
+    .replace(/quán game xóm|qgx edition|edition|việt hóa|việt hoá|viethoa|resynced|remastered|re-?make|repack|full iso|iso|crack/gi, ' ')
+    .replace(/[:\-\—\–\/\_\.\,]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+  const candidates = Array.from(new Set([
+    normKey1,
+    normKey2,
+    normKey3,
+    title.toLowerCase().trim(),
+    cleanedTitle.toLowerCase().trim()
+  ])).filter(Boolean);
+
+  // 1. Check DYNAMIC_SERVER_ART_MAP candidate exact matches
+  for (const key of candidates) {
+    if (DYNAMIC_SERVER_ART_MAP[key]) {
+      const da = DYNAMIC_SERVER_ART_MAP[key];
+      return {
+        coverImage: da.coverImage || null,
+        bannerImage: da.bannerImage || null,
+        rating: da.rating || 95,
+        genres: da.genres || ['Game Quán Xóm']
+      };
+    }
+  }
+
+  // 2. Check KNOWN_GAME_ART candidate exact matches
+  for (const key of candidates) {
+    if (KNOWN_GAME_ART[key]) {
+      const ka = KNOWN_GAME_ART[key];
+      return {
+        coverImage: ka.coverImage,
+        bannerImage: ka.bannerImage,
+        rating: ka.rating || 95,
+        genres: ka.genres || ['Game Quán Xóm']
+      };
+    }
+  }
+
+  // 3. Check DYNAMIC_SERVER_ART_MAP fuzzy / substring matches
+  for (const [key, da] of Object.entries(DYNAMIC_SERVER_ART_MAP)) {
+    for (const cand of candidates) {
+      if (cand.length >= 3 && (cand.includes(key) || key.includes(cand))) {
+        return {
+          coverImage: da.coverImage || null,
+          bannerImage: da.bannerImage || null,
+          rating: da.rating || 95,
+          genres: da.genres || ['Game Quán Xóm']
+        };
+      }
+    }
+  }
+
+  // 4. Check KNOWN_GAME_ART fuzzy / substring matches
+  for (const [key, ka] of Object.entries(KNOWN_GAME_ART)) {
+    for (const cand of candidates) {
+      if (cand.length >= 3 && (cand.includes(key) || key.includes(cand))) {
+        return {
+          coverImage: ka.coverImage,
+          bannerImage: ka.bannerImage,
+          rating: ka.rating || 95,
+          genres: ka.genres || ['Game Quán Xóm']
+        };
+      }
+    }
+  }
+
+  return null;
+}
 
 export async function loadServerArtMap(): Promise<Record<string, any>> {
   try {
@@ -491,6 +586,18 @@ clearFailedRawgCache();
  * Fetch game avatar/cover image with dedicated cache key rawg_cover_[cleanTitle]
  */
 export async function fetchRawgCover(title: string): Promise<RawgCoverResult | null> {
+  if (!title) return null;
+
+  // 0. Check DYNAMIC_SERVER_ART_MAP & KNOWN_GAME_ART FIRST (Instant lookup, bypasses API queue and fail cache)
+  const serverOrLocalArt = getGameArtFromLocalOrServerMap(title);
+  if (serverOrLocalArt && serverOrLocalArt.coverImage) {
+    return {
+      coverImage: serverOrLocalArt.coverImage,
+      rating: serverOrLocalArt.rating || 95,
+      genres: serverOrLocalArt.genres || ['Game Quán Xóm']
+    };
+  }
+
   const cleanedTitle = cleanTitleForSearch(title);
   if (!cleanedTitle) return null;
 
@@ -557,6 +664,17 @@ export async function fetchRawgCover(title: string): Promise<RawgCoverResult | n
  * Fetch game wide top hero banner image with dedicated cache key rawg_banner_[cleanTitle]
  */
 export async function fetchRawgBanner(title: string): Promise<RawgBannerResult | null> {
+  if (!title) return null;
+
+  // 0. Check DYNAMIC_SERVER_ART_MAP & KNOWN_GAME_ART FIRST (Instant lookup, bypasses API queue and fail cache)
+  const serverOrLocalArt = getGameArtFromLocalOrServerMap(title);
+  if (serverOrLocalArt && (serverOrLocalArt.bannerImage || serverOrLocalArt.coverImage)) {
+    return {
+      bannerImage: serverOrLocalArt.bannerImage || serverOrLocalArt.coverImage,
+      rating: serverOrLocalArt.rating || 95
+    };
+  }
+
   const cleanedTitle = cleanTitleForSearch(title);
   if (!cleanedTitle) return null;
 

@@ -240,17 +240,23 @@ app.post("/api/save-game-art", async (req, res) => {
 
     // B. Update persistent gameArtOverrides.json
     const overrides = getArtMapOverrides();
-    overrides[cleanKey] = overrides[cleanKey] || {
-      coverImage: finalImageSrc,
-      bannerImage: finalImageSrc,
-      rating: 95,
-      genres: ['Game Quán Xóm']
-    };
+    const rawLower = title.toLowerCase().trim();
+    const normKey = title.toLowerCase().replace(/[:\-\—\–\/\_\.\,]/g, ' ').replace(/\s+/g, ' ').trim();
+    const keysToUpdate = Array.from(new Set([cleanKey, rawLower, normKey])).filter(Boolean);
 
-    if (isBanner) {
-      overrides[cleanKey].bannerImage = finalImageSrc;
-    } else {
-      overrides[cleanKey].coverImage = finalImageSrc;
+    for (const k of keysToUpdate) {
+      overrides[k] = overrides[k] || {
+        coverImage: finalImageSrc,
+        bannerImage: finalImageSrc,
+        rating: 95,
+        genres: ['Game Quán Xóm']
+      };
+
+      if (isBanner) {
+        overrides[k].bannerImage = finalImageSrc;
+      } else {
+        overrides[k].coverImage = finalImageSrc;
+      }
     }
     saveArtMapOverrides(overrides);
 

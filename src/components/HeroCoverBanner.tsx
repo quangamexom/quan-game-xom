@@ -177,6 +177,7 @@ const HeroSlideContent: React.FC<HeroSlideContentProps> = ({
                   src={effectiveCover}
                   alt={cleanTitle}
                   className="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105"
+                  referrerPolicy="no-referrer"
                 />
               )}
 

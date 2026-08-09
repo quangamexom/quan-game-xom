@@ -153,6 +153,7 @@ export const Logo: React.FC<LogoProps> = ({
               src={customImage} 
               alt="Logo Quán Game Xóm" 
               className="w-full h-full object-cover rounded-full"
+              referrerPolicy="no-referrer"
               onError={() => {
                 if (customImage !== DEFAULT_LOGO_URL && customImage !== '/assets/logo/logo-qgx-default.png') {
                   setCustomImage('/assets/logo/logo-qgx-default.png');

@@ -167,6 +167,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                 alt={game.title}
                 onError={handleBannerImgError}
                 className="w-full h-full object-cover object-center filter brightness-90 group-hover:scale-105 transition-transform duration-500"
+                referrerPolicy="no-referrer"
               />
             ) : !bannerState.isLoading && (
               <div
@@ -238,6 +239,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                     alt={game.title}
                     onError={handleAvatarImgError}
                     className="w-full h-full object-cover object-center"
+                    referrerPolicy="no-referrer"
                   />
                 ) : !coverState.isLoading && (
                   <div
