@@ -89,7 +89,7 @@ export const Logo: React.FC<LogoProps> = ({
   };
 
   const resetToDefaultLogo = () => {
-    const defaultUrl = DEFAULT_LOGO_URL || '/assets/logo/logo-qgx-default.png';
+    const defaultUrl = DEFAULT_LOGO_URL || '/assets/logo/logo-qgx-default.svg';
     localStorage.removeItem('quan_game_xom_custom_logo');
     saveLogoToServerAndLocal(defaultUrl);
   };
@@ -151,7 +151,6 @@ export const Logo: React.FC<LogoProps> = ({
               alt="QUÁN GAME XÓM Logo" 
               className="w-full h-full object-cover"
               onError={() => {
-                console.warn('Image failed to load, falling back to SVG vector logo');
                 setImgError(true);
               }}
             />

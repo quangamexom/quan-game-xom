@@ -123,7 +123,7 @@ export function getManualCover(gameId: string, title: string): string | null {
 }
 
 /**
- * Save manual cover override to localStorage (Base64 data URL)
+ * Save manual cover override to localStorage (Base64 data URL) and post to Server API
  */
 export function saveManualCover(gameId: string, title: string, base64DataUrl: string): void {
   try {
@@ -134,6 +134,18 @@ export function saveManualCover(gameId: string, title: string, base64DataUrl: st
     window.dispatchEvent(new CustomEvent('game-cover-updated', {
       detail: { gameId, title, coverUrl: base64DataUrl }
     }));
+
+    // Post to Server API to persist to disk & gameArtMap.ts
+    fetch('/api/save-game-art', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        gameId,
+        title,
+        imageType: 'cover',
+        fileData: base64DataUrl
+      })
+    }).catch((err) => console.warn('Failed to post manual cover to server:', err));
   } catch (e) {
     console.warn('Failed to save manual cover to localStorage:', e);
   }
@@ -170,7 +182,7 @@ export function getManualBanner(gameId: string, title: string): string | null {
 }
 
 /**
- * Save manual banner override to localStorage (Base64 data URL)
+ * Save manual banner override to localStorage (Base64 data URL) and post to Server API
  */
 export function saveManualBanner(gameId: string, title: string, base64DataUrl: string): void {
   try {
@@ -181,10 +193,74 @@ export function saveManualBanner(gameId: string, title: string, base64DataUrl: s
     window.dispatchEvent(new CustomEvent('game-banner-updated', {
       detail: { gameId, title, bannerUrl: base64DataUrl }
     }));
+
+    // Post to Server API to persist to disk & gameArtMap.ts
+    fetch('/api/save-game-art', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        gameId,
+        title,
+        imageType: 'banner',
+        fileData: base64DataUrl
+      })
+    }).catch((err) => console.warn('Failed to post manual banner to server:', err));
   } catch (e) {
     console.warn('Failed to save manual banner to localStorage:', e);
   }
 }
+
+/**
+ * Sync all manual covers and banners currently in browser localStorage to Server
+ */
+export async function syncAllLocalCoversToServer(): Promise<number> {
+  try {
+    let syncedCount = 0;
+    const pendingItems: Array<{ title: string; imageType: 'cover' | 'banner'; fileData: string }> = [];
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+
+      if (key.startsWith('manual_cover_title_')) {
+        const title = key.replace('manual_cover_title_', '');
+        const dataUrl = localStorage.getItem(key);
+        if (dataUrl) {
+          pendingItems.push({ title, imageType: 'cover', fileData: dataUrl });
+        }
+      } else if (key.startsWith('manual_banner_title_')) {
+        const title = key.replace('manual_banner_title_', '');
+        const dataUrl = localStorage.getItem(key);
+        if (dataUrl) {
+          pendingItems.push({ title, imageType: 'banner', fileData: dataUrl });
+        }
+      }
+    }
+
+    for (const item of pendingItems) {
+      try {
+        const res = await fetch('/api/save-game-art', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(item)
+        });
+        if (res.ok) syncedCount++;
+      } catch (err) {
+        console.warn('Error syncing item to server:', item.title, err);
+      }
+    }
+
+    return syncedCount;
+  } catch (e) {
+    console.warn('Failed to sync local covers to server:', e);
+    return 0;
+  }
+}
+
+// Automatically trigger sync on service module import
+setTimeout(() => {
+  syncAllLocalCoversToServer();
+}, 1500);
 
 /**
  * Remove manual banner override from localStorage
