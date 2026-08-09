@@ -11,6 +11,39 @@ const PORT = 3000;
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Express Static Serving for Public Uploaded Assets
+app.use("/assets", express.static(path.join(process.cwd(), "public", "assets")));
+
+// Helper function to read persistent art map overrides
+function getArtMapOverrides(): Record<string, { coverImage?: string; bannerImage?: string; rating?: number; genres?: string[] }> {
+  try {
+    const overridesPath = path.join(process.cwd(), "public", "assets", "covers", "gameArtOverrides.json");
+    if (fs.existsSync(overridesPath)) {
+      const content = fs.readFileSync(overridesPath, "utf-8");
+      return JSON.parse(content);
+    }
+  } catch (err) {
+    console.warn("[getArtMapOverrides error]:", err);
+  }
+  return {};
+}
+
+// Save persistent art map overrides
+function saveArtMapOverrides(overrides: Record<string, any>) {
+  try {
+    const publicDir = path.join(process.cwd(), "public", "assets", "covers");
+    const srcDir = path.join(process.cwd(), "src", "assets", "covers");
+    if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
+    if (!fs.existsSync(srcDir)) fs.mkdirSync(srcDir, { recursive: true });
+
+    const content = JSON.stringify(overrides, null, 2);
+    fs.writeFileSync(path.join(publicDir, "gameArtOverrides.json"), content, "utf-8");
+    fs.writeFileSync(path.join(srcDir, "gameArtOverrides.json"), content, "utf-8");
+  } catch (err) {
+    console.warn("[saveArtMapOverrides error]:", err);
+  }
+}
+
 // 0. Secure Admin Password Verification Route
 app.post("/api/admin/verify", (req, res) => {
   try {
@@ -205,7 +238,23 @@ app.post("/api/save-game-art", async (req, res) => {
       }
     }
 
-    // B. Update local gameArtMap.ts on disk
+    // B. Update persistent gameArtOverrides.json
+    const overrides = getArtMapOverrides();
+    overrides[cleanKey] = overrides[cleanKey] || {
+      coverImage: finalImageSrc,
+      bannerImage: finalImageSrc,
+      rating: 95,
+      genres: ['Game Quán Xóm']
+    };
+
+    if (isBanner) {
+      overrides[cleanKey].bannerImage = finalImageSrc;
+    } else {
+      overrides[cleanKey].coverImage = finalImageSrc;
+    }
+    saveArtMapOverrides(overrides);
+
+    // C. Update local gameArtMap.ts on disk
     const artMapPath = path.join(process.cwd(), "src", "data", "gameArtMap.ts");
     let fileContent = "";
     if (fs.existsSync(artMapPath)) {
@@ -235,7 +284,7 @@ app.post("/api/save-game-art", async (req, res) => {
 
     fs.writeFileSync(artMapPath, fileContent, "utf-8");
 
-    // C. Attempt GitHub API Commit if GITHUB_TOKEN & GITHUB_REPO present
+    // D. Attempt GitHub API Commit if GITHUB_TOKEN & GITHUB_REPO present
     let savedToGithub = false;
     const githubToken = process.env.GITHUB_TOKEN;
     const githubRepo = process.env.GITHUB_REPO;
@@ -284,6 +333,7 @@ app.post("/api/save-game-art", async (req, res) => {
       cleanKey,
       finalImageSrc,
       savedToGithub,
+      artMap: overrides,
       message: savedToGithub
         ? "Đã lưu ảnh và commit thành công lên GitHub Repository!"
         : "Đã lưu ảnh thành công vào gameArtMap trên Server!"
@@ -294,11 +344,21 @@ app.post("/api/save-game-art", async (req, res) => {
   }
 });
 
+// GET Server Art Map
+app.get("/api/get-server-art-map", (req, res) => {
+  try {
+    const overrides = getArtMapOverrides();
+    return res.json({ success: true, artMap: overrides });
+  } catch (err: any) {
+    return res.json({ success: true, artMap: {} });
+  }
+});
+
 // Get Current Custom Logo
 app.get("/api/get-logo", (req, res) => {
   try {
     const customLogoPath = path.join(process.cwd(), "src/data/customLogo.ts");
-    const defaultLogoUrl = "/assets/logo/logo-qgx-default.svg";
+    const defaultLogoUrl = "/assets/logo/logo-qgx-default.png";
     let logoUrl = defaultLogoUrl;
 
     if (fs.existsSync(customLogoPath)) {
@@ -311,7 +371,7 @@ app.get("/api/get-logo", (req, res) => {
 
     return res.json({ success: true, logoUrl, defaultLogoUrl });
   } catch (err: any) {
-    return res.json({ success: true, logoUrl: "/assets/logo/logo-qgx-default.svg" });
+    return res.json({ success: true, logoUrl: "/assets/logo/logo-qgx-default.png" });
   }
 });
 

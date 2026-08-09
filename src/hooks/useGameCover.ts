@@ -61,7 +61,26 @@ export function useGameCover(game: GameItem): UseGameCoverResult {
       }
     };
 
+    const handleServerArtUpdate = () => {
+      const existingManual = getManualCover(game.id, game.title);
+      if (!existingManual) {
+        setIsLoading(true);
+        fetchRawgCover(game.title)
+          .then((res) => {
+            if (!isMounted) return;
+            if (res && res.coverImage) {
+              setRawgCover(res.coverImage);
+              if (res.rating) setRawgRating(res.rating);
+            }
+          })
+          .finally(() => {
+            if (isMounted) setIsLoading(false);
+          });
+      }
+    };
+
     window.addEventListener('game-cover-updated', handleCoverEvent);
+    window.addEventListener('server-art-map-updated', handleServerArtUpdate);
     window.addEventListener('storage', syncManualCover);
 
     const existingManual = getManualCover(game.id, game.title);
@@ -90,6 +109,7 @@ export function useGameCover(game: GameItem): UseGameCoverResult {
     return () => {
       isMounted = false;
       window.removeEventListener('game-cover-updated', handleCoverEvent);
+      window.removeEventListener('server-art-map-updated', handleServerArtUpdate);
       window.removeEventListener('storage', syncManualCover);
     };
   }, [game.id, game.title]);
@@ -183,7 +203,25 @@ export function useGameBanner(game: GameItem): UseGameBannerResult {
       }
     };
 
+    const handleServerArtUpdate = () => {
+      const existingManual = getManualBanner(game.id, game.title);
+      if (!existingManual) {
+        setIsLoading(true);
+        fetchRawgBanner(game.title)
+          .then((res) => {
+            if (!isMounted) return;
+            if (res && res.bannerImage) {
+              setRawgBanner(res.bannerImage);
+            }
+          })
+          .finally(() => {
+            if (isMounted) setIsLoading(false);
+          });
+      }
+    };
+
     window.addEventListener('game-banner-updated', handleBannerEvent);
+    window.addEventListener('server-art-map-updated', handleServerArtUpdate);
     window.addEventListener('storage', syncManualBanner);
 
     const existingManual = getManualBanner(game.id, game.title);
@@ -211,6 +249,7 @@ export function useGameBanner(game: GameItem): UseGameBannerResult {
     return () => {
       isMounted = false;
       window.removeEventListener('game-banner-updated', handleBannerEvent);
+      window.removeEventListener('server-art-map-updated', handleServerArtUpdate);
       window.removeEventListener('storage', syncManualBanner);
     };
   }, [game.id, game.title]);

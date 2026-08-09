@@ -210,6 +210,28 @@ export function saveManualBanner(gameId: string, title: string, base64DataUrl: s
   }
 }
 
+// Dynamic Server Art Map fetched from backend API
+export let DYNAMIC_SERVER_ART_MAP: Record<string, { coverImage?: string; bannerImage?: string; rating?: number; genres?: string[] }> = {};
+
+export async function loadServerArtMap(): Promise<Record<string, any>> {
+  try {
+    const res = await fetch('/api/get-server-art-map');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.success && data.artMap) {
+        DYNAMIC_SERVER_ART_MAP = { ...DYNAMIC_SERVER_ART_MAP, ...data.artMap };
+        window.dispatchEvent(new CustomEvent('server-art-map-updated', { detail: { artMap: DYNAMIC_SERVER_ART_MAP } }));
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to load server art map:', err);
+  }
+  return DYNAMIC_SERVER_ART_MAP;
+}
+
+// Immediately trigger loading server art map on import
+loadServerArtMap();
+
 /**
  * Sync all manual covers and banners currently in browser localStorage to Server
  */
@@ -248,6 +270,10 @@ export async function syncAllLocalCoversToServer(): Promise<number> {
       } catch (err) {
         console.warn('Error syncing item to server:', item.title, err);
       }
+    }
+
+    if (syncedCount > 0 || pendingItems.length > 0) {
+      await loadServerArtMap();
     }
 
     return syncedCount;
@@ -355,7 +381,29 @@ async function queryRawgSearchResults(cleanedTitle: string): Promise<any[] | nul
 async function queryGameArtFromProviders(cleanedTitle: string): Promise<{ coverImage: string | null; bannerImage: string | null; rating: number | null; genres: string[] } | null> {
   const normKey = cleanedTitle.toLowerCase().replace(/[:\-\—\–\/\_\.\,]/g, ' ').replace(/\s+/g, ' ').trim();
 
-  // 1. Check KNOWN_GAME_ART first (Instant, zero latency)
+  // 0. Check DYNAMIC_SERVER_ART_MAP first (Dynamically saved on backend)
+  if (DYNAMIC_SERVER_ART_MAP[normKey]) {
+    const da = DYNAMIC_SERVER_ART_MAP[normKey];
+    return {
+      coverImage: da.coverImage || null,
+      bannerImage: da.bannerImage || null,
+      rating: da.rating || 95,
+      genres: da.genres || ['Game Quán Xóm']
+    };
+  }
+
+  for (const [key, da] of Object.entries(DYNAMIC_SERVER_ART_MAP)) {
+    if (normKey.includes(key) || key.includes(normKey)) {
+      return {
+        coverImage: da.coverImage || null,
+        bannerImage: da.bannerImage || null,
+        rating: da.rating || 95,
+        genres: da.genres || ['Game Quán Xóm']
+      };
+    }
+  }
+
+  // 1. Check KNOWN_GAME_ART next (Static fallback)
   if (KNOWN_GAME_ART[normKey]) {
     const ka = KNOWN_GAME_ART[normKey];
     return {
