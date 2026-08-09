@@ -2,6 +2,24 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      (function() {
+        window.addEventListener('unhandledrejection', function(e) {
+          var r = e && e.reason ? String(e.reason.message || e.reason) : '';
+          if (r.indexOf('WebSocket') !== -1 || r.indexOf('websocket') !== -1) {
+            if (e.preventDefault) e.preventDefault();
+            if (e.stopPropagation) e.stopPropagation();
+          }
+        }, true);
+        window.addEventListener('error', function(e) {
+          var msg = e && e.message ? String(e.message) : '';
+          if (msg.indexOf('WebSocket') !== -1 || msg.indexOf('websocket') !== -1 || msg.indexOf('[vite]') !== -1) {
+            if (e.preventDefault) e.preventDefault();
+            if (e.stopPropagation) e.stopPropagation();
+          }
+        }, true);
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>QUÁN GAME XÓM - Lớp U40/50 Chuyên Ngành Game Thủ</title>
     <link rel="icon" type="image/png" href="/assets/logo/logo-qgx-default.png" />

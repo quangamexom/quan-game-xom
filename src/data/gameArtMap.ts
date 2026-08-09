@@ -1,5 +1,6 @@
 // Comprehensive Game Art Mapping for Popular Retro & Modern Games
 // Uses high-definition official Steam App posters (600x900) & headers, plus curated art for retro classics.
+import gameArtOverrides from './gameArtOverrides.json';
 
 export interface StaticGameArt {
   steamId?: string;
@@ -10,6 +11,30 @@ export interface StaticGameArt {
 }
 
 export const KNOWN_GAME_ART: Record<string, StaticGameArt> = {
+  'diner dash collection': {
+    coverImage: 'https://cdn2.steamgriddb.com/thumb/90140a664ee612fb2ea3a32c766feab6.jpg',
+    bannerImage: 'https://cdn2.steamgriddb.com/thumb/9af5a9fcea33795bde41aef4dcf451f5.jpg',
+    rating: 95,
+    genres: ['Game Quán Xóm']
+  },
+  'yu gi oh! forbidden memories • qgx collection': {
+    coverImage: 'https://cdn2.steamgriddb.com/thumb/fb3fb416095812f23a22302e9efe50b6.jpg',
+    bannerImage: 'https://cdn2.steamgriddb.com/thumb/70bf8d252ff7a9cf7f7637257eb9bcd0.jpg',
+    rating: 95,
+    genres: ['Game Quán Xóm']
+  },
+  'zoo tycoon collection': {
+    coverImage: 'https://cdn2.steamgriddb.com/thumb/26bdccf0500d76571990bfe323bb5be3.jpg',
+    bannerImage: 'https://cdn2.steamgriddb.com/thumb/61d427b812eea882235a3ae3ce613dd2.jpg',
+    rating: 95,
+    genres: ['Game Quán Xóm']
+  },
+  'wars and warriors joan of arc': {
+    coverImage: 'https://cdn2.steamgriddb.com/thumb/459614c0a230bf994ea48ef35b71c4ab.jpg',
+    bannerImage: 'https://cdn2.steamgriddb.com/hero_thumb/3cfbdf468f0a03187f6cee51a25e5e9a.jpg',
+    rating: 95,
+    genres: ['Game Quán Xóm']
+  },
   // Wukong
   'black myth wukong': {
     steamId: '2358720',
@@ -28,27 +53,27 @@ export const KNOWN_GAME_ART: Record<string, StaticGameArt> = {
   },
   'god of war': {
     steamId: '1593500',
-    coverImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/1593500/library_600x900.jpg',
-    bannerImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/1593500/header.jpg',
+    coverImage: 'https://cdn2.steamgriddb.com/thumb/72d0eaa80cc3412fda4a133ca1f884e8.jpg',
+    bannerImage: 'https://cdn2.steamgriddb.com/hero_thumb/261474eb96c1fdc6456d2abef7019e45.jpg',
     rating: 97,
     genres: ['Hành Động', 'Thần Thoại']
   },
   'god of war chains of olympus': {
-    coverImage: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=600&auto=format&fit=crop',
-    bannerImage: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop',
+    coverImage: 'https://cdn2.steamgriddb.com/thumb/63719b0a1928ddc9f968cb69bffe2f81.jpg',
+    bannerImage: 'https://cdn2.steamgriddb.com/hero_thumb/955cb567b6e38f4c6b3f28cc857fc38c.jpg',
     rating: 92,
     genres: ['Giả Lập PSP', 'Hành Động']
   },
   'god of war ghost of sparta': {
-    coverImage: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=600&auto=format&fit=crop',
-    bannerImage: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1200&auto=format&fit=crop',
+    coverImage: 'https://cdn2.steamgriddb.com/thumb/1f751f12b2347aeaa24c1c1184996a0d.jpg',
+    bannerImage: 'https://cdn2.steamgriddb.com/thumb/fc0be25cb10bf01fddcebc63d4fbf35a.jpg',
     rating: 93,
     genres: ['Giả Lập PSP', 'Hành Động']
   },
   // Starcraft
   'starcraft gundam century': {
     steamId: '208650',
-    coverImage: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?q=80&w=600&auto=format&fit=crop',
+    coverImage: '/assets/covers/starcraft_gundam_century-cover.jpg?t=1786284706752',
     bannerImage: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop',
     rating: 95,
     genres: ['Chiến Thuật', 'RTS', 'Kinh Điển']
@@ -105,8 +130,8 @@ export const KNOWN_GAME_ART: Record<string, StaticGameArt> = {
   },
   'grand theft auto v': {
     steamId: '271590',
-    coverImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/271590/library_600x900.jpg',
-    bannerImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/271590/header.jpg',
+    coverImage: 'https://cdn2.steamgriddb.com/thumb/a300cda08d24b7cf1cf45bd4eba1ae0b.jpg',
+    bannerImage: 'https://cdn2.steamgriddb.com/hero_thumb/7ba60d3ddc1e74bacf9e12dfafbb9ad3.jpg',
     rating: 97,
     genres: ['Thế Giới Mở', 'Hành Động']
   },
@@ -531,3 +556,16 @@ export const KNOWN_GAME_ART: Record<string, StaticGameArt> = {
     genres: ['Lén Lút', 'Hành Động']
   }
 };
+
+// Merge server overrides into static KNOWN_GAME_ART for production static builds (e.g. Vercel)
+if (gameArtOverrides && typeof gameArtOverrides === 'object') {
+  for (const [key, val] of Object.entries(gameArtOverrides)) {
+    if (val && typeof val === 'object') {
+      const kLower = key.toLowerCase().trim();
+      KNOWN_GAME_ART[kLower] = {
+        ...KNOWN_GAME_ART[kLower],
+        ...(val as any)
+      };
+    }
+  }
+}

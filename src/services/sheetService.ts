@@ -137,7 +137,7 @@ export function parseGoogleSheetCSV(csvText: string): GameItem[] {
   return parsedGames.length > 0 ? parsedGames : INITIAL_GAMES;
 }
 
-export async function fetchSheetData(sheetUrlOrId: string, gid = '0'): Promise<GameItem[]> {
+export async function fetchSheetData(sheetUrlOrId: string = "1UafcEOp-1R6LWnnu36EQRp5V0b12K4fqho9X0qJYPy4", gid = '0'): Promise<GameItem[]> {
   try {
     const response = await fetch('/api/sheet-games');
     if (response.ok) {
@@ -147,8 +147,24 @@ export async function fetchSheetData(sheetUrlOrId: string, gid = '0'): Promise<G
       }
     }
   } catch (err) {
-    console.warn("Could not fetch from /api/sheet-games, using pre-loaded Google Sheet dataset.", err);
+    // API endpoint unavailable (e.g. static site on Vercel)
   }
+
+  // Direct CSV fetch fallback for static hosts (Vercel, GitHub Pages)
+  try {
+    const csvUrl = `https://docs.google.com/spreadsheets/d/1UafcEOp-1R6LWnnu36EQRp5V0b12K4fqho9X0qJYPy4/export?format=csv&gid=${gid}`;
+    const csvRes = await fetch(csvUrl);
+    if (csvRes.ok) {
+      const csvText = await csvRes.text();
+      const sheetGames = parseGoogleSheetCSV(csvText);
+      if (sheetGames && sheetGames.length > 0) {
+        return sheetGames;
+      }
+    }
+  } catch (err) {
+    console.warn("Direct CSV fetch fallback error, using pre-loaded dataset:", err);
+  }
+
   return INITIAL_GAMES;
 }
 
