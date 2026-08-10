@@ -67,8 +67,8 @@ app.get("/api/sheet-games", async (req, res) => {
     return res.json({
       success: true,
       count: googleSheetBackup.length,
-      sheetId: "1UafcEOp-1R6LWnnu36EQRp5V0b12K4fqho9X0qJYPy4",
-      sheetUrl: "https://docs.google.com/spreadsheets/d/1UafcEOp-1R6LWnnu36EQRp5V0b12K4fqho9X0qJYPy4/edit?gid=0#gid=0",
+      sheetId: "1VA8Wv9OQmrR4nDpf0SUFQiqC4IAoVSCswCjY37ChplM",
+      sheetUrl: "https://docs.google.com/spreadsheets/d/1VA8Wv9OQmrR4nDpf0SUFQiqC4IAoVSCswCjY37ChplM/edit?gid=0#gid=0",
       syncedAt: new Date().toISOString(),
       games: googleSheetBackup
     });
