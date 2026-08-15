@@ -5,6 +5,13 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import { put, list, del } from "@vercel/blob";
 import googleSheetBackup from "./src/data/googleSheetGames.json";
+import { 
+  readGamesLibrary, 
+  writeGamesLibrary, 
+  addGameToLibrary, 
+  updateGameInLibrary, 
+  removeGameFromLibrary 
+} from "./server/metadataStorage";
 
 const app = express();
 const PORT = 3000;
@@ -559,95 +566,17 @@ function getSystemMeta(systemCode: string = 'snes') {
   }
 }
 
-// Helpers for games-library.json persistence (Vercel Blob + Local Disk)
-async function loadGamesLibrary(): Promise<any[]> {
-  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
-  
-  // 1. Try reading from Vercel Blob if token available
-  if (blobToken) {
-    try {
-      const { blobs } = await list({ token: blobToken, prefix: 'roms-metadata/' });
-      const metadataBlob = blobs.find(b => b.pathname.includes('games-library.json'));
-      if (metadataBlob) {
-        const res = await fetch(`${metadataBlob.url}?t=${Date.now()}`);
-        if (res.ok) {
-          const listData = await res.json();
-          if (Array.isArray(listData)) {
-            return listData;
-          }
-        }
-      }
-    } catch (blobErr) {
-      console.warn("[Vercel Blob Metadata Read Warning]:", blobErr);
-    }
-  }
-
-  // 2. Fallback to reading from local disk
-  try {
-    const publicPath = path.join(process.cwd(), "public", "assets", "games-library.json");
-    if (fs.existsSync(publicPath)) {
-      const content = fs.readFileSync(publicPath, "utf-8");
-      const parsed = JSON.parse(content);
-      if (Array.isArray(parsed)) return parsed;
-    }
-    const srcPath = path.join(process.cwd(), "src", "data", "adminGamesLibrary.json");
-    if (fs.existsSync(srcPath)) {
-      const content = fs.readFileSync(srcPath, "utf-8");
-      const parsed = JSON.parse(content);
-      if (Array.isArray(parsed)) return parsed;
-    }
-  } catch (diskErr) {
-    console.warn("[Disk Metadata Read Warning]:", diskErr);
-  }
-
-  return [];
-}
-
-async function saveGamesLibrary(games: any[]): Promise<boolean> {
-  const jsonContent = JSON.stringify(games, null, 2);
-
-  // 1. Save to local disk for persistence
-  try {
-    const publicAssetsDir = path.join(process.cwd(), "public", "assets");
-    const srcDataDir = path.join(process.cwd(), "src", "data");
-    if (!fs.existsSync(publicAssetsDir)) fs.mkdirSync(publicAssetsDir, { recursive: true });
-    if (!fs.existsSync(srcDataDir)) fs.mkdirSync(srcDataDir, { recursive: true });
-
-    fs.writeFileSync(path.join(publicAssetsDir, "games-library.json"), jsonContent, "utf-8");
-    fs.writeFileSync(path.join(srcDataDir, "adminGamesLibrary.json"), jsonContent, "utf-8");
-  } catch (fsErr) {
-    console.warn("[Disk Metadata Save Warning]:", fsErr);
-  }
-
-  // 2. Save to Vercel Blob
-  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
-  if (blobToken) {
-    try {
-      await put('roms-metadata/games-library.json', Buffer.from(jsonContent), {
-        access: 'public',
-        token: blobToken,
-        addRandomSuffix: false,
-        contentType: 'application/json'
-      });
-      console.log(`[Vercel Blob] Saved games-library.json metadata (${games.length} games)`);
-      return true;
-    } catch (blobErr) {
-      console.warn("[Vercel Blob Metadata Save Warning]:", blobErr);
-    }
-  }
-
-  return true;
-}
-
 // 4. Vercel Blob Storage Admin Routes for direct public ROM storage & Metadata Library
 
 // Public API to get Admin Uploaded Games Library
 app.get("/api/games/admin-library", async (req, res) => {
   try {
     const includeHidden = req.query.includeHidden === 'true';
-    const allGames = await loadGamesLibrary();
+    const allGames = await readGamesLibrary();
     const result = includeHidden ? allGames : allGames.filter(g => !g.isHidden);
     
+    // Send standard cache control headers (no-cache for always-fresh metadata)
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     return res.json({
       success: true,
       count: result.length,
@@ -692,14 +621,22 @@ app.post("/api/admin/blob/upload", async (req, res) => {
     const cleanFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
     const blobPath = `roms/${cleanFilename}`;
 
-    const blobResult = await put(blobPath, buffer, {
-      access: "public",
-      token: blobToken,
-      addRandomSuffix: false,
-      contentType: contentType || "application/octet-stream"
-    });
-
-    console.log(`[Vercel Blob] Uploaded ROM successfully: ${blobResult.url} (${buffer.length} bytes)`);
+    let blobResult;
+    try {
+      blobResult = await put(blobPath, buffer, {
+        access: "public",
+        token: blobToken,
+        addRandomSuffix: false,
+        contentType: contentType || "application/octet-stream"
+      });
+      console.log(`[Vercel Blob] Uploaded ROM successfully: ${blobResult.url} (${buffer.length} bytes)`);
+    } catch (uploadErr: any) {
+      console.error("[Vercel Blob Upload Error]:", uploadErr);
+      return res.status(500).json({
+        success: false,
+        error: `Lỗi khi tải file ROM lên Vercel Blob Storage: ${uploadErr.message || uploadErr}`
+      });
+    }
 
     // Prepare Game Card details
     const selectedSystem = (system || 'snes').toLowerCase();
@@ -742,13 +679,18 @@ app.post("/api/admin/blob/upload", async (req, res) => {
       isHidden: false
     };
 
-    // Load existing metadata, prepend new game, and save
-    const currentLibrary = await loadGamesLibrary();
-    // Remove if already exists with same romUrl or id
-    const filteredLibrary = currentLibrary.filter(g => g.romUrl !== blobResult.url && g.id !== uniqueId);
-    filteredLibrary.unshift(newGameCard);
-
-    await saveGamesLibrary(filteredLibrary);
+    // Save metadata using dedicated storage helper (Cloud-first persistence on Vercel Blob)
+    try {
+      await addGameToLibrary(newGameCard);
+    } catch (metaErr: any) {
+      console.error("[Vercel Blob Metadata Save Error]:", metaErr);
+      return res.status(500).json({
+        success: false,
+        error: `ROM uploaded but metadata save failed: ${metaErr.message || metaErr}`,
+        romUrl: blobResult.url,
+        hint: "File ROM đã tải lên thành công nhưng không thể ghi metadata vào Vercel Blob. Vui lòng thử lại hoặc kiểm tra quyền ghi của BLOB_READ_WRITE_TOKEN."
+      });
+    }
 
     return res.json({
       success: true,
@@ -760,10 +702,10 @@ app.post("/api/admin/blob/upload", async (req, res) => {
       message: `Tải file ROM "${displayTitle}" lên Vercel Blob và tạo thẻ game thành công!`
     });
   } catch (err: any) {
-    console.error("[Vercel Blob Upload Error]:", err);
+    console.error("[Vercel Blob Handler Error]:", err);
     return res.status(500).json({
       success: false,
-      error: err.message || "Lỗi khi tải file lên Vercel Blob Storage."
+      error: err.message || "Lỗi xử lý upload ROM."
     });
   }
 });
@@ -776,20 +718,20 @@ app.post("/api/admin/games/toggle-visibility", async (req, res) => {
       return res.status(400).json({ success: false, error: "Thiếu ID game cần chuyển trạng thái." });
     }
 
-    const currentLibrary = await loadGamesLibrary();
+    const currentLibrary = await readGamesLibrary();
     const game = currentLibrary.find(g => g.id === id || g.romUrl === id);
     if (!game) {
       return res.status(404).json({ success: false, error: "Không tìm thấy game trong danh sách metadata." });
     }
 
-    game.isHidden = typeof isHidden === 'boolean' ? isHidden : !game.isHidden;
-    await saveGamesLibrary(currentLibrary);
+    const nextHiddenState = typeof isHidden === 'boolean' ? isHidden : !game.isHidden;
+    const updatedGame = await updateGameInLibrary(game.id, { isHidden: nextHiddenState });
 
     return res.json({
       success: true,
       id: game.id,
-      isHidden: game.isHidden,
-      message: game.isHidden ? "Đã ẩn game khỏi Thư Viện Công Khai." : "Đã hiện game lên Thư Viện Công Khai."
+      isHidden: updatedGame?.isHidden ?? nextHiddenState,
+      message: nextHiddenState ? "Đã ẩn game khỏi Thư Viện Công Khai." : "Đã hiện game lên Thư Viện Công Khai."
     });
   } catch (err: any) {
     console.error("[Toggle Visibility Error]:", err);
@@ -801,7 +743,7 @@ app.post("/api/admin/games/toggle-visibility", async (req, res) => {
 app.get("/api/admin/blob/list", async (req, res) => {
   try {
     const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
-    const library = await loadGamesLibrary();
+    const library = await readGamesLibrary();
 
     if (!blobToken) {
       return res.json({
@@ -855,10 +797,8 @@ app.delete("/api/admin/blob/delete", async (req, res) => {
       return res.status(400).json({ success: false, error: "Thiếu tham số 'url' hoặc 'id' cần xóa." });
     }
 
-    // 1. Delete from games-library.json
-    const library = await loadGamesLibrary();
-    const updatedLibrary = library.filter(g => g.romUrl !== url && g.id !== id);
-    await saveGamesLibrary(updatedLibrary);
+    // 1. Delete from persistent games-library.json
+    await removeGameFromLibrary(id || url);
 
     // 2. Delete ROM file from Vercel Blob if url provided
     const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
@@ -928,7 +868,7 @@ app.get("/api/snes-games", async (req, res) => {
 
   try {
     // Load admin blob games for SNES (or retro)
-    const adminGames = await loadGamesLibrary();
+    const adminGames = await readGamesLibrary();
     const activeAdminGames = adminGames.filter(g => !g.isHidden && (g.emulatorCore === 'snes' || g.system === 'snes' || !g.emulatorCore));
 
     const sheetId = (req.query.sheetId as string) || "103Kz3v0fGN30BIhlaKMQ2IJNJ82GPif92OSgt_LtyG0";
