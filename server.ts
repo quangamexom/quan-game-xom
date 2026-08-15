@@ -3,6 +3,7 @@ import path from "path";
 import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
+import { put, list, del } from "@vercel/blob";
 import googleSheetBackup from "./src/data/googleSheetGames.json";
 
 const app = express();
@@ -482,204 +483,122 @@ app.post("/api/save-logo", async (req, res) => {
   }
 });
 
-// 4. ROM Proxy Route for EmulatorJS (Streams romUrl and prevents CORS issues with Google Drive)
-app.get("/api/rom-proxy", async (req, res) => {
+// 4. Vercel Blob Storage Admin Routes for direct public ROM storage
+// Upload ROM file directly to Vercel Blob
+app.post("/api/admin/blob/upload", async (req, res) => {
   try {
-    const rawUrl = req.query.url as string;
-    if (!rawUrl || typeof rawUrl !== "string" || rawUrl.trim().length === 0) {
-      console.warn("[ROM Proxy] Bad Request: Missing 'url' parameter");
+    const { filename, fileData, contentType } = req.body;
+    if (!filename || !fileData) {
       return res.status(400).json({ 
         success: false, 
-        error: "Thiếu tham số 'url' của file ROM." 
+        error: "Thiếu tên file (filename) hoặc nội dung tệp (fileData)!" 
       });
     }
 
-    let targetUrl = decodeURIComponent(rawUrl.trim());
-    console.log(`[ROM Proxy] Received request for ROM URL: "${targetUrl}"`);
-
-    let fileId = "";
-    const isGoogleDrive = targetUrl.includes("drive.google.com") || 
-                          targetUrl.includes("docs.google.com") || 
-                          targetUrl.includes("drive.usercontent.google.com");
-
-    if (isGoogleDrive) {
-      const fileMatch = targetUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-      const idMatch = targetUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-      if (fileMatch) {
-        fileId = fileMatch[1];
-      } else if (idMatch) {
-        fileId = idMatch[1];
-      }
-      console.log(`[ROM Proxy] Detected Google Drive File ID: "${fileId || 'None'}"`);
-    }
-
-    // List of candidate URLs to fetch from (for Google Drive, test direct download endpoints)
-    const candidateUrls: string[] = [];
-    if (fileId) {
-      candidateUrls.push(`https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`);
-      candidateUrls.push(`https://drive.google.com/uc?export=download&id=${fileId}&confirm=t`);
-      candidateUrls.push(`https://docs.google.com/uc?export=download&id=${fileId}&confirm=t`);
-    }
-    candidateUrls.push(targetUrl);
-
-    let finalBuffer: Buffer | null = null;
-    let finalContentType = "application/octet-stream";
-    let lastStatus = 500;
-    let lastErrorDetails = "";
-    let isPermissionError = false;
-
-    // Helper to fetch with full redirect following and cookie extraction
-    for (const urlToTry of candidateUrls) {
-      console.log(`[ROM Proxy] Attempting fetch from: ${urlToTry}`);
-      try {
-        let cookieHeader = "";
-        let response = await fetch(urlToTry, {
-          headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-            "Accept": "*/*",
-            "Accept-Language": "en-US,en;q=0.9,vi;q=0.8"
-          },
-          redirect: "follow"
-        });
-
-        lastStatus = response.status;
-        const contentType = response.headers.get("content-type") || "";
-        const contentLength = response.headers.get("content-length") || "unknown";
-
-        // Capture Set-Cookie if any for confirmation redirects
-        const setCookie = response.headers.get("set-cookie");
-        if (setCookie) {
-          cookieHeader = setCookie.split(";")[0];
-        }
-
-        console.log(`[ROM Proxy] -> Response Status: ${response.status}, Content-Type: "${contentType}", Content-Length: ${contentLength}`);
-
-        if (!response.ok) {
-          console.warn(`[ROM Proxy] Fetch returned non-OK status: ${response.status}`);
-          lastErrorDetails = `Server từ chối kết nối (Mã HTTP: ${response.status}).`;
-          if (response.status === 403 || response.status === 401) {
-            isPermissionError = true;
-          }
-          continue;
-        }
-
-        // If response is HTML, Google Drive might be returning a confirmation page or login page
-        if (contentType.includes("text/html")) {
-          const htmlText = await response.text();
-          console.log(`[ROM Proxy] Received HTML (${htmlText.length} bytes). Checking page contents...`);
-
-          // 1. Check if permission is denied / required login
-          const lowerHtml = htmlText.toLowerCase();
-          if (
-            lowerHtml.includes("servicelogin") ||
-            lowerHtml.includes("accounts.google.com") ||
-            lowerHtml.includes("you need access") ||
-            lowerHtml.includes("yêu cầu quyền truy cập") ||
-            lowerHtml.includes("không có quyền truy cập") ||
-            lowerHtml.includes("access denied") ||
-            lowerHtml.includes("request access")
-          ) {
-            console.warn("[ROM Proxy] Permission Denied: Google Drive file requires login or is not shared publicly.");
-            isPermissionError = true;
-            lastErrorDetails = "File Google Drive chưa được mở quyền chia sẻ công khai ('Anyone with the link' / 'Bất kỳ ai có liên kết').";
-            break;
-          }
-
-          // 2. Check for virus scan confirmation form or link
-          const downloadLinkMatch = htmlText.match(/href="(\/uc\?export=download[^"]+)"/) ||
-                                    htmlText.match(/id="uc-download-link"[^>]+href="([^"]+)"/) ||
-                                    htmlText.match(/action="([^"]+download[^"]*)"/);
-
-          const confirmTokenMatch = htmlText.match(/name="confirm" value="([^"]+)"/);
-
-          if (downloadLinkMatch || confirmTokenMatch) {
-            let confirmUrl = "";
-            if (downloadLinkMatch) {
-              confirmUrl = downloadLinkMatch[1];
-              if (confirmUrl.startsWith("/")) {
-                confirmUrl = `https://drive.google.com${confirmUrl}`;
-              }
-            } else if (confirmTokenMatch && fileId) {
-              confirmUrl = `https://drive.google.com/uc?export=download&id=${fileId}&confirm=${confirmTokenMatch[1]}`;
-            }
-
-            if (confirmUrl) {
-              console.log(`[ROM Proxy] Following Google Drive confirmation link: ${confirmUrl}`);
-              const confirmRes = await fetch(confirmUrl, {
-                headers: {
-                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                  "Accept": "*/*",
-                  ...(cookieHeader ? { "Cookie": cookieHeader } : {})
-                },
-                redirect: "follow"
-              });
-
-              const confirmCt = confirmRes.headers.get("content-type") || "";
-              console.log(`[ROM Proxy] -> Confirmation Response Status: ${confirmRes.status}, Content-Type: "${confirmCt}"`);
-
-              if (confirmRes.ok && !confirmCt.includes("text/html")) {
-                finalBuffer = Buffer.from(await confirmRes.arrayBuffer());
-                finalContentType = confirmCt || "application/octet-stream";
-                break;
-              }
-            }
-          }
-
-          lastErrorDetails = "Google Drive trả về trang HTML thay vì dữ liệu tệp ROM nhị phân.";
-          continue;
-        }
-
-        // Successfully got binary content!
-        const arrayBuf = await response.arrayBuffer();
-        finalBuffer = Buffer.from(arrayBuf);
-        finalContentType = contentType || "application/octet-stream";
-        console.log(`[ROM Proxy] Successfully downloaded ROM binary (${finalBuffer.length} bytes)`);
-        break;
-      } catch (tryErr: any) {
-        console.error(`[ROM Proxy] Error attempting ${urlToTry}:`, tryErr.message || tryErr);
-        lastErrorDetails = tryErr.message || "Lỗi kết nối khi tải ROM";
-      }
-    }
-
-    if (finalBuffer && finalBuffer.length > 0) {
-      res.setHeader("Access-Control-Allow-Origin", "*");
-      res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS, HEAD");
-      res.setHeader("Access-Control-Allow-Headers", "*");
-      res.setHeader("Content-Type", finalContentType);
-      res.setHeader("Content-Length", finalBuffer.length);
-      res.setHeader("Cache-Control", "public, max-age=86400");
-      return res.send(finalBuffer);
-    }
-
-    // If we reach here, we could not fetch the binary ROM
-    if (isPermissionError) {
-      return res.status(403).json({
+    const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+    if (!blobToken) {
+      return res.status(400).json({
         success: false,
-        error: "File Google Drive chưa được mở quyền chia sẻ công khai ('Anyone with the link' / 'Bất kỳ ai có liên kết').",
-        details: "Trang Google Drive yêu cầu đăng nhập hoặc yêu cầu cấp quyền truy cập để tải file.",
-        driveFileId: fileId || undefined,
-        originalUrl: rawUrl,
-        statusCode: lastStatus,
-        hint: "Để khắc phục: Mở Google Drive -> Nhấp chuột phải vào file ROM -> Chọn Chia sẻ (Share) -> Chuyển thành 'Bất kỳ ai có đường liên kết' (Anyone with the link)."
+        error: "Chưa cấu hình biến môi trường BLOB_READ_WRITE_TOKEN trên Vercel/Server!",
+        hint: "Vui lòng cấu hình BLOB_READ_WRITE_TOKEN trong Settings / Environment Variables trên Vercel."
       });
     }
 
-    return res.status(422).json({
-      success: false,
-      error: "Không thể tải file ROM từ Google Drive.",
-      details: lastErrorDetails || `Google Drive trả về mã HTTP ${lastStatus} hoặc trang HTML thay vì tệp nhị phân.`,
-      driveFileId: fileId || undefined,
-      originalUrl: rawUrl,
-      statusCode: lastStatus,
-      hint: "Vui lòng kiểm tra lại liên kết file hoặc chắc chắn file ở chế độ chia sẻ công khai."
+    // Convert base64 data to Buffer
+    let buffer: Buffer;
+    if (fileData.startsWith("data:")) {
+      const base64Data = fileData.split(",")[1];
+      buffer = Buffer.from(base64Data, "base64");
+    } else {
+      buffer = Buffer.from(fileData, "base64");
+    }
+
+    // Sanitize filename and organize under roms/
+    const cleanFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const blobPath = `roms/${cleanFilename}`;
+
+    const blobResult = await put(blobPath, buffer, {
+      access: "public",
+      token: blobToken,
+      addRandomSuffix: false,
+      contentType: contentType || "application/octet-stream"
+    });
+
+    console.log(`[Vercel Blob] Uploaded ROM successfully: ${blobResult.url} (${buffer.length} bytes)`);
+
+    return res.json({
+      success: true,
+      url: blobResult.url,
+      pathname: blobResult.pathname,
+      contentType: blobResult.contentType,
+      size: buffer.length,
+      message: "Tải file ROM lên Vercel Blob thành công!"
     });
   } catch (err: any) {
-    console.error("[ROM Proxy Unhandled Exception]:", err);
+    console.error("[Vercel Blob Upload Error]:", err);
     return res.status(500).json({
       success: false,
-      error: "Lỗi hệ thống khi proxy tải ROM từ Google Drive.",
-      details: err.message || "Internal Proxy Server Error"
+      error: err.message || "Lỗi khi tải file lên Vercel Blob Storage."
     });
+  }
+});
+
+// List all uploaded ROMs in Vercel Blob
+app.get("/api/admin/blob/list", async (req, res) => {
+  try {
+    const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+    if (!blobToken) {
+      return res.json({
+        success: true,
+        hasToken: false,
+        blobs: [],
+        message: "Chưa cấu hình biến môi trường BLOB_READ_WRITE_TOKEN."
+      });
+    }
+
+    const { blobs } = await list({
+      token: blobToken,
+      prefix: "roms/"
+    });
+
+    return res.json({
+      success: true,
+      hasToken: true,
+      count: blobs.length,
+      blobs: blobs.map(b => ({
+        url: b.url,
+        pathname: b.pathname,
+        size: b.size,
+        uploadedAt: b.uploadedAt
+      }))
+    });
+  } catch (err: any) {
+    console.error("[Vercel Blob List Error]:", err);
+    return res.status(500).json({
+      success: false,
+      error: err.message || "Lỗi khi lấy danh sách ROM từ Vercel Blob."
+    });
+  }
+});
+
+// Delete a ROM from Vercel Blob
+app.delete("/api/admin/blob/delete", async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url) {
+      return res.status(400).json({ success: false, error: "Thiếu tham số 'url' cần xóa." });
+    }
+
+    const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+    if (!blobToken) {
+      return res.status(400).json({ success: false, error: "Chưa cấu hình BLOB_READ_WRITE_TOKEN." });
+    }
+
+    await del(url, { token: blobToken });
+    return res.json({ success: true, message: "Đã xóa file ROM khỏi Vercel Blob." });
+  } catch (err: any) {
+    console.error("[Vercel Blob Delete Error]:", err);
+    return res.status(500).json({ success: false, error: err.message || "Lỗi khi xóa file từ Vercel Blob." });
   }
 });
 
@@ -700,8 +619,8 @@ app.get("/api/snes-games", async (req, res) => {
       rating: 4.9,
       genres: ["SNES", "Hành Động", "Kinh Điển"],
       description: "Hóa thân thành Aladdin cùng chú khỉ Abu trong chuyến phiêu lưu kinh điển qua vương quốc Agrabah trên hệ máy Super Nintendo 16-bit mượt mà.",
-      romUrl: "https://drive.google.com/uc?export=download&id=1QGgmop-JEIKZ6kyV2HcHjHugdzb88Q7f",
-      downloadUrl: "https://drive.google.com/file/d/1QGgmop-JEIKZ6kyV2HcHjHugdzb88Q7f/view?usp=sharing",
+      romUrl: "https://archive.org/download/snes-romset-ultra/Aladdin%20%28USA%29.sfc",
+      downloadUrl: "https://archive.org/download/snes-romset-ultra/Aladdin%20%28USA%29.sfc",
       emulatorCore: "snes",
       isFeatured: true,
       isPopular: true,
@@ -722,8 +641,8 @@ app.get("/api/snes-games", async (req, res) => {
       rating: 4.95,
       genres: ["SNES", "Đua Xe", "Bắn Súng"],
       description: "Game đua xe mô tô chiến đấu huyền thoại của Konami trên SNES với 3 chú chuột chiến binh Throttle, Modo và Vinnie cùng kho vũ khí tối tân.",
-      romUrl: "https://drive.google.com/uc?export=download&id=1i9fsfy5lM-eKcQIh1raZpx7etQlGd-Mt",
-      downloadUrl: "https://drive.google.com/file/d/1i9fsfy5lM-eKcQIh1raZpx7etQlGd-Mt/view?usp=sharing",
+      romUrl: "https://archive.org/download/snes-romset-ultra/Biker%20Mice%20from%20Mars%20%28USA%29.sfc",
+      downloadUrl: "https://archive.org/download/snes-romset-ultra/Biker%20Mice%20from%20Mars%20%28USA%29.sfc",
       emulatorCore: "snes",
       isFeatured: true,
       isPopular: true,

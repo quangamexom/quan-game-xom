@@ -23,11 +23,14 @@ import {
   Flame,
   AlertTriangle,
   AlertCircle,
-  ExternalLink
+  ExternalLink,
+  Cloud
 } from 'lucide-react';
 import { fetchSnesGamesFromSheet, DEFAULT_SNES_TEST_GAMES, SNES_SHEET_ID } from '../services/sheetService';
 import { GameItem } from '../types';
 import { ShareGameMenu } from './ShareGameMenu';
+import { useAdminMode } from '../hooks/useAdminMode';
+import { AdminRomManagerModal } from './AdminRomManagerModal';
 
 export interface PresetRom {
   id: string;
@@ -126,6 +129,9 @@ export const presetRomToGameItem = (rom: PresetRom): GameItem => ({
 });
 
 export const EmulatorZone: React.FC = () => {
+  const { isAdmin } = useAdminMode();
+  const [isAdminRomModalOpen, setIsAdminRomModalOpen] = useState<boolean>(false);
+
   const [selectedCore, setSelectedCore] = useState<string>('snes');
   const [currentRomUrl, setCurrentRomUrl] = useState<string | null>(null);
   const [currentRomName, setCurrentRomName] = useState<string>('');
@@ -136,7 +142,7 @@ export const EmulatorZone: React.FC = () => {
   const [snesGames, setSnesGames] = useState<GameItem[]>(DEFAULT_SNES_TEST_GAMES);
   const [isLoadingSnesSheet, setIsLoadingSnesSheet] = useState<boolean>(false);
 
-  // Loading State for ROM Fetch via Proxy
+  // Loading State for ROM Launch
   const [isLoadingRom, setIsLoadingRom] = useState<boolean>(false);
   const [loadingStepText, setLoadingStepText] = useState<string>('');
   const [romError, setRomError] = useState<{
@@ -145,7 +151,6 @@ export const EmulatorZone: React.FC = () => {
     hint?: string;
     details?: string;
     originalUrl?: string;
-    driveFileId?: string;
   } | null>(null);
 
   // Netplay State
@@ -189,50 +194,25 @@ export const EmulatorZone: React.FC = () => {
     return selectedCore;
   };
 
-  // Launch ROM into EmulatorJS Engine with Server Proxy for remote URLs
-  const launchRom = async (romUrl: string, gameName: string, core: string = 'snes') => {
+  // Launch ROM directly into EmulatorJS Engine (Vercel Blob direct URL or local file ObjectURL)
+  const launchRom = (romUrl: string, gameName: string, core: string = 'snes') => {
+    if (!romUrl || romUrl.trim().length === 0) {
+      setRomError({
+        title: "Không Có File ROM",
+        message: `Game "${gameName}" chưa có đường dẫn romUrl trong cơ sở dữ liệu.`,
+        hint: "Vui lòng upload file ROM lên Vercel Blob và cập nhật cột romUrl trong Google Sheet."
+      });
+      return;
+    }
+
     setIsLoadingRom(true);
     setRomError(null);
-    setLoadingStepText(`Đang kết nối ROM "${gameName}" qua Server Proxy...`);
+    setLoadingStepText(`Đang khởi động ${gameName} trên EmulatorJS Core (${core.toUpperCase()})...`);
     setActiveTab('play');
 
     try {
-      let finalGameUrl = romUrl;
-
-      // If it's a remote URL, fetch and stream through our /api/rom-proxy route
-      if (romUrl.startsWith('http://') || romUrl.startsWith('https://')) {
-        const proxyUrl = `/api/rom-proxy?url=${encodeURIComponent(romUrl)}`;
-        setLoadingStepText(`Đang tải ROM "${gameName}" từ Google Drive qua Server Proxy...`);
-
-        const proxyRes = await fetch(proxyUrl);
-        const contentType = proxyRes.headers.get("content-type") || "";
-
-        if (!proxyRes.ok || contentType.includes("application/json")) {
-          const errorJson = await proxyRes.json().catch(() => null);
-          const errMsg = errorJson?.error || `Không thể tải ROM từ Google Drive (Mã lỗi ${proxyRes.status}).`;
-          const hint = errorJson?.hint || "Vui lòng kiểm tra lại quyền chia sẻ file trên Google Drive thành 'Bất kỳ ai có đường liên kết'.";
-          const details = errorJson?.details || "";
-
-          setRomError({
-            title: "Không Thể Tải ROM Game",
-            message: errMsg,
-            hint,
-            details,
-            originalUrl: romUrl,
-            driveFileId: errorJson?.driveFileId
-          });
-          setIsLoadingRom(false);
-          setIsPlaying(false);
-          return;
-        }
-
-        setLoadingStepText(`Đang nạp ROM vào bộ nhớ giả lập...`);
-        const blob = await proxyRes.blob();
-        finalGameUrl = URL.createObjectURL(blob);
-      }
-
-      setLoadingStepText(`Khởi động EmulatorJS Core (${core.toUpperCase()})...`);
-      setCurrentRomUrl(finalGameUrl);
+      const cleanUrl = romUrl.trim();
+      setCurrentRomUrl(cleanUrl);
       setCurrentRomName(gameName);
       setSelectedCore(core);
       setIsPlaying(true);
@@ -244,9 +224,9 @@ export const EmulatorZone: React.FC = () => {
     } catch (err: any) {
       console.error("[Launch ROM Error]:", err);
       setRomError({
-        title: "Lỗi Kết Nối Mạng",
-        message: err.message || "Không thể kết nối đến máy chủ ROM Proxy.",
-        hint: "Vui lòng kiểm tra lại đường truyền mạng hoặc thử tải ROM trực tiếp từ máy cá nhân.",
+        title: "Lỗi Khởi Động Trình Giả Lập",
+        message: err.message || "Không thể nạp ROM vào EmulatorJS.",
+        hint: "Hãy thử tải lại trang hoặc nạp ROM trực tiếp từ máy tính.",
         originalUrl: romUrl
       });
       setIsLoadingRom(false);
@@ -331,18 +311,29 @@ export const EmulatorZone: React.FC = () => {
           <div className="space-y-2 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono text-xs font-bold">
               <Gamepad2 className="w-4 h-4 text-amber-400" />
-              <span>EMULATORJS WEB ENGINE • SNES 16-BIT CLOUD</span>
+              <span>EMULATORJS WEB ENGINE • VERCEL BLOB STORAGE DIRECT</span>
             </div>
             <h1 className="text-3xl sm:text-5xl font-display font-black text-white uppercase tracking-tight">
-              KHU VỰC <span className="text-amber-400 text-glow-amber">GIẢ LẬP GAME SNES</span>
+              KHU VỰC <span className="text-amber-400 text-glow-amber">GIẢ LẬP GAME RETRO</span>
             </h1>
             <p className="text-xs sm:text-sm font-body text-slate-300 leading-relaxed">
-              Chơi ngay game SNES & Retro kinh điển qua EmulatorJS stream trực tiếp từ Google Sheet và Server Proxy Quán Game Xóm. Không cần cài đặt phần mềm ngoài, mượt mà 60 FPS!
+              Chơi ngay game SNES & Retro kinh điển qua EmulatorJS stream trực tiếp từ kho Vercel Blob Storage tốc độ cao và Google Sheet Quán Game Xóm. Tải tức thì 100%, không lag, 60 FPS mượt mà!
             </p>
           </div>
 
-          {/* Quick Action Load File Button */}
+          {/* Quick Action Load File & Admin Upload Button */}
           <div className="shrink-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <button
+              id="btn-open-admin-blob-modal"
+              type="button"
+              onClick={() => setIsAdminRomModalOpen(true)}
+              className="px-5 py-3.5 bg-slate-900 hover:bg-slate-800 border border-amber-500/50 hover:border-amber-400 text-amber-300 hover:text-white font-bold rounded-2xl text-xs font-mono uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+              title="Upload file ROM lên Vercel Blob Storage và lấy URL công khai"
+            >
+              <Cloud className="w-4 h-4 text-amber-400" />
+              <span>ADMIN UPLOAD BLOB</span>
+            </button>
+
             <label
               id="btn-upload-local-rom"
               className="px-5 py-3.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-2xl text-xs font-mono uppercase tracking-wider transition-all shadow-xl hover:scale-105 active:scale-95 flex items-center justify-center gap-2.5 cursor-pointer"
@@ -438,12 +429,23 @@ export const EmulatorZone: React.FC = () => {
                     </span>
                   </h2>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Dữ liệu đồng bộ từ Google Sheet SNES — Tự động proxy qua server chống lỗi CORS. User chọn là chơi ngay không cần upload!
+                    Dữ liệu đồng bộ từ Google Sheet SNES — Tải ROM trực tiếp từ Vercel Blob Storage tốc độ cao. Chọn là chơi ngay!
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
+                <button
+                  id="btn-snes-admin-upload"
+                  type="button"
+                  onClick={() => setIsAdminRomModalOpen(true)}
+                  className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                  title="Upload ROM mới lên Vercel Blob"
+                >
+                  <Cloud className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Upload ROM (Blob)</span>
+                </button>
+
                 <button
                   id="btn-refresh-snes-sheet"
                   onClick={() => {
@@ -956,6 +958,13 @@ export const EmulatorZone: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Admin ROM Manager Modal */}
+      <AdminRomManagerModal
+        isOpen={isAdminRomModalOpen}
+        onClose={() => setIsAdminRomModalOpen(false)}
+        onPlayRom={(url, name, core) => launchRom(url, name, core || 'snes')}
+      />
     </div>
   );
 };
