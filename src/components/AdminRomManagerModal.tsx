@@ -173,8 +173,15 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
             })
           });
 
-          const result = await res.json();
-          if (result.success && result.url) {
+          const rawText = await res.text();
+          let result: any;
+          try {
+            result = JSON.parse(rawText);
+          } catch {
+            throw new Error(`Máy chủ trả về phản hồi không hợp lệ (HTTP ${res.status}): ${rawText.slice(0, 150) || res.statusText}`);
+          }
+
+          if (res.ok && result.success && result.url) {
             setUploadedGame(result.game || {
               title: displayTitle.trim(),
               system: selectedSystem,
@@ -190,7 +197,8 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
               window.dispatchEvent(new CustomEvent('qgx_games_updated'));
             }
           } else {
-            setErrorMessage(result.error || result.hint || 'Không thể upload file lên Vercel Blob.');
+            const errorMsg = result?.error || result?.hint || `Upload thất bại (HTTP ${res.status}).`;
+            setErrorMessage(errorMsg);
           }
         } catch (postErr: any) {
           setErrorMessage(postErr.message || 'Lỗi mạng khi gọi API upload Vercel Blob.');

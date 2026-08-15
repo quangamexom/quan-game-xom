@@ -1,7 +1,6 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
-import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import { put, list, del } from "@vercel/blob";
 import googleSheetBackup from "./src/data/googleSheetGames.json";
@@ -18,6 +17,14 @@ const PORT = 3000;
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Normalize request URL for Vercel Serverless Function rewrites
+app.use((req, res, next) => {
+  if (req.url && !req.url.startsWith("/api") && !req.url.startsWith("/assets")) {
+    req.url = `/api${req.url}`;
+  }
+  next();
+});
 
 // Express Static Serving for Public Uploaded Assets
 app.use("/assets", express.static(path.join(process.cwd(), "public", "assets")));
@@ -952,6 +959,19 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
+// Global Express Error Handler for structured JSON responses
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error("[Global Express Error Handler]:", err);
+  if (res.headersSent) {
+    return next(err);
+  }
+  res.status(500).json({
+    success: false,
+    stage: "server_unhandled_error",
+    error: err.message || "Internal server error"
+  });
+});
+
 export { app };
 export default app;
 
@@ -961,6 +981,7 @@ async function startServer() {
   }
 
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
