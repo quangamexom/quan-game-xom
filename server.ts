@@ -482,7 +482,336 @@ app.post("/api/save-logo", async (req, res) => {
   }
 });
 
-// 4. Health check
+// 4. ROM Proxy Route for EmulatorJS (Streams romUrl and prevents CORS issues with Google Drive)
+app.get("/api/rom-proxy", async (req, res) => {
+  try {
+    const rawUrl = req.query.url as string;
+    if (!rawUrl || typeof rawUrl !== "string" || rawUrl.trim().length === 0) {
+      console.warn("[ROM Proxy] Bad Request: Missing 'url' parameter");
+      return res.status(400).json({ 
+        success: false, 
+        error: "Thiếu tham số 'url' của file ROM." 
+      });
+    }
+
+    let targetUrl = decodeURIComponent(rawUrl.trim());
+    console.log(`[ROM Proxy] Received request for ROM URL: "${targetUrl}"`);
+
+    let fileId = "";
+    const isGoogleDrive = targetUrl.includes("drive.google.com") || 
+                          targetUrl.includes("docs.google.com") || 
+                          targetUrl.includes("drive.usercontent.google.com");
+
+    if (isGoogleDrive) {
+      const fileMatch = targetUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+      const idMatch = targetUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if (fileMatch) {
+        fileId = fileMatch[1];
+      } else if (idMatch) {
+        fileId = idMatch[1];
+      }
+      console.log(`[ROM Proxy] Detected Google Drive File ID: "${fileId || 'None'}"`);
+    }
+
+    // List of candidate URLs to fetch from (for Google Drive, test direct download endpoints)
+    const candidateUrls: string[] = [];
+    if (fileId) {
+      candidateUrls.push(`https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`);
+      candidateUrls.push(`https://drive.google.com/uc?export=download&id=${fileId}&confirm=t`);
+      candidateUrls.push(`https://docs.google.com/uc?export=download&id=${fileId}&confirm=t`);
+    }
+    candidateUrls.push(targetUrl);
+
+    let finalBuffer: Buffer | null = null;
+    let finalContentType = "application/octet-stream";
+    let lastStatus = 500;
+    let lastErrorDetails = "";
+    let isPermissionError = false;
+
+    // Helper to fetch with full redirect following and cookie extraction
+    for (const urlToTry of candidateUrls) {
+      console.log(`[ROM Proxy] Attempting fetch from: ${urlToTry}`);
+      try {
+        let cookieHeader = "";
+        let response = await fetch(urlToTry, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Accept": "*/*",
+            "Accept-Language": "en-US,en;q=0.9,vi;q=0.8"
+          },
+          redirect: "follow"
+        });
+
+        lastStatus = response.status;
+        const contentType = response.headers.get("content-type") || "";
+        const contentLength = response.headers.get("content-length") || "unknown";
+
+        // Capture Set-Cookie if any for confirmation redirects
+        const setCookie = response.headers.get("set-cookie");
+        if (setCookie) {
+          cookieHeader = setCookie.split(";")[0];
+        }
+
+        console.log(`[ROM Proxy] -> Response Status: ${response.status}, Content-Type: "${contentType}", Content-Length: ${contentLength}`);
+
+        if (!response.ok) {
+          console.warn(`[ROM Proxy] Fetch returned non-OK status: ${response.status}`);
+          lastErrorDetails = `Server từ chối kết nối (Mã HTTP: ${response.status}).`;
+          if (response.status === 403 || response.status === 401) {
+            isPermissionError = true;
+          }
+          continue;
+        }
+
+        // If response is HTML, Google Drive might be returning a confirmation page or login page
+        if (contentType.includes("text/html")) {
+          const htmlText = await response.text();
+          console.log(`[ROM Proxy] Received HTML (${htmlText.length} bytes). Checking page contents...`);
+
+          // 1. Check if permission is denied / required login
+          const lowerHtml = htmlText.toLowerCase();
+          if (
+            lowerHtml.includes("servicelogin") ||
+            lowerHtml.includes("accounts.google.com") ||
+            lowerHtml.includes("you need access") ||
+            lowerHtml.includes("yêu cầu quyền truy cập") ||
+            lowerHtml.includes("không có quyền truy cập") ||
+            lowerHtml.includes("access denied") ||
+            lowerHtml.includes("request access")
+          ) {
+            console.warn("[ROM Proxy] Permission Denied: Google Drive file requires login or is not shared publicly.");
+            isPermissionError = true;
+            lastErrorDetails = "File Google Drive chưa được mở quyền chia sẻ công khai ('Anyone with the link' / 'Bất kỳ ai có liên kết').";
+            break;
+          }
+
+          // 2. Check for virus scan confirmation form or link
+          const downloadLinkMatch = htmlText.match(/href="(\/uc\?export=download[^"]+)"/) ||
+                                    htmlText.match(/id="uc-download-link"[^>]+href="([^"]+)"/) ||
+                                    htmlText.match(/action="([^"]+download[^"]*)"/);
+
+          const confirmTokenMatch = htmlText.match(/name="confirm" value="([^"]+)"/);
+
+          if (downloadLinkMatch || confirmTokenMatch) {
+            let confirmUrl = "";
+            if (downloadLinkMatch) {
+              confirmUrl = downloadLinkMatch[1];
+              if (confirmUrl.startsWith("/")) {
+                confirmUrl = `https://drive.google.com${confirmUrl}`;
+              }
+            } else if (confirmTokenMatch && fileId) {
+              confirmUrl = `https://drive.google.com/uc?export=download&id=${fileId}&confirm=${confirmTokenMatch[1]}`;
+            }
+
+            if (confirmUrl) {
+              console.log(`[ROM Proxy] Following Google Drive confirmation link: ${confirmUrl}`);
+              const confirmRes = await fetch(confirmUrl, {
+                headers: {
+                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                  "Accept": "*/*",
+                  ...(cookieHeader ? { "Cookie": cookieHeader } : {})
+                },
+                redirect: "follow"
+              });
+
+              const confirmCt = confirmRes.headers.get("content-type") || "";
+              console.log(`[ROM Proxy] -> Confirmation Response Status: ${confirmRes.status}, Content-Type: "${confirmCt}"`);
+
+              if (confirmRes.ok && !confirmCt.includes("text/html")) {
+                finalBuffer = Buffer.from(await confirmRes.arrayBuffer());
+                finalContentType = confirmCt || "application/octet-stream";
+                break;
+              }
+            }
+          }
+
+          lastErrorDetails = "Google Drive trả về trang HTML thay vì dữ liệu tệp ROM nhị phân.";
+          continue;
+        }
+
+        // Successfully got binary content!
+        const arrayBuf = await response.arrayBuffer();
+        finalBuffer = Buffer.from(arrayBuf);
+        finalContentType = contentType || "application/octet-stream";
+        console.log(`[ROM Proxy] Successfully downloaded ROM binary (${finalBuffer.length} bytes)`);
+        break;
+      } catch (tryErr: any) {
+        console.error(`[ROM Proxy] Error attempting ${urlToTry}:`, tryErr.message || tryErr);
+        lastErrorDetails = tryErr.message || "Lỗi kết nối khi tải ROM";
+      }
+    }
+
+    if (finalBuffer && finalBuffer.length > 0) {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS, HEAD");
+      res.setHeader("Access-Control-Allow-Headers", "*");
+      res.setHeader("Content-Type", finalContentType);
+      res.setHeader("Content-Length", finalBuffer.length);
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      return res.send(finalBuffer);
+    }
+
+    // If we reach here, we could not fetch the binary ROM
+    if (isPermissionError) {
+      return res.status(403).json({
+        success: false,
+        error: "File Google Drive chưa được mở quyền chia sẻ công khai ('Anyone with the link' / 'Bất kỳ ai có liên kết').",
+        details: "Trang Google Drive yêu cầu đăng nhập hoặc yêu cầu cấp quyền truy cập để tải file.",
+        driveFileId: fileId || undefined,
+        originalUrl: rawUrl,
+        statusCode: lastStatus,
+        hint: "Để khắc phục: Mở Google Drive -> Nhấp chuột phải vào file ROM -> Chọn Chia sẻ (Share) -> Chuyển thành 'Bất kỳ ai có đường liên kết' (Anyone with the link)."
+      });
+    }
+
+    return res.status(422).json({
+      success: false,
+      error: "Không thể tải file ROM từ Google Drive.",
+      details: lastErrorDetails || `Google Drive trả về mã HTTP ${lastStatus} hoặc trang HTML thay vì tệp nhị phân.`,
+      driveFileId: fileId || undefined,
+      originalUrl: rawUrl,
+      statusCode: lastStatus,
+      hint: "Vui lòng kiểm tra lại liên kết file hoặc chắc chắn file ở chế độ chia sẻ công khai."
+    });
+  } catch (err: any) {
+    console.error("[ROM Proxy Unhandled Exception]:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Lỗi hệ thống khi proxy tải ROM từ Google Drive.",
+      details: err.message || "Internal Proxy Server Error"
+    });
+  }
+});
+
+// 5. SNES Google Sheet games endpoint with fallback
+app.get("/api/snes-games", async (req, res) => {
+  const defaultTestGames = [
+    {
+      id: "snes-aladdin",
+      title: "Aladdin",
+      subtitle: "Disney's Aladdin • Super Nintendo (SNES) 16-Bit",
+      coverArt: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
+      backdropArt: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
+      platforms: ["Other"],
+      language: "Tiếng Anh ⭐",
+      hasVietHoa: false,
+      releaseYear: 1993,
+      fileSize: "1.3 MB",
+      rating: 4.9,
+      genres: ["SNES", "Hành Động", "Kinh Điển"],
+      description: "Hóa thân thành Aladdin cùng chú khỉ Abu trong chuyến phiêu lưu kinh điển qua vương quốc Agrabah trên hệ máy Super Nintendo 16-bit mượt mà.",
+      romUrl: "https://drive.google.com/uc?export=download&id=1QGgmop-JEIKZ6kyV2HcHjHugdzb88Q7f",
+      downloadUrl: "https://drive.google.com/file/d/1QGgmop-JEIKZ6kyV2HcHjHugdzb88Q7f/view?usp=sharing",
+      emulatorCore: "snes",
+      isFeatured: true,
+      isPopular: true,
+      isNewUpdate: true,
+      addedDate: "2026-08-15"
+    },
+    {
+      id: "snes-biker-mice",
+      title: "Biker Mice from Mars",
+      subtitle: "Đua xe bắn súng chuột không gian • Konami SNES",
+      coverArt: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop",
+      backdropArt: "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=600&auto=format&fit=crop",
+      platforms: ["Other"],
+      language: "Tiếng Anh ⭐",
+      hasVietHoa: false,
+      releaseYear: 1994,
+      fileSize: "1.0 MB",
+      rating: 4.95,
+      genres: ["SNES", "Đua Xe", "Bắn Súng"],
+      description: "Game đua xe mô tô chiến đấu huyền thoại của Konami trên SNES với 3 chú chuột chiến binh Throttle, Modo và Vinnie cùng kho vũ khí tối tân.",
+      romUrl: "https://drive.google.com/uc?export=download&id=1i9fsfy5lM-eKcQIh1raZpx7etQlGd-Mt",
+      downloadUrl: "https://drive.google.com/file/d/1i9fsfy5lM-eKcQIh1raZpx7etQlGd-Mt/view?usp=sharing",
+      emulatorCore: "snes",
+      isFeatured: true,
+      isPopular: true,
+      isNewUpdate: true,
+      addedDate: "2026-08-15"
+    }
+  ];
+
+  try {
+    const sheetId = (req.query.sheetId as string) || "103Kz3v0fGN30BIhlaKMQ2IJNJ82GPif92OSgt_LtyG0";
+    console.log(`[SNES API] Fetching games from Google Sheet ID: ${sheetId}`);
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=0`;
+    const response = await fetch(csvUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      }
+    });
+
+    if (response.ok) {
+      const csvText = await response.text();
+      // If it's valid CSV text and not Google login html
+      if (csvText && !csvText.includes("<!DOCTYPE html>") && !csvText.includes("accounts.google.com") && !csvText.includes("document-root")) {
+        const rows = csvText.split(/\r?\n/).map(line => line.split(',').map(cell => cell.replace(/^"(.*)"$/, '$1').trim()));
+        if (rows.length > 1) {
+          const snesGames: any[] = [];
+          for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || row.length < 2) continue;
+            const title = row[1] || row[0];
+            const platform = row[2] || "SNES";
+            const shareUrl = row[3] || "";
+            const romUrl = row[4] || "";
+
+            if (title && romUrl) {
+              snesGames.push({
+                id: `snes-sheet-${i}-${title.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+                title: title,
+                subtitle: `${platform} • Quán Game Xóm Cloud ROM`,
+                coverArt: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
+                platforms: ["Other"],
+                language: "Tiếng Anh ⭐",
+                hasVietHoa: false,
+                releaseYear: 1994,
+                fileSize: "SNES ROM",
+                rating: 4.9,
+                genres: ["SNES", "Kinh Điển"],
+                description: `${title} — Game SNES chuẩn được nạp trực tiếp qua Google Sheet và Server Proxy của Quán Game Xóm.`,
+                downloadUrl: shareUrl || romUrl,
+                romUrl: romUrl,
+                emulatorCore: "snes",
+                isFeatured: true,
+                isPopular: true,
+                isNewUpdate: true,
+                addedDate: "2026-08-15"
+              });
+            }
+          }
+
+          if (snesGames.length > 0) {
+            console.log(`[SNES API] Successfully loaded ${snesGames.length} games directly from Google Sheet ID: ${sheetId}`);
+            return res.json({
+              success: true,
+              sheetId,
+              source: "google-sheet",
+              count: snesGames.length,
+              games: snesGames
+            });
+          }
+        }
+      } else {
+        console.warn(`[SNES API] Google Sheet ID ${sheetId} returned HTML/Login page (Sheet might be private or requires permission). Using verified fallback with real Google Drive IDs.`);
+      }
+    }
+  } catch (err: any) {
+    console.warn("[SNES Sheet Fetch Warning]:", err);
+  }
+
+  console.log(`[SNES API] Serving verified SNES Games: Aladdin (1QGgmop-JEIKZ6kyV2HcHjHugdzb88Q7f), Biker Mice from Mars (1i9fsfy5lM-eKcQIh1raZpx7etQlGd-Mt)`);
+  return res.json({
+    success: true,
+    sheetId: "103Kz3v0fGN30BIhlaKMQ2IJNJ82GPif92OSgt_LtyG0",
+    source: "verified-test-games",
+    count: defaultTestGames.length,
+    games: defaultTestGames
+  });
+});
+
+// 6. Health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });

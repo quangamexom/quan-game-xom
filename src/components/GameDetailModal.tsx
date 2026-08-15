@@ -6,6 +6,7 @@ import { useGameCover, useGameBanner } from '../hooks/useGameCover';
 import { useAdminMode } from '../hooks/useAdminMode';
 import { parseGameTitle } from '../utils/titleParser';
 import { ImageUploadModal } from './ImageUploadModal';
+import { ShareGameMenu } from './ShareGameMenu';
 
 interface GameDetailModalProps {
   game: GameItem | null;
@@ -210,6 +211,13 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                   <span className="hidden xs:inline">📸 Sửa Banner</span>
                 </button>
               )}
+
+              {/* Share Game Button (Top-Right) */}
+              <ShareGameMenu
+                game={game}
+                variant="button"
+                align="right"
+              />
 
               <button
                 onClick={onClose}
@@ -445,6 +453,13 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                   <span>Upload Ảnh</span>
                 </button>
               )}
+
+              {/* Share Button in Footer */}
+              <ShareGameMenu
+                game={game}
+                variant="footer"
+                align="left"
+              />
 
               {game.fbPreviewUrl && (
                 <a

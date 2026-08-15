@@ -59,6 +59,81 @@ export default function App() {
   const [isDonateOpen, setIsDonateOpen] = useState<boolean>(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState<boolean>(false);
 
+  // Helper: Extract Game ID or Slug from URL pathname (/game/:id) or search query (?game=:id)
+  const getGameIdFromUrl = (): string | null => {
+    if (typeof window === 'undefined') return null;
+    const pathname = window.location.pathname;
+    const match = pathname.match(/^\/game\/(.+)$/);
+    if (match && match[1]) {
+      return decodeURIComponent(match[1].replace(/\/$/, ''));
+    }
+    const searchParams = new URLSearchParams(window.location.search);
+    return searchParams.get('game');
+  };
+
+  // Helper: Match game by ID, encoded ID, or slugified title
+  const findGameMatch = (targetId: string, list: GameItem[]): GameItem | null => {
+    if (!targetId || !list || list.length === 0) return null;
+    const lower = targetId.toLowerCase().trim();
+    return list.find((g) => {
+      if (g.id.toLowerCase() === lower) return true;
+      if (encodeURIComponent(g.id).toLowerCase() === lower) return true;
+      const slug = g.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      if (slug === lower) return true;
+      return false;
+    }) || null;
+  };
+
+  // Synchronize URL on initial load or whenever games change
+  useEffect(() => {
+    const urlId = getGameIdFromUrl();
+    if (urlId && games.length > 0) {
+      const match = findGameMatch(urlId, games);
+      if (match) {
+        setSelectedGame(match);
+      }
+    }
+  }, [games]);
+
+  // Listen to browser Back / Forward (popstate) navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const urlId = getGameIdFromUrl();
+      if (urlId) {
+        const match = findGameMatch(urlId, games);
+        if (match) {
+          setSelectedGame(match);
+        }
+      } else {
+        setSelectedGame(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [games]);
+
+  // Open Game Detail Modal and synchronize browser URL to /game/:id
+  const handleOpenGameDetail = (game: GameItem) => {
+    setSelectedGame(game);
+    if (typeof window !== 'undefined') {
+      const targetUrl = `/game/${encodeURIComponent(game.id)}`;
+      if (window.location.pathname !== targetUrl) {
+        window.history.pushState({ gameId: game.id }, '', targetUrl);
+      }
+    }
+  };
+
+  // Close Game Detail Modal and restore browser URL
+  const handleCloseGameDetail = () => {
+    setSelectedGame(null);
+    if (typeof window !== 'undefined') {
+      if (window.location.pathname.startsWith('/game/') || window.location.search.includes('game=')) {
+        window.history.pushState(null, '', '/');
+      }
+    }
+  };
+
   // Filters State
   const [filterState, setFilterState] = useState<FilterState>({
     searchQuery: '',
@@ -167,7 +242,7 @@ export default function App() {
           onGoToGames={() => handleCategoryChange('GAMES')}
           onGoToArticles={() => handleCategoryChange('ARTICLES')}
           onOpenDonate={() => setIsDonateOpen(true)}
-          onSelectGame={(g) => setSelectedGame(g)}
+          onSelectGame={(g) => handleOpenGameDetail(g)}
           featuredGames={games.slice(0, 10)}
         />
       </div>
@@ -247,7 +322,7 @@ export default function App() {
                 <GameCard
                   key={game.id}
                   game={game}
-                  onSelect={(g) => setSelectedGame(g)}
+                  onSelect={(g) => handleOpenGameDetail(g)}
                   onOpenDownload={(g) => setDownloadGame(g)}
                   onSelectGenre={(g) => handleFilterChange({ selectedGenre: g })}
                 />
@@ -265,7 +340,7 @@ export default function App() {
                 <LaunchBoxCard
                   key={game.id}
                   game={game}
-                  onSelect={(g) => setSelectedGame(g)}
+                  onSelect={(g) => handleOpenGameDetail(g)}
                   onOpenDownload={(g) => setDownloadGame(g)}
                 />
               ))}
@@ -298,7 +373,7 @@ export default function App() {
                       key={game.id}
                       game={game}
                       index={idx}
-                      onSelect={(g) => setSelectedGame(g)}
+                      onSelect={(g) => handleOpenGameDetail(g)}
                       onOpenDownload={(g) => setDownloadGame(g)}
                     />
                   ))}
@@ -332,7 +407,7 @@ export default function App() {
         defaultPassword={defaultPassword}
         featuredGames={games.slice(0, 10)}
         onSelectGame={(g) => {
-          setSelectedGame(g);
+          handleOpenGameDetail(g);
           handleCategoryChange('GAMES');
         }}
       />
@@ -347,7 +422,7 @@ export default function App() {
       {/* Modals & Drawers */}
       <GameDetailModal
         game={selectedGame}
-        onClose={() => setSelectedGame(null)}
+        onClose={handleCloseGameDetail}
         onOpenDownload={(g) => setDownloadGame(g)}
       />
 

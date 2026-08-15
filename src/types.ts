@@ -29,6 +29,8 @@ export interface GameItem {
   mirror1Url?: string;
   mirror2Url?: string;
   onlinePlayUrl?: string;
+  romUrl?: string; // Direct ROM URL for EmulatorJS
+  emulatorCore?: string; // e.g. 'snes', 'nes', 'gba'
   
   // LaunchBox metadata
   developer?: string;

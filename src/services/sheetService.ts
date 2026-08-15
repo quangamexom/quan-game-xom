@@ -3,6 +3,54 @@ import { INITIAL_GAMES } from '../data/initialGames';
 import { KNOWN_GAME_ART } from '../data/gameArtMap';
 
 export const DEFAULT_SHEET_ID = "1VA8Wv9OQmrR4nDpf0SUFQiqC4IAoVSCswCjY37ChplM";
+export const SNES_SHEET_ID = "103Kz3v0fGN30BIhlaKMQ2IJNJ82GPif92OSgt_LtyG0";
+
+export const DEFAULT_SNES_TEST_GAMES: GameItem[] = [
+  {
+    id: "snes-aladdin",
+    title: "Aladdin",
+    subtitle: "Disney's Aladdin • Super Nintendo (SNES) 16-Bit",
+    coverArt: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
+    backdropArt: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
+    platforms: ["Other"],
+    language: "Tiếng Anh ⭐",
+    hasVietHoa: false,
+    releaseYear: 1993,
+    fileSize: "1.3 MB",
+    rating: 4.9,
+    genres: ["SNES", "Hành Động", "Kinh Điển"],
+    description: "Hóa thân thành Aladdin cùng chú khỉ Abu trong chuyến phiêu lưu kinh điển qua vương quốc Agrabah trên hệ máy Super Nintendo 16-bit mượt mà.",
+    romUrl: "https://drive.google.com/uc?export=download&id=1QGgmop-JEIKZ6kyV2HcHjHugdzb88Q7f",
+    downloadUrl: "https://drive.google.com/file/d/1QGgmop-JEIKZ6kyV2HcHjHugdzb88Q7f/view?usp=sharing",
+    emulatorCore: "snes",
+    isFeatured: true,
+    isPopular: true,
+    isNewUpdate: true,
+    addedDate: "2026-08-15"
+  },
+  {
+    id: "snes-biker-mice",
+    title: "Biker Mice from Mars",
+    subtitle: "Đua xe bắn súng chuột không gian • Konami SNES",
+    coverArt: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop",
+    backdropArt: "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=600&auto=format&fit=crop",
+    platforms: ["Other"],
+    language: "Tiếng Anh ⭐",
+    hasVietHoa: false,
+    releaseYear: 1994,
+    fileSize: "1.0 MB",
+    rating: 4.95,
+    genres: ["SNES", "Đua Xe", "Bắn Súng"],
+    description: "Game đua xe mô tô chiến đấu huyền thoại của Konami trên SNES với 3 chú chuột chiến binh Throttle, Modo và Vinnie cùng kho vũ khí tối tân.",
+    romUrl: "https://drive.google.com/file/d/1i9fsfy5lM-eKcQIh1raZpx7etQlGd-Mt/view",
+    downloadUrl: "https://drive.google.com/file/d/1i9fsfy5lM-eKcQIh1raZpx7etQlGd-Mt/view?usp=sharing",
+    emulatorCore: "snes",
+    isFeatured: true,
+    isPopular: true,
+    isNewUpdate: true,
+    addedDate: "2026-08-15"
+  }
+];
 
 export function parseCSVToRows(csvText: string): string[][] {
   const rows: string[][] = [];
@@ -112,20 +160,22 @@ export function parseGoogleSheetCSV(csvText: string): GameItem[] {
     let m2Raw = '';
     let onlineRaw = '';
     let coverRaw = '';
+    let romRaw = '';
 
     if (headerIndex !== -1) {
       const coverIdx = headers.findIndex(h => h.includes('COVER'));
       const platformIdx = headers.findIndex(h => h.includes('HỆ MÁY') || h.includes('PLATFORM'));
-      const titleIdx = headers.findIndex(h => h.includes('TÊN GAME') || h.includes('TITLE'));
+      const titleIdx = headers.findIndex(h => h.includes('TÊN GAME') || h.includes('TITLE') || h.includes('GAME'));
       const langIdx = headers.findIndex(h => h.includes('NGÔN NGỮ') || h.includes('LANGUAGE'));
       const fbIdx = headers.findIndex(h => h.includes('LINK BÀI VIẾT') || h.includes('PREVIEW') || h.includes('FACEBOOK'));
-      const dlIdx = headers.findIndex(h => h.includes('LINK DOWNLOAD') || h.includes('DOWNLOAD'));
+      const dlIdx = headers.findIndex(h => h.includes('LINK DOWNLOAD') || h.includes('DOWNLOAD') || h.includes('LINK CHIA SẺ') || h.includes('CHIA SẺ'));
       const m1Idx = headers.findIndex(h => h.includes('MIRROR 1'));
       const m2Idx = headers.findIndex(h => h.includes('MIRROR 2'));
       const onlineIdx = headers.findIndex(h => h.includes('CHƠI ONLINE') || h.includes('ONLINE'));
+      const romIdx = headers.findIndex(h => h.includes('ROMURL') || h.includes('ROM URL') || h.includes('LINK ROM') || h.includes('ROM'));
 
-      platformRaw = platformIdx !== -1 && row[platformIdx] ? row[platformIdx] : 'PC';
-      titleRaw = titleIdx !== -1 && row[titleIdx] ? row[titleIdx] : '';
+      platformRaw = platformIdx !== -1 && row[platformIdx] ? row[platformIdx] : (row[2] || 'PC');
+      titleRaw = titleIdx !== -1 && row[titleIdx] ? row[titleIdx] : (row[1] || row[0] || '');
       langRaw = langIdx !== -1 && row[langIdx] ? row[langIdx] : 'Tiếng Việt ⭐';
       coverRaw = coverIdx !== -1 && row[coverIdx] ? row[coverIdx] : '';
       fbRaw = fbIdx !== -1 && row[fbIdx] ? row[fbIdx] : '';
@@ -133,16 +183,32 @@ export function parseGoogleSheetCSV(csvText: string): GameItem[] {
       m1Raw = m1Idx !== -1 && row[m1Idx] ? row[m1Idx] : '';
       m2Raw = m2Idx !== -1 && row[m2Idx] ? row[m2Idx] : '';
       onlineRaw = onlineIdx !== -1 && row[onlineIdx] ? row[onlineIdx] : '';
+      romRaw = romIdx !== -1 && row[romIdx] ? row[romIdx] : '';
     } else {
-      // Direct positional schema for standard sheets without header row
-      platformRaw = row[0] || 'PC';
-      titleRaw = row[1] || '';
-      langRaw = row[2] || 'Tiếng Việt ⭐';
-      fbRaw = row[3] || '';
-      dlRaw = row[4] || '';
-      m1Raw = row[5] || '';
-      m2Raw = row[6] || '';
-      onlineRaw = row[7] || '';
+      // Direct positional schema: check if row is (STT, Tên Game, Hệ Máy, Link Chia Sẻ, romUrl) or standard
+      if (row.length >= 4 && (row[0].match(/^\d+$/) || row[2]?.toUpperCase().includes('SNES') || row[2]?.toUpperCase().includes('NES') || row[2]?.toUpperCase().includes('GBA'))) {
+        titleRaw = row[1] || '';
+        platformRaw = row[2] || 'SNES';
+        dlRaw = row[3] || '';
+        romRaw = row[4] || '';
+        langRaw = 'Tiếng Anh ⭐';
+      } else {
+        // Direct positional schema for standard games sheet
+        platformRaw = row[0] || 'PC';
+        titleRaw = row[1] || '';
+        langRaw = row[2] || 'Tiếng Việt ⭐';
+        fbRaw = row[3] || '';
+        dlRaw = row[4] || '';
+        m1Raw = row[5] || '';
+        m2Raw = row[6] || '';
+        onlineRaw = row[7] || '';
+        romRaw = row[8] || '';
+      }
+    }
+
+    // Also auto-detect romUrl if present in 4th/5th column
+    if (!romRaw && row[4] && (row[4].startsWith('http') || row[4].includes('drive.google') || row[4].endsWith('.sfc') || row[4].endsWith('.smc') || row[4].endsWith('.nes') || row[4].endsWith('.gba') || row[4].endsWith('.zip'))) {
+      romRaw = row[4];
     }
 
     if (!titleRaw || titleRaw.trim().length < 2) continue;
@@ -166,6 +232,11 @@ export function parseGoogleSheetCSV(csvText: string): GameItem[] {
 
     const backdropUrl = knownArt?.bannerImage || "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop";
 
+    const isSnes = platformRaw.toUpperCase().includes('SNES') || title.toLowerCase().includes('snes');
+    const isNes = platformRaw.toUpperCase().includes('NES') && !isSnes;
+    const isGba = platformRaw.toUpperCase().includes('GBA') || platformRaw.toUpperCase().includes('ADVANCE');
+    const emuCore = isSnes ? 'snes' : isNes ? 'nes' : isGba ? 'gba' : undefined;
+
     parsedGames.push({
       id: `sheet-${i}-${title.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
       title: title,
@@ -185,6 +256,8 @@ export function parseGoogleSheetCSV(csvText: string): GameItem[] {
       mirror2Url: m2Raw.startsWith('http') ? m2Raw : (m2Raw && m2Raw.length > 5 ? m2Raw : undefined),
       fbPreviewUrl: fbRaw.startsWith('http') ? fbRaw : undefined,
       onlinePlayUrl: onlineRaw.startsWith('http') ? onlineRaw : undefined,
+      romUrl: romRaw.startsWith('http') || romRaw.length > 5 ? romRaw.trim() : undefined,
+      emulatorCore: emuCore,
       isFeatured: i < 8,
       isPopular: i % 2 === 0,
       isNewUpdate: i < 20,
@@ -227,5 +300,40 @@ export async function fetchSheetData(sheetUrlOrId: string = DEFAULT_SHEET_ID, gi
   }
 
   return INITIAL_GAMES;
+}
+
+export async function fetchSnesGamesFromSheet(sheetUrlOrId: string = SNES_SHEET_ID, gid = '0'): Promise<GameItem[]> {
+  const targetId = sheetUrlOrId.includes('/')
+    ? sheetUrlOrId.split('/d/')[1]?.split('/')[0] || SNES_SHEET_ID
+    : sheetUrlOrId;
+
+  try {
+    const response = await fetch(`/api/snes-games?sheetId=${targetId}`);
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.games && Array.isArray(data.games) && data.games.length > 0) {
+        return data.games;
+      }
+    }
+  } catch (err) {
+    // API endpoint unavailable, try direct CSV fetch
+  }
+
+  try {
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${targetId}/export?format=csv&gid=${gid}`;
+    const csvRes = await fetch(csvUrl);
+    if (csvRes.ok) {
+      const csvText = await csvRes.text();
+      const sheetGames = parseGoogleSheetCSV(csvText);
+      const withRom = sheetGames.filter(g => g.romUrl && g.romUrl.trim().length > 0);
+      if (withRom.length > 0) {
+        return withRom;
+      }
+    }
+  } catch (err) {
+    console.warn("Direct SNES CSV fetch fallback warning:", err);
+  }
+
+  return DEFAULT_SNES_TEST_GAMES;
 }
 

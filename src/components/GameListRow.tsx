@@ -3,6 +3,7 @@ import { GameItem } from '../types';
 import { Download, Star, ExternalLink, Gamepad2, Radio, CheckCircle, Eye } from 'lucide-react';
 import { parseGameTitle } from '../utils/titleParser';
 import { useGameCover } from '../hooks/useGameCover';
+import { ShareGameMenu } from './ShareGameMenu';
 
 interface GameListRowProps {
   game: GameItem;
@@ -135,15 +136,22 @@ export const GameListRow: React.FC<GameListRowProps> = ({ game, index, onSelect,
         )}
       </td>
 
-      {/* 6. LINK DOWNLOAD */}
+      {/* 6. LINK DOWNLOAD & SHARE */}
       <td className="p-2 sm:p-3 align-middle text-center whitespace-nowrap">
-        <button
-          onClick={() => onOpenDownload(game)}
-          className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded font-bold text-xs shadow hover:scale-105 transition-all cursor-pointer"
-        >
-          <Download className="w-3.5 h-3.5 fill-slate-950" />
-          <span>Tải Ngay</span>
-        </button>
+        <div className="flex items-center justify-center gap-1.5">
+          <button
+            onClick={() => onOpenDownload(game)}
+            className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded font-bold text-xs shadow hover:scale-105 transition-all cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5 fill-slate-950" />
+            <span>Tải Ngay</span>
+          </button>
+          <ShareGameMenu
+            game={game}
+            variant="icon"
+            align="right"
+          />
+        </div>
       </td>
 
       {/* 7. MIRROR 1 */}

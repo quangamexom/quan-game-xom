@@ -6,6 +6,7 @@ import { useGameCover } from '../hooks/useGameCover';
 import { useAdminMode } from '../hooks/useAdminMode';
 import { parseGameTitle } from '../utils/titleParser';
 import { ImageUploadModal } from './ImageUploadModal';
+import { ShareGameMenu } from './ShareGameMenu';
 
 interface GameCardProps {
   game: GameItem;
@@ -128,32 +129,39 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelect }) => {
             </div>
           )}
 
-          {/* 3. Camera / Upload Button (Top-Right) - Admin Only */}
-          {isAdmin && (
-            <div className="absolute top-2 right-2 z-30 flex items-center gap-1">
-              {isManual && (
-                <span
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    resetCover();
-                    setImageError(false);
-                  }}
-                  title="Đặt lại ảnh mặc định"
-                  className="px-1.5 py-0.5 rounded bg-cyan-950/90 hover:bg-red-600 text-cyan-300 hover:text-white border border-cyan-500/40 text-[9px] font-mono transition-all backdrop-blur-md cursor-pointer"
+          {/* 3. Action Buttons (Top-Right: Share & Admin Upload) */}
+          <div className="absolute top-2 right-2 z-30 flex items-center gap-1.5">
+            <ShareGameMenu
+              game={game}
+              variant="icon"
+              align="right"
+            />
+            {isAdmin && (
+              <>
+                {isManual && (
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      resetCover();
+                      setImageError(false);
+                    }}
+                    title="Đặt lại ảnh mặc định"
+                    className="px-1.5 py-0.5 rounded bg-cyan-950/90 hover:bg-red-600 text-cyan-300 hover:text-white border border-cyan-500/40 text-[9px] font-mono transition-all backdrop-blur-md cursor-pointer"
+                  >
+                    Custom
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={handleOpenUploadModal}
+                  title="Thay đổi ảnh cover (Upload file từ máy hoặc Dán link URL)"
+                  className="w-8 h-8 rounded-full bg-slate-950/90 hover:bg-amber-400 text-amber-300 hover:text-slate-950 border border-amber-500/60 flex items-center justify-center transition-all opacity-90 group-hover:opacity-100 hover:scale-110 active:scale-95 shadow-lg backdrop-blur-md cursor-pointer"
                 >
-                  Custom
-                </span>
-              )}
-              <button
-                type="button"
-                onClick={handleOpenUploadModal}
-                title="Thay đổi ảnh cover (Upload file từ máy hoặc Dán link URL)"
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-950/90 hover:bg-amber-400 text-amber-300 hover:text-slate-950 border border-amber-500/60 flex items-center justify-center transition-all opacity-90 group-hover:opacity-100 hover:scale-110 active:scale-95 shadow-lg backdrop-blur-md cursor-pointer"
-              >
-                <Camera className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
+                  <Camera className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* 4. Dedicated Game Title Box Below Image */}

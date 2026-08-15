@@ -16,8 +16,17 @@ import {
   Share2,
   Copy,
   Info,
-  Maximize2
+  Maximize2,
+  Loader2,
+  RefreshCw,
+  Zap,
+  Flame,
+  AlertTriangle,
+  AlertCircle,
+  ExternalLink
 } from 'lucide-react';
+import { fetchSnesGamesFromSheet, DEFAULT_SNES_TEST_GAMES, SNES_SHEET_ID } from '../services/sheetService';
+import { GameItem } from '../types';
 
 export interface PresetRom {
   id: string;
@@ -27,9 +36,30 @@ export interface PresetRom {
   romUrl: string;
   coverArt: string;
   description: string;
+  isSnesSheet?: boolean;
 }
 
-const PRESET_ROMS: PresetRom[] = [
+const CLASSIC_PRESET_ROMS: PresetRom[] = [
+  {
+    id: 'snes-aladdin-preset',
+    title: 'Aladdin',
+    system: 'snes',
+    systemName: 'Super Nintendo (SNES)',
+    romUrl: 'https://drive.google.com/uc?export=download&id=1QGgmop-JEIKZ6kyV2HcHjHugdzb88Q7f',
+    coverArt: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop',
+    description: 'Game phiêu lưu hành động 16-bit kinh điển đưa bạn cùng chú khỉ Abu khám phá vương quốc Agrabah trên hệ máy SNES.',
+    isSnesSheet: true
+  },
+  {
+    id: 'snes-biker-mice-preset',
+    title: 'Biker Mice from Mars',
+    system: 'snes',
+    systemName: 'Super Nintendo (SNES)',
+    romUrl: 'https://drive.google.com/file/d/1i9fsfy5lM-eKcQIh1raZpx7etQlGd-Mt/view',
+    coverArt: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop',
+    description: 'Game đua xe bắn súng chuột không gian huyền thoại của Konami trên SNES với tốc độ cao và vũ khí uy lực.',
+    isSnesSheet: true
+  },
   {
     id: 'nes-2048',
     title: '2048 (NES Edition)',
@@ -69,8 +99,8 @@ const PRESET_ROMS: PresetRom[] = [
 ];
 
 const SYSTEM_CORES = [
-  { id: 'nes', name: 'Nintendo NES (8-bit)', exts: ['.nes'] },
   { id: 'snes', name: 'Super Nintendo SNES (16-bit)', exts: ['.snes', '.smc', '.sfc'] },
+  { id: 'nes', name: 'Nintendo NES (8-bit)', exts: ['.nes'] },
   { id: 'gba', name: 'Game Boy Advance (GBA)', exts: ['.gba'] },
   { id: 'gbc', name: 'Game Boy Color (GBC)', exts: ['.gbc', '.gb'] },
   { id: 'n64', name: 'Nintendo 64 (N64)', exts: ['.n64', '.z64', '.v64'] },
@@ -80,11 +110,27 @@ const SYSTEM_CORES = [
 ];
 
 export const EmulatorZone: React.FC = () => {
-  const [selectedCore, setSelectedCore] = useState<string>('nes');
+  const [selectedCore, setSelectedCore] = useState<string>('snes');
   const [currentRomUrl, setCurrentRomUrl] = useState<string | null>(null);
   const [currentRomName, setCurrentRomName] = useState<string>('');
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [uploadFileName, setUploadFileName] = useState<string | null>(null);
+
+  // SNES Sheet State
+  const [snesGames, setSnesGames] = useState<GameItem[]>(DEFAULT_SNES_TEST_GAMES);
+  const [isLoadingSnesSheet, setIsLoadingSnesSheet] = useState<boolean>(false);
+
+  // Loading State for ROM Fetch via Proxy
+  const [isLoadingRom, setIsLoadingRom] = useState<boolean>(false);
+  const [loadingStepText, setLoadingStepText] = useState<string>('');
+  const [romError, setRomError] = useState<{
+    title: string;
+    message: string;
+    hint?: string;
+    details?: string;
+    originalUrl?: string;
+    driveFileId?: string;
+  } | null>(null);
 
   // Netplay State
   const [netplayRoom, setNetplayRoom] = useState<string>('');
@@ -93,13 +139,33 @@ export const EmulatorZone: React.FC = () => {
 
   const playerContainerRef = useRef<HTMLDivElement>(null);
 
+  // Fetch SNES Games from Google Sheet on mount
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoadingSnesSheet(true);
+    fetchSnesGamesFromSheet(SNES_SHEET_ID)
+      .then((games) => {
+        if (isMounted && games && games.length > 0) {
+          setSnesGames(games);
+        }
+      })
+      .catch((err) => console.warn("Load SNES games error:", err))
+      .finally(() => {
+        if (isMounted) setIsLoadingSnesSheet(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Auto detect core from filename
   const detectCoreFromFilename = (filename: string): string => {
     const lower = filename.toLowerCase();
+    if (lower.endsWith('.snes') || lower.endsWith('.smc') || lower.endsWith('.sfc')) return 'snes';
     if (lower.endsWith('.nes')) return 'nes';
     if (lower.endsWith('.gba')) return 'gba';
     if (lower.endsWith('.gbc') || lower.endsWith('.gb')) return 'gbc';
-    if (lower.endsWith('.snes') || lower.endsWith('.smc') || lower.endsWith('.sfc')) return 'snes';
     if (lower.endsWith('.n64') || lower.endsWith('.z64') || lower.endsWith('.v64')) return 'n64';
     if (lower.endsWith('.nds')) return 'nds';
     if (lower.endsWith('.md') || lower.endsWith('.smd') || lower.endsWith('.gen')) return 'segaMD';
@@ -107,20 +173,69 @@ export const EmulatorZone: React.FC = () => {
     return selectedCore;
   };
 
-  // Launch ROM into EmulatorJS Engine
-  const launchRom = (romUrl: string, gameName: string, core: string) => {
-    setCurrentRomUrl(romUrl);
-    setCurrentRomName(gameName);
-    setSelectedCore(core);
-    setIsPlaying(true);
+  // Launch ROM into EmulatorJS Engine with Server Proxy for remote URLs
+  const launchRom = async (romUrl: string, gameName: string, core: string = 'snes') => {
+    setIsLoadingRom(true);
+    setRomError(null);
+    setLoadingStepText(`Đang kết nối ROM "${gameName}" qua Server Proxy...`);
     setActiveTab('play');
 
-    // Scroll smoothly to player container
-    setTimeout(() => {
+    try {
+      let finalGameUrl = romUrl;
+
+      // If it's a remote URL, fetch and stream through our /api/rom-proxy route
+      if (romUrl.startsWith('http://') || romUrl.startsWith('https://')) {
+        const proxyUrl = `/api/rom-proxy?url=${encodeURIComponent(romUrl)}`;
+        setLoadingStepText(`Đang tải ROM "${gameName}" từ Google Drive qua Server Proxy...`);
+
+        const proxyRes = await fetch(proxyUrl);
+        const contentType = proxyRes.headers.get("content-type") || "";
+
+        if (!proxyRes.ok || contentType.includes("application/json")) {
+          const errorJson = await proxyRes.json().catch(() => null);
+          const errMsg = errorJson?.error || `Không thể tải ROM từ Google Drive (Mã lỗi ${proxyRes.status}).`;
+          const hint = errorJson?.hint || "Vui lòng kiểm tra lại quyền chia sẻ file trên Google Drive thành 'Bất kỳ ai có đường liên kết'.";
+          const details = errorJson?.details || "";
+
+          setRomError({
+            title: "Không Thể Tải ROM Game",
+            message: errMsg,
+            hint,
+            details,
+            originalUrl: romUrl,
+            driveFileId: errorJson?.driveFileId
+          });
+          setIsLoadingRom(false);
+          setIsPlaying(false);
+          return;
+        }
+
+        setLoadingStepText(`Đang nạp ROM vào bộ nhớ giả lập...`);
+        const blob = await proxyRes.blob();
+        finalGameUrl = URL.createObjectURL(blob);
+      }
+
+      setLoadingStepText(`Khởi động EmulatorJS Core (${core.toUpperCase()})...`);
+      setCurrentRomUrl(finalGameUrl);
+      setCurrentRomName(gameName);
+      setSelectedCore(core);
+      setIsPlaying(true);
+      setIsLoadingRom(false);
+
       if (playerContainerRef.current) {
         playerContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-    }, 100);
+    } catch (err: any) {
+      console.error("[Launch ROM Error]:", err);
+      setRomError({
+        title: "Lỗi Kết Nối Mạng",
+        message: err.message || "Không thể kết nối đến máy chủ ROM Proxy.",
+        hint: "Vui lòng kiểm tra lại đường truyền mạng hoặc thử tải ROM trực tiếp từ máy cá nhân.",
+        originalUrl: romUrl
+      });
+      setIsLoadingRom(false);
+      setIsPlaying(false);
+    }
   };
 
   // Handle local File ROM upload
@@ -165,8 +280,8 @@ export const EmulatorZone: React.FC = () => {
   <div id="ejs-game-container"></div>
   <script>
     window.EJS_player = '#ejs-game-container';
-    window.EJS_core = ${JSON.stringify(selectedCore)};
-    window.EJS_gameName = ${JSON.stringify(currentRomName || 'Quán Game Xóm ROM')};
+    window.EJS_core = ${JSON.stringify(selectedCore || 'snes')};
+    window.EJS_gameName = ${JSON.stringify(currentRomName || 'Quán Game Xóm SNES ROM')};
     window.EJS_gameUrl = ${JSON.stringify(currentRomUrl)};
     window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
     window.EJS_startOnLoaded = true;
@@ -191,7 +306,7 @@ export const EmulatorZone: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <div id="emulator-zone" className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       {/* Header Banner */}
       <div className="relative rounded-3xl overflow-hidden p-6 sm:p-10 mb-8 border border-amber-500/30 bg-gradient-to-r from-slate-950 via-amber-950/40 to-slate-950 shadow-2xl">
         <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -200,19 +315,22 @@ export const EmulatorZone: React.FC = () => {
           <div className="space-y-2 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono text-xs font-bold">
               <Gamepad2 className="w-4 h-4 text-amber-400" />
-              <span>EMULATORJS WEB ENGINE 2026</span>
+              <span>EMULATORJS WEB ENGINE • SNES 16-BIT CLOUD</span>
             </div>
             <h1 className="text-3xl sm:text-5xl font-display font-black text-white uppercase tracking-tight">
-              KHU VỰC <span className="text-amber-400 text-glow-amber">GIẢ LẬP GAME</span>
+              KHU VỰC <span className="text-amber-400 text-glow-amber">GIẢ LẬP GAME SNES</span>
             </h1>
             <p className="text-xs sm:text-sm font-body text-slate-300 leading-relaxed">
-              Trải nghiệm game Retro cổ điển (NES, SNES, GBA, N64, NDS, PS1...) chạy trực tiếp 100% trên trình duyệt web. Không cần cài đặt phần mềm ngoài, mượt mà và cực kỳ tiện lợi!
+              Chơi ngay game SNES & Retro kinh điển qua EmulatorJS stream trực tiếp từ Google Sheet và Server Proxy Quán Game Xóm. Không cần cài đặt phần mềm ngoài, mượt mà 60 FPS!
             </p>
           </div>
 
           {/* Quick Action Load File Button */}
           <div className="shrink-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <label className="px-5 py-3.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-2xl text-xs font-mono uppercase tracking-wider transition-all shadow-xl hover:scale-105 active:scale-95 flex items-center justify-center gap-2.5 cursor-pointer">
+            <label
+              id="btn-upload-local-rom"
+              className="px-5 py-3.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-2xl text-xs font-mono uppercase tracking-wider transition-all shadow-xl hover:scale-105 active:scale-95 flex items-center justify-center gap-2.5 cursor-pointer"
+            >
               <Upload className="w-4 h-4 text-slate-950" />
               <span>TẢI ROM TỪ MÁY</span>
               <input
@@ -228,6 +346,7 @@ export const EmulatorZone: React.FC = () => {
         {/* Tab Navigation Controls */}
         <div className="flex flex-wrap items-center gap-2 mt-8 pt-6 border-t border-slate-800/80">
           <button
+            id="tab-snes-library"
             onClick={() => setActiveTab('library')}
             className={`px-4 py-2 rounded-xl text-xs font-display font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'library'
@@ -236,25 +355,27 @@ export const EmulatorZone: React.FC = () => {
             }`}
           >
             <FolderOpen className="w-4 h-4" />
-            <span>Thư Viện ROM Có Sẵn</span>
+            <span>Thư Viện ROM SNES & Retro</span>
           </button>
 
           <button
+            id="tab-snes-play"
             onClick={() => setActiveTab('play')}
-            disabled={!isPlaying}
+            disabled={!isPlaying && !isLoadingRom}
             className={`px-4 py-2 rounded-xl text-xs font-display font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'play'
                 ? 'bg-amber-500 text-slate-950 shadow-lg'
-                : isPlaying
+                : isPlaying || isLoadingRom
                 ? 'bg-slate-900/80 text-slate-300 hover:bg-slate-800 hover:text-white'
                 : 'opacity-40 cursor-not-allowed text-slate-500'
             }`}
           >
             <Play className="w-4 h-4" />
-            <span>Màn Hình Mới Chơi {isPlaying && `(${currentRomName})`}</span>
+            <span>Màn Hình Chơi Game {isPlaying && `(${currentRomName})`}</span>
           </button>
 
           <button
+            id="tab-snes-saves"
             onClick={() => setActiveTab('saves')}
             className={`px-4 py-2 rounded-xl text-xs font-display font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'saves'
@@ -267,6 +388,7 @@ export const EmulatorZone: React.FC = () => {
           </button>
 
           <button
+            id="tab-snes-netplay"
             onClick={() => setActiveTab('netplay')}
             className={`px-4 py-2 rounded-xl text-xs font-display font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'netplay'
@@ -284,81 +406,195 @@ export const EmulatorZone: React.FC = () => {
 
       {/* TAB 1: PRESET ROM LIBRARY */}
       {activeTab === 'library' && (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
-            <div>
-              <h2 className="text-xl font-display font-black text-white uppercase tracking-tight flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-amber-400" />
-                <span>THƯ VIỆN ROM MẪU & TẢI FILE CÁ NHÂN</span>
-              </h2>
-              <p className="text-xs text-slate-400 mt-1">
-                Bấm vào game bên dưới để chơi ngay lập tức, hoặc tải file ROM cá nhân của bạn từ máy tính!
-              </p>
+        <div className="space-y-8">
+          {/* 1. FEATURED SNES GOOGLE SHEET GAMES (Aladdin & Biker Mice from Mars) */}
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-amber-500/30">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                  <Flame className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-display font-black text-white uppercase tracking-tight flex items-center gap-2">
+                    <span>DANH SÁCH GAME SNES CLOUD (GOOGLE SHEET)</span>
+                    <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[10px] font-mono font-black">
+                      CHƠI NGAY
+                    </span>
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Dữ liệu đồng bộ từ Google Sheet SNES — Tự động proxy qua server chống lỗi CORS. User chọn là chơi ngay không cần upload!
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  id="btn-refresh-snes-sheet"
+                  onClick={() => {
+                    setIsLoadingSnesSheet(true);
+                    fetchSnesGamesFromSheet(SNES_SHEET_ID)
+                      .then((data) => setSnesGames(data))
+                      .finally(() => setIsLoadingSnesSheet(false));
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-500/40 text-amber-300 hover:text-white text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingSnesSheet ? 'animate-spin' : ''}`} />
+                  <span>Đồng bộ Sheet</span>
+                </button>
+              </div>
             </div>
 
-            {/* Core Selector Dropdown */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono text-slate-400 whitespace-nowrap">Hệ máy mặc định:</span>
-              <select
-                value={selectedCore}
-                onChange={(e) => setSelectedCore(e.target.value)}
-                className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-mono font-bold text-amber-300 focus:outline-none focus:border-amber-500 cursor-pointer"
-              >
-                {SYSTEM_CORES.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+            {/* Grid of SNES Sheet Games */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {snesGames.map((game) => (
+                <div
+                  key={game.id}
+                  id={`card-snes-${game.id}`}
+                  className="group relative glass-card rounded-3xl overflow-hidden border border-amber-500/40 hover:border-amber-400 transition-all duration-300 flex flex-col sm:flex-row shadow-2xl hover:shadow-amber-500/20 bg-gradient-to-br from-slate-900/90 via-slate-950/90 to-amber-950/30"
+                >
+                  <div className="relative sm:w-2/5 aspect-[4/3] sm:aspect-auto overflow-hidden bg-slate-950 shrink-0">
+                    <img
+                      src={game.coverArt}
+                      alt={game.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute top-3 left-3 px-2.5 py-1 bg-slate-950/90 backdrop-blur-md rounded-lg border border-amber-400/60 text-xs font-mono font-black text-amber-300 flex items-center gap-1.5">
+                      <Zap className="w-3 h-3 text-amber-400" />
+                      <span>SNES 16-BIT</span>
+                    </div>
+                  </div>
+
+                  <div className="p-5 flex flex-col justify-between flex-1 gap-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">
+                          Cloud ROM Direct
+                        </span>
+                        <span className="text-[10px] font-mono text-slate-400">
+                          {game.fileSize || 'SNES ROM'}
+                        </span>
+                      </div>
+
+                      <h3 className="text-lg font-bold text-white group-hover:text-amber-300 transition-colors font-display">
+                        {game.title}
+                      </h3>
+                      <p className="text-xs text-slate-300 font-body line-clamp-2 mt-1.5 leading-relaxed">
+                        {game.description || game.subtitle}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2 border-t border-slate-800">
+                      <button
+                        id={`btn-play-snes-${game.id}`}
+                        onClick={() => launchRom(game.romUrl || '', game.title, 'snes')}
+                        className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs font-mono uppercase tracking-wider transition-all shadow-lg hover:shadow-amber-500/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                      >
+                        <Play className="w-4 h-4 fill-slate-950" />
+                        <span>CHƠI NGAY (SNES)</span>
+                      </button>
+
+                      {game.downloadUrl && (
+                        <a
+                          href={game.downloadUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all"
+                          title="Mở link chia sẻ Google Drive"
+                        >
+                          <Download className="w-4 h-4" />
+                          <span className="sm:hidden">Tải ROM</span>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Grid of Preset ROMs */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {PRESET_ROMS.map((rom) => (
-              <div
-                key={rom.id}
-                className="group glass-card rounded-2xl overflow-hidden border border-slate-800 hover:border-amber-500/50 transition-all duration-300 flex flex-col h-full shadow-lg hover:shadow-2xl hover:shadow-amber-500/10"
-              >
-                <div className="relative aspect-[16/9] overflow-hidden bg-slate-950">
-                  <img
-                    src={rom.coverArt}
-                    alt={rom.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute top-2 left-2 px-2 py-0.5 bg-slate-950/80 backdrop-blur-md rounded border border-amber-500/40 text-[10px] font-mono font-bold text-amber-300">
-                    {rom.systemName}
-                  </div>
-                </div>
-
-                <div className="p-4 flex flex-col flex-1 justify-between gap-4">
-                  <div>
-                    <h3 className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors">
-                      {rom.title}
-                    </h3>
-                    <p className="text-xs text-slate-400 font-body line-clamp-2 mt-1.5 leading-relaxed">
-                      {rom.description}
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => launchRom(rom.romUrl, rom.title, rom.system)}
-                    className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs font-mono uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <Play className="w-3.5 h-3.5 fill-slate-950" />
-                    <span>NẠP GAME & CHƠI NGAY</span>
-                  </button>
-                </div>
+          {/* 2. ALL RETRO PRESET CORES & GAMES */}
+          <div className="space-y-4 pt-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-800">
+              <div>
+                <h3 className="text-base font-display font-black text-white uppercase tracking-tight flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <span>CÁC GAME MẪU KHÁC (NES, GBA, GBC)</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Chọn core và game mẫu để thử nghiệm trình giả lập EmulatorJS.
+                </p>
               </div>
-            ))}
+
+              {/* Core Selector Dropdown */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono text-slate-400 whitespace-nowrap">Hệ máy mặc định:</span>
+                <select
+                  id="select-emulator-core"
+                  value={selectedCore}
+                  onChange={(e) => setSelectedCore(e.target.value)}
+                  className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-mono font-bold text-amber-300 focus:outline-none focus:border-amber-500 cursor-pointer"
+                >
+                  {SYSTEM_CORES.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Grid of Other Preset ROMs */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {CLASSIC_PRESET_ROMS.map((rom) => (
+                <div
+                  key={rom.id}
+                  id={`card-preset-${rom.id}`}
+                  className="group glass-card rounded-2xl overflow-hidden border border-slate-800 hover:border-amber-500/50 transition-all duration-300 flex flex-col h-full shadow-lg hover:shadow-2xl hover:shadow-amber-500/10"
+                >
+                  <div className="relative aspect-[16/9] overflow-hidden bg-slate-950">
+                    <img
+                      src={rom.coverArt}
+                      alt={rom.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute top-2 left-2 px-2 py-0.5 bg-slate-950/80 backdrop-blur-md rounded border border-amber-500/40 text-[10px] font-mono font-bold text-amber-300">
+                      {rom.systemName}
+                    </div>
+                  </div>
+
+                  <div className="p-4 flex flex-col flex-1 justify-between gap-4">
+                    <div>
+                      <h3 className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors">
+                        {rom.title}
+                      </h3>
+                      <p className="text-xs text-slate-400 font-body line-clamp-2 mt-1.5 leading-relaxed">
+                        {rom.description}
+                      </p>
+                    </div>
+
+                    <button
+                      id={`btn-launch-rom-${rom.id}`}
+                      onClick={() => launchRom(rom.romUrl, rom.title, rom.system)}
+                      className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs font-mono uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Play className="w-3.5 h-3.5 fill-slate-950" />
+                      <span>NẠP GAME & CHƠI NGAY</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Local File Upload Box */}
           <div className="mt-8 p-6 glass-modal rounded-3xl border border-dashed border-amber-500/40 text-center space-y-3 bg-gradient-to-b from-slate-950 to-amber-950/20">
             <Upload className="w-10 h-10 text-amber-400 mx-auto" />
-            <h3 className="text-base font-bold text-white font-display">Tải Lên File ROM Từ Máy Cá Nhân</h3>
+            <h3 className="text-base font-bold text-white font-display">Tải Lên File ROM Từ Máy Cá Nhân (Tất Cả Hệ Máy)</h3>
             <p className="text-xs text-slate-400 max-w-xl mx-auto font-body">
-              Hỗ trợ các file đuôi: <strong className="text-amber-300 font-mono">.nes, .gba, .gbc, .snes, .n64, .nds, .iso, .md</strong>. File sẽ được nạp trực tiếp vào bộ nhớ trình duyệt, hoàn toàn bảo mật và không lưu file lên server.
+              Hỗ trợ các file đuôi: <strong className="text-amber-300 font-mono">.snes, .smc, .sfc, .nes, .gba, .gbc, .n64, .nds, .iso, .md</strong>. File sẽ được nạp trực tiếp vào bộ nhớ trình duyệt, hoàn toàn bảo mật và không lưu file lên server.
             </p>
-            <label className="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 border border-amber-500/50 text-amber-300 hover:text-white rounded-2xl text-xs font-bold font-mono transition-all cursor-pointer shadow-lg">
+            <label
+              id="btn-upload-file-box"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 border border-amber-500/50 text-amber-300 hover:text-white rounded-2xl text-xs font-bold font-mono transition-all cursor-pointer shadow-lg"
+            >
               <FolderOpen className="w-4 h-4" />
               <span>{uploadFileName ? `File đã chọn: ${uploadFileName}` : 'Chọn File ROM Từ Máy Tính'}</span>
               <input
@@ -377,32 +613,152 @@ export const EmulatorZone: React.FC = () => {
         <div ref={playerContainerRef} className="space-y-4">
           <div className="flex items-center justify-between p-4 bg-slate-950 rounded-2xl border border-slate-800">
             <div className="flex items-center gap-3">
-              <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
+              <span className={`w-3 h-3 rounded-full ${isLoadingRom ? 'bg-amber-400 animate-spin' : 'bg-emerald-400 animate-pulse'}`} />
               <div>
                 <h3 className="text-sm font-bold text-white font-display">
                   Đang Chơi: <span className="text-amber-300">{currentRomName || 'ROM Game'}</span>
                 </h3>
                 <span className="text-[10px] font-mono text-slate-400 uppercase">
-                  Hệ Máy Core: {SYSTEM_CORES.find(c => c.id === selectedCore)?.name || selectedCore}
+                  Hệ Máy Core: {SYSTEM_CORES.find(c => c.id === selectedCore)?.name || selectedCore.toUpperCase()} • Server Proxy CORS Safe
                 </span>
               </div>
             </div>
 
-            <button
-              onClick={() => {
-                setIsPlaying(false);
-                setCurrentRomUrl(null);
-                setActiveTab('library');
-              }}
-              className="px-3.5 py-1.5 bg-red-950/80 hover:bg-red-600 border border-red-500/50 text-red-200 hover:text-white rounded-xl text-xs font-bold font-mono transition-all cursor-pointer"
-            >
-              Thoát Game
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                id="btn-switch-to-library"
+                onClick={() => setActiveTab('library')}
+                className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold font-mono transition-all cursor-pointer"
+              >
+                Đổi Game Khác
+              </button>
+
+              <button
+                id="btn-exit-emulator"
+                onClick={() => {
+                  setIsPlaying(false);
+                  setCurrentRomUrl(null);
+                  setActiveTab('library');
+                }}
+                className="px-3.5 py-1.5 bg-red-950/80 hover:bg-red-600 border border-red-500/50 text-red-200 hover:text-white rounded-xl text-xs font-bold font-mono transition-all cursor-pointer"
+              >
+                Thoát Game
+              </button>
+            </div>
           </div>
 
-          {/* EMULATORJS IFRAME CONTAINER */}
+          {/* EMULATORJS IFRAME CONTAINER, LOADING SPINNER & ERROR STATE */}
           <div className="relative w-full aspect-[4/3] max-h-[720px] bg-black rounded-3xl border border-amber-500/30 overflow-hidden shadow-2xl flex items-center justify-center">
-            {isPlaying && currentRomUrl ? (
+            {/* Loading Spinner Overlay when fetching ROM via proxy */}
+            <AnimatePresence>
+              {isLoadingRom && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 z-20 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center gap-4 p-6 text-center"
+                >
+                  <div className="relative flex items-center justify-center">
+                    <Loader2 className="w-12 h-12 text-amber-400 animate-spin" />
+                    <Gamepad2 className="w-6 h-6 text-amber-300 absolute" />
+                  </div>
+
+                  <div className="space-y-1 max-w-md">
+                    <h4 className="text-base font-bold text-white font-display uppercase tracking-wide">
+                      Đang Tải ROM SNES Qua Server Proxy
+                    </h4>
+                    <p className="text-xs font-mono text-amber-300">
+                      {loadingStepText || "Đang kết nối ROM..."}
+                    </p>
+                    <p className="text-[11px] text-slate-400 font-body mt-2">
+                      Trình duyệt đang tải ROM an toàn qua route /api/rom-proxy nhằm vượt lỗi CORS Google Drive.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Error Message Container when Google Drive link is invalid or private */}
+            {romError && !isLoadingRom && (
+              <div className="absolute inset-0 z-10 p-6 sm:p-10 flex flex-col items-center justify-center bg-slate-950/95 text-center overflow-y-auto">
+                <div className="p-4 rounded-3xl bg-red-500/10 border border-red-500/30 text-red-400 mb-4 inline-flex">
+                  <AlertTriangle className="w-10 h-10" />
+                </div>
+
+                <h3 className="text-xl sm:text-2xl font-bold text-white font-display uppercase tracking-tight mb-2">
+                  {romError.title}
+                </h3>
+                
+                <p className="text-sm font-semibold text-red-300 max-w-lg mb-2 leading-relaxed">
+                  {romError.message}
+                </p>
+
+                {romError.details && (
+                  <p className="text-xs text-slate-400 font-mono mb-4 max-w-md">
+                    {romError.details}
+                  </p>
+                )}
+
+                {romError.hint && (
+                  <div className="max-w-xl w-full p-4 rounded-2xl bg-amber-950/40 border border-amber-500/40 text-xs text-amber-200 text-left font-body mb-6 space-y-1">
+                    <strong className="text-amber-300 font-bold block flex items-center gap-1.5 font-mono">
+                      <AlertCircle className="w-4 h-4 text-amber-400" />
+                      HƯỚNG DẪN KHẮC PHỤC:
+                    </strong>
+                    <p className="leading-relaxed text-slate-300">
+                      {romError.hint}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  {romError.originalUrl && (
+                    <button
+                      id="btn-retry-launch-rom"
+                      onClick={() => launchRom(romError.originalUrl || '', currentRomName, selectedCore)}
+                      className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs font-mono uppercase tracking-wider transition-all shadow-lg flex items-center gap-2 cursor-pointer"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      <span>Thử Lại Ngay</span>
+                    </button>
+                  )}
+
+                  {romError.originalUrl && (romError.originalUrl.includes('drive.google.com') || romError.originalUrl.includes('docs.google.com')) && (
+                    <a
+                      href={romError.originalUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all"
+                    >
+                      <ExternalLink className="w-4 h-4 text-amber-400" />
+                      <span>Mở File Trên Drive</span>
+                    </a>
+                  )}
+
+                  <label
+                    className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 hover:text-white rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <Upload className="w-4 h-4 text-cyan-400" />
+                    <span>Tải ROM Từ Máy Tính</span>
+                    <input
+                      type="file"
+                      onChange={handleFileUpload}
+                      accept=".nes,.snes,.smc,.sfc,.gba,.gbc,.gb,.n64,.z64,.v64,.nds,.md,.gen,.bin,.iso,.chd"
+                      className="hidden"
+                    />
+                  </label>
+
+                  <button
+                    onClick={() => setActiveTab('library')}
+                    className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer"
+                  >
+                    Đổi Game Khác
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {isPlaying && currentRomUrl && !romError ? (
               <iframe
                 key={`${currentRomUrl}-${selectedCore}`}
                 srcDoc={iframeSrcDoc}
@@ -410,11 +766,18 @@ export const EmulatorZone: React.FC = () => {
                 allow="autoplay; gamepad; fullscreen; microphone"
                 title="Retro Emulator Engine"
               />
-            ) : (
-              <div className="text-center p-8 text-slate-500 font-mono text-xs">
-                Vui lòng chọn một trò chơi từ thư viện hoặc tải ROM từ máy để bắt đầu.
+            ) : !isLoadingRom && !romError ? (
+              <div className="text-center p-8 text-slate-500 font-mono text-xs space-y-3">
+                <Gamepad2 className="w-10 h-10 text-slate-700 mx-auto" />
+                <p>Vui lòng chọn một trò chơi SNES từ thư viện hoặc tải ROM từ máy để bắt đầu.</p>
+                <button
+                  onClick={() => setActiveTab('library')}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs font-mono uppercase"
+                >
+                  Xem Thư Viện ROM
+                </button>
               </div>
-            )}
+            ) : null}
           </div>
 
           {/* Quick Control Hints & Keybindings Guide */}
@@ -425,7 +788,7 @@ export const EmulatorZone: React.FC = () => {
                 <span>CẤU HÌNH PHÍM MẶC ĐỊNH EMULATORJS & TỐC ĐỘ 60 FPS</span>
               </div>
               <span className="text-[10px] text-amber-400/90 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
-                ⚡ FPS: 60 FPS Locked
+                ⚡ Core: {selectedCore.toUpperCase()} (60 FPS Locked)
               </span>
             </div>
 
@@ -508,6 +871,7 @@ export const EmulatorZone: React.FC = () => {
 
             <div className="flex items-center gap-3">
               <input
+                id="input-netplay-room"
                 type="text"
                 value={netplayRoom}
                 onChange={(e) => setNetplayRoom(e.target.value)}
@@ -516,6 +880,7 @@ export const EmulatorZone: React.FC = () => {
               />
 
               <button
+                id="btn-create-netplay-room"
                 type="button"
                 onClick={handleCreateRoom}
                 className="px-4 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs font-mono uppercase tracking-wider transition-all cursor-pointer"
@@ -525,6 +890,7 @@ export const EmulatorZone: React.FC = () => {
 
               {netplayRoom && (
                 <button
+                  id="btn-copy-netplay-room"
                   type="button"
                   onClick={handleCopyRoom}
                   className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-1.5 cursor-pointer"
@@ -539,7 +905,7 @@ export const EmulatorZone: React.FC = () => {
               <strong>💡 Hướng dẫn chơi cùng bạn bè:</strong>
               <ol className="list-decimal list-inside space-y-1 mt-1.5 text-slate-300">
                 <li>Tạo hoặc dán mã phòng ở trên.</li>
-                <li>Chọn 1 game mẫu từ Thư viện ROM và bấm Nạp Game.</li>
+                <li>Chọn 1 game mẫu từ Thư viện ROM SNES và bấm Chơi Ngay.</li>
                 <li>Gửi mã phòng này cho bạn bè, họ cũng nhập đúng mã này và nạp cùng 1 file ROM để bắt đầu kết nối Netplay Player 2!</li>
               </ol>
             </div>

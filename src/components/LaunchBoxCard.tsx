@@ -5,6 +5,7 @@ import { Download, Star, HardDrive, Gamepad2, Info, Camera, Image as ImageIcon, 
 import { useGameCover } from '../hooks/useGameCover';
 import { useAdminMode } from '../hooks/useAdminMode';
 import { parseGameTitle } from '../utils/titleParser';
+import { ShareGameMenu } from './ShareGameMenu';
 
 interface LaunchBoxCardProps {
   game: GameItem;
@@ -179,6 +180,12 @@ export const LaunchBoxCard: React.FC<LaunchBoxCardProps> = ({ game, onSelect, on
             <Info className="w-3.5 h-3.5 text-amber-400" />
             <span>Chi Tiết</span>
           </button>
+
+          <ShareGameMenu
+            game={game}
+            variant="compact"
+            align="right"
+          />
         </div>
       </div>
     </motion.div>
