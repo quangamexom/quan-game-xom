@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { fetchSnesGamesFromSheet, DEFAULT_SNES_TEST_GAMES, SNES_SHEET_ID } from '../services/sheetService';
 import { GameItem } from '../types';
+import { ShareGameMenu } from './ShareGameMenu';
 
 export interface PresetRom {
   id: string;
@@ -108,6 +109,21 @@ const SYSTEM_CORES = [
   { id: 'segaMD', name: 'Sega Genesis / MegaDrive', exts: ['.md', '.smd', '.gen', '.bin'] },
   { id: 'psx', name: 'PlayStation 1 (PSX)', exts: ['.iso', '.cue', '.chd'] }
 ];
+
+export const presetRomToGameItem = (rom: PresetRom): GameItem => ({
+  id: rom.id,
+  title: rom.title,
+  subtitle: rom.systemName,
+  platforms: ['Other'],
+  language: 'Gốc / Tiếng Anh',
+  hasVietHoa: false,
+  coverArt: rom.coverArt,
+  description: rom.description,
+  fileSize: rom.systemName,
+  emulatorCore: rom.system,
+  romUrl: rom.romUrl,
+  downloadUrl: rom.romUrl
+});
 
 export const EmulatorZone: React.FC = () => {
   const [selectedCore, setSelectedCore] = useState<string>('snes');
@@ -493,6 +509,12 @@ export const EmulatorZone: React.FC = () => {
                         <span>CHƠI NGAY (SNES)</span>
                       </button>
 
+                      <ShareGameMenu
+                        game={game}
+                        variant="compact"
+                        align="right"
+                      />
+
                       {game.downloadUrl && (
                         <a
                           href={game.downloadUrl}
@@ -570,14 +592,22 @@ export const EmulatorZone: React.FC = () => {
                       </p>
                     </div>
 
-                    <button
-                      id={`btn-launch-rom-${rom.id}`}
-                      onClick={() => launchRom(rom.romUrl, rom.title, rom.system)}
-                      className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs font-mono uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <Play className="w-3.5 h-3.5 fill-slate-950" />
-                      <span>NẠP GAME & CHƠI NGAY</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        id={`btn-launch-rom-${rom.id}`}
+                        onClick={() => launchRom(rom.romUrl, rom.title, rom.system)}
+                        className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs font-mono uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-slate-950" />
+                        <span>CHƠI NGAY</span>
+                      </button>
+
+                      <ShareGameMenu
+                        game={presetRomToGameItem(rom)}
+                        variant="compact"
+                        align="right"
+                      />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -625,6 +655,20 @@ export const EmulatorZone: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
+              <ShareGameMenu
+                game={{
+                  id: currentRomName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                  title: currentRomName || 'Retro Emulator Game',
+                  platforms: ['Other'],
+                  language: 'Gốc / Tiếng Anh',
+                  hasVietHoa: false,
+                  fileSize: selectedCore.toUpperCase(),
+                  coverArt: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop'
+                }}
+                variant="compact"
+                align="right"
+              />
+
               <button
                 id="btn-switch-to-library"
                 onClick={() => setActiveTab('library')}
