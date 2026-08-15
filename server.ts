@@ -10,7 +10,7 @@ import {
   addGameToLibrary, 
   updateGameInLibrary, 
   removeGameFromLibrary 
-} from "./src/services/metadataStorage";
+} from "./src/services/metadataStorage.ts";
 
 const app = express();
 const PORT = 3000;
