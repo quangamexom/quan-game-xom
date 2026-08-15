@@ -37,7 +37,7 @@ export default function App() {
   const [defaultPassword, setDefaultPassword] = useState<string>("quangamexom");
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
-  useEffect(() => {
+  const syncAllGames = () => {
     setIsSyncing(true);
     fetchSheetData(DEFAULT_SHEET_URL)
       .then((data) => {
@@ -47,6 +47,18 @@ export default function App() {
       })
       .catch((err) => console.error("Sync sheet error:", err))
       .finally(() => setIsSyncing(false));
+  };
+
+  useEffect(() => {
+    syncAllGames();
+
+    // Listen to real-time updates from Admin ROM Upload / Visibility Toggle
+    const handleGameUpdate = () => {
+      syncAllGames();
+    };
+
+    window.addEventListener('qgx_games_updated', handleGameUpdate);
+    return () => window.removeEventListener('qgx_games_updated', handleGameUpdate);
   }, []);
 
   // Scroll Spy Hook for Intelligent Navbar Active Highlight & Smooth Scrolling

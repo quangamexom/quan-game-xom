@@ -160,23 +160,31 @@ export const EmulatorZone: React.FC = () => {
 
   const playerContainerRef = useRef<HTMLDivElement>(null);
 
-  // Fetch SNES Games from Google Sheet on mount
-  useEffect(() => {
-    let isMounted = true;
+  const refreshSnesGames = () => {
     setIsLoadingSnesSheet(true);
     fetchSnesGamesFromSheet(SNES_SHEET_ID)
       .then((games) => {
-        if (isMounted && games && games.length > 0) {
+        if (games && games.length > 0) {
           setSnesGames(games);
         }
       })
       .catch((err) => console.warn("Load SNES games error:", err))
       .finally(() => {
-        if (isMounted) setIsLoadingSnesSheet(false);
+        setIsLoadingSnesSheet(false);
       });
+  };
 
+  // Fetch SNES Games from Google Sheet on mount & listen to updates
+  useEffect(() => {
+    refreshSnesGames();
+
+    const handleUpdate = () => {
+      refreshSnesGames();
+    };
+
+    window.addEventListener('qgx_games_updated', handleUpdate);
     return () => {
-      isMounted = false;
+      window.removeEventListener('qgx_games_updated', handleUpdate);
     };
   }, []);
 
@@ -964,6 +972,7 @@ export const EmulatorZone: React.FC = () => {
         isOpen={isAdminRomModalOpen}
         onClose={() => setIsAdminRomModalOpen(false)}
         onPlayRom={(url, name, core) => launchRom(url, name, core || 'snes')}
+        onGameUpdated={refreshSnesGames}
       />
     </div>
   );

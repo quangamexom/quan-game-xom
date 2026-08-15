@@ -483,11 +483,186 @@ app.post("/api/save-logo", async (req, res) => {
   }
 });
 
-// 4. Vercel Blob Storage Admin Routes for direct public ROM storage
-// Upload ROM file directly to Vercel Blob
+// System metadata helpers for Auto-Generated Game Cards
+function getSystemMeta(systemCode: string = 'snes') {
+  const code = systemCode.toLowerCase();
+  switch (code) {
+    case 'nes':
+      return {
+        systemName: 'NES / Điện Tử 4 Nút',
+        platform: 'Other' as const,
+        cover: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop',
+        backdrop: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop',
+        genres: ['NES 8-Bit', 'Retro', 'Kinh Điển']
+      };
+    case 'gba':
+      return {
+        systemName: 'Game Boy Advance (GBA)',
+        platform: 'Other' as const,
+        cover: 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=600&auto=format&fit=crop',
+        backdrop: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop',
+        genres: ['GBA 32-Bit', 'Retro', 'Cầm Tay']
+      };
+    case 'gbc':
+    case 'gb':
+      return {
+        systemName: 'Game Boy Color (GBC)',
+        platform: 'Other' as const,
+        cover: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop',
+        backdrop: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop',
+        genres: ['Game Boy', 'Retro', 'Kinh Điển']
+      };
+    case 'n64':
+      return {
+        systemName: 'Nintendo 64 (N64)',
+        platform: 'Other' as const,
+        cover: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop',
+        backdrop: 'https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=600&auto=format&fit=crop',
+        genres: ['N64 64-Bit', '3D Retro', 'Nintendo']
+      };
+    case 'nds':
+      return {
+        systemName: 'Nintendo DS (NDS)',
+        platform: 'Other' as const,
+        cover: 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=600&auto=format&fit=crop',
+        backdrop: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop',
+        genres: ['Nintendo DS', '2 Màn Hình', 'Cầm Tay']
+      };
+    case 'segamd':
+    case 'sega':
+    case 'md':
+      return {
+        systemName: 'Sega Genesis / Mega Drive',
+        platform: 'Other' as const,
+        cover: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop',
+        backdrop: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop',
+        genres: ['Sega 16-Bit', 'Retro', 'Huyền Thoại']
+      };
+    case 'psx':
+    case 'ps1':
+      return {
+        systemName: 'Sony PlayStation 1 (PS1)',
+        platform: 'PS1' as const,
+        cover: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop',
+        backdrop: 'https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=600&auto=format&fit=crop',
+        genres: ['PS1 32-Bit', 'Sony', 'Kinh Điển']
+      };
+    case 'snes':
+    default:
+      return {
+        systemName: 'Super Nintendo (SNES)',
+        platform: 'Other' as const,
+        cover: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop',
+        backdrop: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop',
+        genres: ['SNES 16-Bit', 'Retro', 'Quán Game Xóm']
+      };
+  }
+}
+
+// Helpers for games-library.json persistence (Vercel Blob + Local Disk)
+async function loadGamesLibrary(): Promise<any[]> {
+  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+  
+  // 1. Try reading from Vercel Blob if token available
+  if (blobToken) {
+    try {
+      const { blobs } = await list({ token: blobToken, prefix: 'roms-metadata/' });
+      const metadataBlob = blobs.find(b => b.pathname.includes('games-library.json'));
+      if (metadataBlob) {
+        const res = await fetch(`${metadataBlob.url}?t=${Date.now()}`);
+        if (res.ok) {
+          const listData = await res.json();
+          if (Array.isArray(listData)) {
+            return listData;
+          }
+        }
+      }
+    } catch (blobErr) {
+      console.warn("[Vercel Blob Metadata Read Warning]:", blobErr);
+    }
+  }
+
+  // 2. Fallback to reading from local disk
+  try {
+    const publicPath = path.join(process.cwd(), "public", "assets", "games-library.json");
+    if (fs.existsSync(publicPath)) {
+      const content = fs.readFileSync(publicPath, "utf-8");
+      const parsed = JSON.parse(content);
+      if (Array.isArray(parsed)) return parsed;
+    }
+    const srcPath = path.join(process.cwd(), "src", "data", "adminGamesLibrary.json");
+    if (fs.existsSync(srcPath)) {
+      const content = fs.readFileSync(srcPath, "utf-8");
+      const parsed = JSON.parse(content);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (diskErr) {
+    console.warn("[Disk Metadata Read Warning]:", diskErr);
+  }
+
+  return [];
+}
+
+async function saveGamesLibrary(games: any[]): Promise<boolean> {
+  const jsonContent = JSON.stringify(games, null, 2);
+
+  // 1. Save to local disk for persistence
+  try {
+    const publicAssetsDir = path.join(process.cwd(), "public", "assets");
+    const srcDataDir = path.join(process.cwd(), "src", "data");
+    if (!fs.existsSync(publicAssetsDir)) fs.mkdirSync(publicAssetsDir, { recursive: true });
+    if (!fs.existsSync(srcDataDir)) fs.mkdirSync(srcDataDir, { recursive: true });
+
+    fs.writeFileSync(path.join(publicAssetsDir, "games-library.json"), jsonContent, "utf-8");
+    fs.writeFileSync(path.join(srcDataDir, "adminGamesLibrary.json"), jsonContent, "utf-8");
+  } catch (fsErr) {
+    console.warn("[Disk Metadata Save Warning]:", fsErr);
+  }
+
+  // 2. Save to Vercel Blob
+  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+  if (blobToken) {
+    try {
+      await put('roms-metadata/games-library.json', Buffer.from(jsonContent), {
+        access: 'public',
+        token: blobToken,
+        addRandomSuffix: false,
+        contentType: 'application/json'
+      });
+      console.log(`[Vercel Blob] Saved games-library.json metadata (${games.length} games)`);
+      return true;
+    } catch (blobErr) {
+      console.warn("[Vercel Blob Metadata Save Warning]:", blobErr);
+    }
+  }
+
+  return true;
+}
+
+// 4. Vercel Blob Storage Admin Routes for direct public ROM storage & Metadata Library
+
+// Public API to get Admin Uploaded Games Library
+app.get("/api/games/admin-library", async (req, res) => {
+  try {
+    const includeHidden = req.query.includeHidden === 'true';
+    const allGames = await loadGamesLibrary();
+    const result = includeHidden ? allGames : allGames.filter(g => !g.isHidden);
+    
+    return res.json({
+      success: true,
+      count: result.length,
+      games: result
+    });
+  } catch (err: any) {
+    console.error("[Admin Library API Error]:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to load admin library" });
+  }
+});
+
+// Upload ROM file directly to Vercel Blob & Auto Register in Games Library
 app.post("/api/admin/blob/upload", async (req, res) => {
   try {
-    const { filename, fileData, contentType } = req.body;
+    const { filename, fileData, contentType, title, system, coverArt } = req.body;
     if (!filename || !fileData) {
       return res.status(400).json({ 
         success: false, 
@@ -526,13 +701,63 @@ app.post("/api/admin/blob/upload", async (req, res) => {
 
     console.log(`[Vercel Blob] Uploaded ROM successfully: ${blobResult.url} (${buffer.length} bytes)`);
 
+    // Prepare Game Card details
+    const selectedSystem = (system || 'snes').toLowerCase();
+    const systemMeta = getSystemMeta(selectedSystem);
+    
+    // Auto-generate title from filename if not explicitly provided
+    const displayTitle = (title && title.trim().length > 0)
+      ? title.trim()
+      : filename.replace(/\.[^/.]+$/, '').replace(/[_.-]+/g, ' ').trim();
+
+    const formattedSize = buffer.length < 1024 * 1024 
+      ? `${(buffer.length / 1024).toFixed(1)} KB`
+      : `${(buffer.length / (1024 * 1024)).toFixed(2)} MB`;
+
+    const uniqueId = `blob-rom-${Date.now()}-${displayTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+
+    const newGameCard = {
+      id: uniqueId,
+      title: displayTitle,
+      subtitle: `${systemMeta.systemName} • Vercel Blob Cloud ROM`,
+      system: selectedSystem,
+      systemName: systemMeta.systemName,
+      romUrl: blobResult.url,
+      coverArt: coverArt || systemMeta.cover,
+      backdropArt: systemMeta.backdrop,
+      platforms: [systemMeta.platform],
+      language: "Gốc / Tiếng Anh ⭐",
+      hasVietHoa: false,
+      releaseYear: new Date().getFullYear(),
+      fileSize: formattedSize,
+      rating: 5.0,
+      genres: [systemMeta.systemName, "Retro", "Quán Game Xóm"],
+      description: `${displayTitle} — Game ${systemMeta.systemName} được lưu trữ trực tiếp trên Vercel Blob Storage tốc độ cao, chơi mượt mà trên trình giả lập EmulatorJS của Quán Game Xóm.`,
+      downloadUrl: blobResult.url,
+      emulatorCore: selectedSystem,
+      isFeatured: true,
+      isPopular: true,
+      isNewUpdate: true,
+      addedDate: new Date().toISOString().split('T')[0],
+      isHidden: false
+    };
+
+    // Load existing metadata, prepend new game, and save
+    const currentLibrary = await loadGamesLibrary();
+    // Remove if already exists with same romUrl or id
+    const filteredLibrary = currentLibrary.filter(g => g.romUrl !== blobResult.url && g.id !== uniqueId);
+    filteredLibrary.unshift(newGameCard);
+
+    await saveGamesLibrary(filteredLibrary);
+
     return res.json({
       success: true,
       url: blobResult.url,
       pathname: blobResult.pathname,
       contentType: blobResult.contentType,
       size: buffer.length,
-      message: "Tải file ROM lên Vercel Blob thành công!"
+      game: newGameCard,
+      message: `Tải file ROM "${displayTitle}" lên Vercel Blob và tạo thẻ game thành công!`
     });
   } catch (err: any) {
     console.error("[Vercel Blob Upload Error]:", err);
@@ -543,15 +768,47 @@ app.post("/api/admin/blob/upload", async (req, res) => {
   }
 });
 
-// List all uploaded ROMs in Vercel Blob
+// Toggle Game Visibility in Library (Admin)
+app.post("/api/admin/games/toggle-visibility", async (req, res) => {
+  try {
+    const { id, isHidden } = req.body;
+    if (!id) {
+      return res.status(400).json({ success: false, error: "Thiếu ID game cần chuyển trạng thái." });
+    }
+
+    const currentLibrary = await loadGamesLibrary();
+    const game = currentLibrary.find(g => g.id === id || g.romUrl === id);
+    if (!game) {
+      return res.status(404).json({ success: false, error: "Không tìm thấy game trong danh sách metadata." });
+    }
+
+    game.isHidden = typeof isHidden === 'boolean' ? isHidden : !game.isHidden;
+    await saveGamesLibrary(currentLibrary);
+
+    return res.json({
+      success: true,
+      id: game.id,
+      isHidden: game.isHidden,
+      message: game.isHidden ? "Đã ẩn game khỏi Thư Viện Công Khai." : "Đã hiện game lên Thư Viện Công Khai."
+    });
+  } catch (err: any) {
+    console.error("[Toggle Visibility Error]:", err);
+    return res.status(500).json({ success: false, error: err.message || "Lỗi khi cập nhật trạng thái hiển thị." });
+  }
+});
+
+// List all uploaded ROMs in Vercel Blob + their metadata status
 app.get("/api/admin/blob/list", async (req, res) => {
   try {
     const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+    const library = await loadGamesLibrary();
+
     if (!blobToken) {
       return res.json({
         success: true,
         hasToken: false,
         blobs: [],
+        library,
         message: "Chưa cấu hình biến môi trường BLOB_READ_WRITE_TOKEN."
       });
     }
@@ -565,12 +822,21 @@ app.get("/api/admin/blob/list", async (req, res) => {
       success: true,
       hasToken: true,
       count: blobs.length,
-      blobs: blobs.map(b => ({
-        url: b.url,
-        pathname: b.pathname,
-        size: b.size,
-        uploadedAt: b.uploadedAt
-      }))
+      library,
+      blobs: blobs.map(b => {
+        const matchedMeta = library.find(g => g.romUrl === b.url || b.pathname.includes(g.id));
+        return {
+          url: b.url,
+          pathname: b.pathname,
+          size: b.size,
+          uploadedAt: b.uploadedAt,
+          title: matchedMeta?.title,
+          system: matchedMeta?.system,
+          systemName: matchedMeta?.systemName,
+          id: matchedMeta?.id,
+          isHidden: matchedMeta?.isHidden ?? false
+        };
+      })
     });
   } catch (err: any) {
     console.error("[Vercel Blob List Error]:", err);
@@ -581,28 +847,37 @@ app.get("/api/admin/blob/list", async (req, res) => {
   }
 });
 
-// Delete a ROM from Vercel Blob
+// Delete a ROM from Vercel Blob and remove from games-library.json
 app.delete("/api/admin/blob/delete", async (req, res) => {
   try {
-    const { url } = req.body;
-    if (!url) {
-      return res.status(400).json({ success: false, error: "Thiếu tham số 'url' cần xóa." });
+    const { url, id } = req.body;
+    if (!url && !id) {
+      return res.status(400).json({ success: false, error: "Thiếu tham số 'url' hoặc 'id' cần xóa." });
     }
 
+    // 1. Delete from games-library.json
+    const library = await loadGamesLibrary();
+    const updatedLibrary = library.filter(g => g.romUrl !== url && g.id !== id);
+    await saveGamesLibrary(updatedLibrary);
+
+    // 2. Delete ROM file from Vercel Blob if url provided
     const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
-    if (!blobToken) {
-      return res.status(400).json({ success: false, error: "Chưa cấu hình BLOB_READ_WRITE_TOKEN." });
+    if (blobToken && url) {
+      try {
+        await del(url, { token: blobToken });
+      } catch (delErr) {
+        console.warn("[Vercel Blob Del File Warning]:", delErr);
+      }
     }
 
-    await del(url, { token: blobToken });
-    return res.json({ success: true, message: "Đã xóa file ROM khỏi Vercel Blob." });
+    return res.json({ success: true, message: "Đã xóa game khỏi Thư viện và Vercel Blob Storage." });
   } catch (err: any) {
     console.error("[Vercel Blob Delete Error]:", err);
     return res.status(500).json({ success: false, error: err.message || "Lỗi khi xóa file từ Vercel Blob." });
   }
 });
 
-// 5. SNES Google Sheet games endpoint with fallback
+// 5. SNES Google Sheet games endpoint (Merged with Vercel Blob SNES Games)
 app.get("/api/snes-games", async (req, res) => {
   const defaultTestGames = [
     {
@@ -652,6 +927,10 @@ app.get("/api/snes-games", async (req, res) => {
   ];
 
   try {
+    // Load admin blob games for SNES (or retro)
+    const adminGames = await loadGamesLibrary();
+    const activeAdminGames = adminGames.filter(g => !g.isHidden && (g.emulatorCore === 'snes' || g.system === 'snes' || !g.emulatorCore));
+
     const sheetId = (req.query.sheetId as string) || "103Kz3v0fGN30BIhlaKMQ2IJNJ82GPif92OSgt_LtyG0";
     console.log(`[SNES API] Fetching games from Google Sheet ID: ${sheetId}`);
     const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=0`;
@@ -661,13 +940,12 @@ app.get("/api/snes-games", async (req, res) => {
       }
     });
 
+    let sheetGames: any[] = [];
     if (response.ok) {
       const csvText = await response.text();
-      // If it's valid CSV text and not Google login html
       if (csvText && !csvText.includes("<!DOCTYPE html>") && !csvText.includes("accounts.google.com") && !csvText.includes("document-root")) {
         const rows = csvText.split(/\r?\n/).map(line => line.split(',').map(cell => cell.replace(/^"(.*)"$/, '$1').trim()));
         if (rows.length > 1) {
-          const snesGames: any[] = [];
           for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
             if (!row || row.length < 2) continue;
@@ -677,7 +955,7 @@ app.get("/api/snes-games", async (req, res) => {
             const romUrl = row[4] || "";
 
             if (title && romUrl) {
-              snesGames.push({
+              sheetGames.push({
                 id: `snes-sheet-${i}-${title.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
                 title: title,
                 subtitle: `${platform} • Quán Game Xóm Cloud ROM`,
@@ -689,7 +967,7 @@ app.get("/api/snes-games", async (req, res) => {
                 fileSize: "SNES ROM",
                 rating: 4.9,
                 genres: ["SNES", "Kinh Điển"],
-                description: `${title} — Game SNES chuẩn được nạp trực tiếp qua Google Sheet và Server Proxy của Quán Game Xóm.`,
+                description: `${title} — Game SNES chuẩn được nạp trực tiếp qua Google Sheet của Quán Game Xóm.`,
                 downloadUrl: shareUrl || romUrl,
                 romUrl: romUrl,
                 emulatorCore: "snes",
@@ -700,34 +978,33 @@ app.get("/api/snes-games", async (req, res) => {
               });
             }
           }
-
-          if (snesGames.length > 0) {
-            console.log(`[SNES API] Successfully loaded ${snesGames.length} games directly from Google Sheet ID: ${sheetId}`);
-            return res.json({
-              success: true,
-              sheetId,
-              source: "google-sheet",
-              count: snesGames.length,
-              games: snesGames
-            });
-          }
         }
-      } else {
-        console.warn(`[SNES API] Google Sheet ID ${sheetId} returned HTML/Login page (Sheet might be private or requires permission). Using verified fallback with real Google Drive IDs.`);
       }
     }
+
+    const baseList = sheetGames.length > 0 ? sheetGames : defaultTestGames;
+    // Prepend active admin-uploaded SNES games (deduplicated by romUrl/id)
+    const existingUrls = new Set(baseList.map(g => g.romUrl));
+    const newFromAdmin = activeAdminGames.filter(g => !existingUrls.has(g.romUrl));
+    const combinedGames = [...newFromAdmin, ...baseList];
+
+    return res.json({
+      success: true,
+      sheetId,
+      source: "merged-sheet-and-blob",
+      count: combinedGames.length,
+      games: combinedGames
+    });
   } catch (err: any) {
     console.warn("[SNES Sheet Fetch Warning]:", err);
+    return res.json({
+      success: true,
+      sheetId: "103Kz3v0fGN30BIhlaKMQ2IJNJ82GPif92OSgt_LtyG0",
+      source: "verified-test-games",
+      count: defaultTestGames.length,
+      games: defaultTestGames
+    });
   }
-
-  console.log(`[SNES API] Serving verified SNES Games: Aladdin (1QGgmop-JEIKZ6kyV2HcHjHugdzb88Q7f), Biker Mice from Mars (1i9fsfy5lM-eKcQIh1raZpx7etQlGd-Mt)`);
-  return res.json({
-    success: true,
-    sheetId: "103Kz3v0fGN30BIhlaKMQ2IJNJ82GPif92OSgt_LtyG0",
-    source: "verified-test-games",
-    count: defaultTestGames.length,
-    games: defaultTestGames
-  });
 });
 
 // 6. Health check

@@ -1,41 +1,93 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, Upload, Cloud, Copy, Check, Trash2, Play, 
-  ExternalLink, FileCode, AlertCircle, RefreshCw, HardDrive, Sparkles 
+  Eye, EyeOff, FileCode, AlertCircle, RefreshCw, HardDrive, Sparkles, Gamepad2, CheckCircle2 
 } from 'lucide-react';
 import { useAdminMode } from '../hooks/useAdminMode';
 
-interface BlobItem {
+export interface AdminBlobGameItem {
+  id: string;
+  title: string;
+  system: string;
+  systemName?: string;
+  romUrl: string;
+  size?: number | string;
+  uploadedAt?: string;
+  isHidden?: boolean;
+}
+
+interface BlobListItem {
   url: string;
   pathname: string;
   size: number;
   uploadedAt: string;
+  title?: string;
+  system?: string;
+  systemName?: string;
+  id?: string;
+  isHidden?: boolean;
 }
 
 interface AdminRomManagerModalProps {
   isOpen: boolean;
   onClose: () => void;
   onPlayRom?: (url: string, name: string, core?: string) => void;
+  onGameUpdated?: () => void;
 }
+
+const SUPPORTED_SYSTEMS = [
+  { id: 'snes', name: 'Super Nintendo (SNES)', ext: ['.sfc', '.smc', '.snes'] },
+  { id: 'nes', name: 'NES / Điện Tử 4 Nút', ext: ['.nes'] },
+  { id: 'gba', name: 'Game Boy Advance (GBA)', ext: ['.gba'] },
+  { id: 'gbc', name: 'Game Boy Color (GBC)', ext: ['.gbc', '.gb'] },
+  { id: 'n64', name: 'Nintendo 64 (N64)', ext: ['.n64', '.z64'] },
+  { id: 'nds', name: 'Nintendo DS (NDS)', ext: ['.nds'] },
+  { id: 'segamd', name: 'Sega Genesis / Mega Drive', ext: ['.md', '.gen', '.bin'] },
+  { id: 'psx', name: 'Sony PlayStation 1 (PS1)', ext: ['.iso', '.cue', '.chd'] }
+];
 
 export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
   isOpen,
   onClose,
-  onPlayRom
+  onPlayRom,
+  onGameUpdated
 }) => {
   const { isAdmin } = useAdminMode();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [displayTitle, setDisplayTitle] = useState<string>('');
+  const [selectedSystem, setSelectedSystem] = useState<string>('snes');
+  
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>('');
-  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
+  const [uploadedGame, setUploadedGame] = useState<any | null>(null);
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Blob List
-  const [blobs, setBlobs] = useState<BlobItem[]>([]);
+  // Blob & Metadata List
+  const [blobs, setBlobs] = useState<BlobListItem[]>([]);
   const [isLoadingBlobs, setIsLoadingBlobs] = useState(false);
   const [hasToken, setHasToken] = useState<boolean>(true);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  const detectSystemFromFilename = (filename: string): string => {
+    const lower = filename.toLowerCase();
+    for (const sys of SUPPORTED_SYSTEMS) {
+      if (sys.ext.some(ext => lower.endsWith(ext))) {
+        return sys.id;
+      }
+    }
+    return 'snes';
+  };
+
+  const cleanFilenameToTitle = (filename: string): string => {
+    return filename
+      .replace(/\.[^/.]+$/, '') // remove extension
+      .replace(/[\(\[\{].*?[\)\]\}]/g, ' ') // remove bracketed text e.g. (USA), (Beta)
+      .replace(/[_.-]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
 
   // Fetch blobs list
   const loadBlobs = async () => {
@@ -61,8 +113,10 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
       loadBlobs();
       setErrorMessage(null);
       setSuccessMessage(null);
-      setUploadedUrl(null);
+      setUploadedGame(null);
       setSelectedFile(null);
+      setDisplayTitle('');
+      setSelectedSystem('snes');
     }
   }, [isOpen]);
 
@@ -72,9 +126,13 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
+      const autoTitle = cleanFilenameToTitle(file.name) || file.name.replace(/\.[^/.]+$/, '');
+      const detectedSys = detectSystemFromFilename(file.name);
+      setDisplayTitle(autoTitle);
+      setSelectedSystem(detectedSys);
       setErrorMessage(null);
       setSuccessMessage(null);
-      setUploadedUrl(null);
+      setUploadedGame(null);
     }
   };
 
@@ -84,17 +142,21 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
       return;
     }
 
+    if (!displayTitle.trim()) {
+      setErrorMessage('Vui lòng nhập Tên hiển thị cho Game.');
+      return;
+    }
+
     setIsUploading(true);
     setUploadProgress('Đang đọc dữ liệu file ROM...');
     setErrorMessage(null);
     setSuccessMessage(null);
 
     try {
-      // Convert file to base64
       const reader = new FileReader();
       reader.onload = async () => {
         const base64Data = reader.result as string;
-        setUploadProgress('Đang tải lên Vercel Blob Storage...');
+        setUploadProgress('Đang tải lên Vercel Blob & Tự động tạo thẻ Game...');
 
         try {
           const res = await fetch('/api/admin/blob/upload', {
@@ -105,16 +167,28 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
             body: JSON.stringify({
               filename: selectedFile.name,
               fileData: base64Data,
-              contentType: selectedFile.type || 'application/octet-stream'
+              contentType: selectedFile.type || 'application/octet-stream',
+              title: displayTitle.trim(),
+              system: selectedSystem
             })
           });
 
           const result = await res.json();
           if (result.success && result.url) {
-            setUploadedUrl(result.url);
-            setSuccessMessage(`Tải lên thành công! File: ${selectedFile.name}`);
+            setUploadedGame(result.game || {
+              title: displayTitle.trim(),
+              system: selectedSystem,
+              romUrl: result.url
+            });
+            setSuccessMessage(`Tải lên thành công! Game "${displayTitle}" đã tự động xuất hiện trong Thư Viện Game và Khu Vực Giả Lập.`);
             setSelectedFile(null);
+            setDisplayTitle('');
             loadBlobs();
+            // Notify parent components to reload game catalogs
+            if (onGameUpdated) onGameUpdated();
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('qgx_games_updated'));
+            }
           } else {
             setErrorMessage(result.error || result.hint || 'Không thể upload file lên Vercel Blob.');
           }
@@ -144,19 +218,48 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
     setTimeout(() => setCopiedUrl(null), 2500);
   };
 
-  const handleDelete = async (url: string) => {
-    if (!confirm('Bạn có chắc muốn xóa file ROM này khỏi Vercel Blob?')) return;
+  const handleToggleVisibility = async (id: string, currentHidden: boolean) => {
+    setTogglingId(id);
+    try {
+      const res = await fetch('/api/admin/games/toggle-visibility', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, isHidden: !currentHidden })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setBlobs(blobs.map(b => (b.id === id || b.url === id) ? { ...b, isHidden: data.isHidden } : b));
+        if (onGameUpdated) onGameUpdated();
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('qgx_games_updated'));
+        }
+      } else {
+        alert(data.error || 'Lỗi cập nhật trạng thái.');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Lỗi kết nối.');
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const handleDelete = async (url: string, id?: string) => {
+    if (!confirm('Bạn có chắc muốn xóa vĩnh viễn game ROM này khỏi Vercel Blob và Thư Viện?')) return;
 
     try {
       const res = await fetch('/api/admin/blob/delete', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
+        body: JSON.stringify({ url, id })
       });
       const data = await res.json();
       if (data.success) {
-        setBlobs(blobs.filter(b => b.url !== url));
-        if (uploadedUrl === url) setUploadedUrl(null);
+        setBlobs(blobs.filter(b => b.url !== url && (!id || b.id !== id)));
+        if (uploadedGame && uploadedGame.romUrl === url) setUploadedGame(null);
+        if (onGameUpdated) onGameUpdated();
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('qgx_games_updated'));
+        }
       } else {
         alert(data.error || 'Lỗi khi xóa file.');
       }
@@ -165,23 +268,12 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
     }
   };
 
-  const formatFileSize = (bytes: number): string => {
+  const formatFileSize = (bytes: number | string | undefined): string => {
+    if (!bytes) return 'N/A';
+    if (typeof bytes === 'string') return bytes;
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-  };
-
-  const detectCore = (name: string): string => {
-    const l = name.toLowerCase();
-    if (l.endsWith('.sfc') || l.endsWith('.smc') || l.endsWith('.snes')) return 'snes';
-    if (l.endsWith('.nes')) return 'nes';
-    if (l.endsWith('.gba')) return 'gba';
-    if (l.endsWith('.gbc') || l.endsWith('.gb')) return 'gbc';
-    if (l.endsWith('.n64') || l.endsWith('.z64')) return 'n64';
-    if (l.endsWith('.nds')) return 'nds';
-    if (l.endsWith('.md') || l.endsWith('.gen')) return 'segaMD';
-    if (l.endsWith('.iso') || l.endsWith('.cue')) return 'psx';
-    return 'snes';
   };
 
   return (
@@ -199,10 +291,10 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
             <div>
               <h2 className="text-lg sm:text-xl font-display font-black text-white uppercase tracking-tight flex items-center gap-2">
                 <span>ADMIN UPLOAD ROM</span>
-                <span className="text-amber-400 text-glow-amber">VERCEL BLOB</span>
+                <span className="text-amber-400 text-glow-amber">TỰ ĐỘNG TẠO CARD GAME</span>
               </h2>
               <p className="text-xs text-slate-400 font-body">
-                Lưu trữ ROM công khai, tốc độ cao, direct URL ổn định cho EmulatorJS.
+                Upload ROM trực tiếp lên Vercel Blob • Tự động tạo thẻ Game trong Thư Viện & Giả Lập
               </p>
             </div>
           </div>
@@ -224,17 +316,17 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
               <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
               <div>
                 <strong className="font-bold text-amber-300 block mb-1">Cần cấu hình BLOB_READ_WRITE_TOKEN:</strong>
-                <span>Để upload file lên Vercel Blob Storage, hãy chắc chắn bạn đã gán biến môi trường <code>BLOB_READ_WRITE_TOKEN</code> trong Vercel Project Settings.</span>
+                <span>Để upload file lên Vercel Blob Storage, hãy chắc chắn bạn đã gán biến môi trường <code>BLOB_READ_WRITE_TOKEN</code> trong Vercel Project Settings. (Nếu đang dev local, server sẽ tự lưu bản sao metadata vào file disk).</span>
               </div>
             </div>
           )}
 
-          {/* Section 1: Upload Zone */}
+          {/* Section 1: Upload Form with 2 Required Fields */}
           <div className="p-5 bg-slate-950/80 border border-amber-500/30 rounded-2xl space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-mono font-bold text-amber-300 uppercase tracking-wider flex items-center gap-2">
                 <Upload className="w-4 h-4 text-amber-400" />
-                <span>1. Chọn file ROM từ máy tính:</span>
+                <span>1. Chọn file ROM & Nhập thông tin Game:</span>
               </span>
               <span className="text-[11px] font-mono text-slate-500">
                 (.smc, .sfc, .nes, .gba, .gbc, .zip)
@@ -242,7 +334,7 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
             </div>
 
             {/* Drag & Drop / Input area */}
-            <div className="border-2 border-dashed border-slate-700 hover:border-amber-500/60 rounded-2xl p-6 text-center transition-colors bg-slate-900/40">
+            <div className="border-2 border-dashed border-slate-700 hover:border-amber-500/60 rounded-2xl p-5 text-center transition-colors bg-slate-900/40">
               <input
                 id="rom-file-input"
                 type="file"
@@ -254,8 +346,8 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
                 htmlFor="rom-file-input"
                 className="cursor-pointer flex flex-col items-center justify-center gap-2"
               >
-                <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                  <HardDrive className="w-6 h-6" />
+                <div className="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <HardDrive className="w-5 h-5" />
                 </div>
                 {selectedFile ? (
                   <div>
@@ -268,11 +360,44 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
                       Nhấp vào đây để chọn file ROM từ máy tính
                     </p>
                     <p className="text-[11px] text-slate-500 mt-1 font-body">
-                      Dung lượng hỗ trợ lên đến 50MB
+                      Tự động điền Tên game & Nhận diện Hệ máy
                     </p>
                   </div>
                 )}
               </label>
+            </div>
+
+            {/* 2 Fields: Tên Hiển Thị & Hệ Máy */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+              <div className="sm:col-span-2 space-y-1">
+                <label className="text-[11px] font-mono font-bold text-slate-300 uppercase tracking-wider block">
+                  Tên hiển thị Game: <span className="text-amber-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={displayTitle}
+                  onChange={(e) => setDisplayTitle(e.target.value)}
+                  placeholder="Ví dụ: Aladdin (USA), Contra, Pokemon Emerald..."
+                  className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded-xl px-3.5 py-2 text-xs font-mono text-white placeholder-slate-500 outline-none transition-all"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-mono font-bold text-slate-300 uppercase tracking-wider block">
+                  Hệ máy (Core): <span className="text-amber-400">*</span>
+                </label>
+                <select
+                  value={selectedSystem}
+                  onChange={(e) => setSelectedSystem(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded-xl px-3 py-2 text-xs font-mono text-amber-300 outline-none cursor-pointer"
+                >
+                  {SUPPORTED_SYSTEMS.map(sys => (
+                    <option key={sys.id} value={sys.id}>
+                      {sys.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Upload Button */}
@@ -280,7 +405,10 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
               {selectedFile && (
                 <button
                   type="button"
-                  onClick={() => setSelectedFile(null)}
+                  onClick={() => {
+                    setSelectedFile(null);
+                    setDisplayTitle('');
+                  }}
                   className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono rounded-xl cursor-pointer"
                 >
                   Bỏ chọn
@@ -289,7 +417,7 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
               <button
                 type="button"
                 onClick={handleUpload}
-                disabled={!selectedFile || isUploading}
+                disabled={!selectedFile || !displayTitle.trim() || isUploading}
                 className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs font-mono uppercase tracking-wider transition-all shadow-lg shadow-amber-500/20 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
               >
                 {isUploading ? (
@@ -300,7 +428,7 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
                 ) : (
                   <>
                     <Upload className="w-4 h-4 text-slate-950" />
-                    <span>TẢI LÊN VERCEL BLOB</span>
+                    <span>TẢI LÊN & TẠO CARD GAME</span>
                   </>
                 )}
               </button>
@@ -314,30 +442,55 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
               </div>
             )}
 
-            {/* Success Upload Box with Copy Link */}
-            {uploadedUrl && (
+            {/* Success Upload Box with Auto-Card Feedback */}
+            {uploadedGame && (
               <div className="p-4 bg-emerald-950/60 border border-emerald-500/60 rounded-2xl space-y-3 animate-in fade-in">
                 <div className="flex items-center justify-between text-xs font-mono text-emerald-300 font-bold">
                   <span className="flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-emerald-400" />
-                    <span>URL CÔNG KHAI ĐÃ TẠO THÀNH CÔNG:</span>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span>ĐÃ TỰ ĐỘNG TẠO NAME CARD TRONG THƯ VIỆN & GIẢ LẬP!</span>
                   </span>
-                  <span className="text-[10px] text-emerald-400">Tải trực tiếp 100% không qua proxy</span>
+                  <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] uppercase font-bold">
+                    MỚI
+                  </span>
                 </div>
 
+                <div className="p-3 bg-slate-950/90 rounded-xl border border-emerald-500/40 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-white font-display truncate">{uploadedGame.title}</p>
+                    <p className="text-xs text-amber-400 font-mono mt-0.5">
+                      Hệ máy: {uploadedGame.systemName || uploadedGame.system?.toUpperCase()} • Direct Vercel Blob Stream
+                    </p>
+                  </div>
+                  {onPlayRom && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onPlayRom(uploadedGame.romUrl, uploadedGame.title, uploadedGame.system || 'snes');
+                        onClose();
+                      }}
+                      className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 shadow-md"
+                    >
+                      <Play className="w-3.5 h-3.5 fill-slate-950" />
+                      <span>Chơi ngay</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Copy Link Row */}
                 <div className="flex items-center gap-2 bg-slate-950 p-2.5 rounded-xl border border-emerald-500/30">
                   <input
                     type="text"
                     readOnly
-                    value={uploadedUrl}
+                    value={uploadedGame.romUrl}
                     className="flex-1 bg-transparent text-xs font-mono text-emerald-200 outline-none select-all"
                   />
                   <button
                     type="button"
-                    onClick={() => copyToClipboard(uploadedUrl)}
+                    onClick={() => copyToClipboard(uploadedGame.romUrl)}
                     className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
                   >
-                    {copiedUrl === uploadedUrl ? (
+                    {copiedUrl === uploadedGame.romUrl ? (
                       <>
                         <Check className="w-3.5 h-3.5" />
                         <span>Đã Copy!</span>
@@ -351,33 +504,19 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
                   </button>
                 </div>
 
-                <div className="flex items-center justify-between text-[11px] font-body text-slate-300 pt-1">
-                  <span>👉 Dán link trên vào cột <strong>romUrl</strong> trong Google Sheet của bạn.</span>
-                  {onPlayRom && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const core = detectCore(uploadedUrl);
-                        onPlayRom(uploadedUrl, 'Test Vercel Blob ROM', core);
-                        onClose();
-                      }}
-                      className="text-amber-400 hover:text-amber-300 font-mono font-bold underline flex items-center gap-1 cursor-pointer"
-                    >
-                      <Play className="w-3 h-3 fill-amber-400" />
-                      <span>Chơi thử ngay</span>
-                    </button>
-                  )}
-                </div>
+                <p className="text-[11px] font-body text-slate-300">
+                  ✨ Game đã sẵn sàng cho tất cả người dùng (kể cả tab ẩn danh). Bạn không cần nhập tay vào Google Sheet nữa!
+                </p>
               </div>
             )}
           </div>
 
-          {/* Section 2: Uploaded ROMs on Vercel Blob */}
+          {/* Section 2: Uploaded ROMs on Vercel Blob with Visibility Toggle */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
                 <FileCode className="w-4 h-4 text-amber-400" />
-                <span>2. Danh sách ROM đã lưu trên Vercel Blob ({blobs.length})</span>
+                <span>2. Quản lý ROM đã upload ({blobs.length} game)</span>
               </span>
 
               <button
@@ -387,7 +526,7 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
                 className="text-[11px] font-mono text-amber-400 hover:text-amber-300 flex items-center gap-1 cursor-pointer"
               >
                 <RefreshCw className={`w-3 h-3 ${isLoadingBlobs ? 'animate-spin' : ''}`} />
-                <span>Làm mới danh sách</span>
+                <span>Làm mới</span>
               </button>
             </div>
 
@@ -396,39 +535,79 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
                 {isLoadingBlobs ? 'Đang tải danh sách...' : 'Chưa có file ROM nào trên Vercel Blob. Hãy upload file đầu tiên ở trên!'}
               </div>
             ) : (
-              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
                 {blobs.map((blob, idx) => {
                   const filename = blob.pathname.replace(/^roms\//, '');
+                  const gameTitle = blob.title || filename.replace(/\.[^/.]+$/, '');
                   const isCopied = copiedUrl === blob.url;
-                  const core = detectCore(filename);
+                  const core = blob.system || detectSystemFromFilename(filename);
+                  const isHidden = blob.isHidden === true;
+                  const itemKey = blob.id || blob.url || idx;
 
                   return (
                     <div 
-                      key={blob.url || idx}
-                      className="p-3 bg-slate-950/60 hover:bg-slate-950 border border-slate-800 hover:border-amber-500/40 rounded-xl flex items-center justify-between gap-3 transition-colors text-xs font-mono"
+                      key={itemKey}
+                      className={`p-3 border rounded-xl flex items-center justify-between gap-3 transition-colors text-xs font-mono ${
+                        isHidden 
+                          ? 'bg-slate-950/40 border-slate-800/80 opacity-75' 
+                          : 'bg-slate-950/80 border-slate-800 hover:border-amber-500/40'
+                      }`}
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] uppercase font-bold shrink-0">
                             {core}
                           </span>
-                          <span className="text-white font-bold truncate" title={filename}>
-                            {filename}
+
+                          {/* Visibility badge */}
+                          {isHidden ? (
+                            <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold shrink-0 flex items-center gap-1 border border-slate-700">
+                              <EyeOff className="w-2.5 h-2.5" />
+                              <span>Đang Ẩn (Test)</span>
+                            </span>
+                          ) : (
+                            <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-bold shrink-0 flex items-center gap-1 border border-emerald-500/30">
+                              <Eye className="w-2.5 h-2.5" />
+                              <span>Công Khai</span>
+                            </span>
+                          )}
+
+                          <span className="text-white font-bold truncate" title={gameTitle}>
+                            {gameTitle}
                           </span>
                         </div>
-                        <div className="text-[10px] text-slate-400 flex items-center gap-3 mt-1">
+
+                        <div className="text-[10px] text-slate-400 flex items-center gap-3 mt-1 truncate">
+                          <span>File: {filename}</span>
+                          <span>•</span>
                           <span>{formatFileSize(blob.size)}</span>
                           <span>•</span>
-                          <span>{new Date(blob.uploadedAt).toLocaleDateString('vi-VN')}</span>
+                          <span>{blob.uploadedAt ? new Date(blob.uploadedAt).toLocaleDateString('vi-VN') : 'Hôm nay'}</span>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-1.5 shrink-0">
+                        {/* Toggle Visibility Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleToggleVisibility(blob.id || blob.url, isHidden)}
+                          disabled={togglingId === (blob.id || blob.url)}
+                          className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border ${
+                            isHidden
+                              ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                              : 'bg-slate-800 hover:bg-amber-500/20 text-slate-300 hover:text-amber-300 border-slate-700'
+                          }`}
+                          title={isHidden ? "Hiện game lên Thư Viện công khai" : "Ẩn game khỏi Thư Viện (chỉ để test riêng)"}
+                        >
+                          {isHidden ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                          <span className="hidden sm:inline">{isHidden ? 'Hiện game' : 'Ẩn game'}</span>
+                        </button>
+
                         {/* Copy Link Button */}
                         <button
                           type="button"
                           onClick={() => copyToClipboard(blob.url)}
-                          className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                          className={`px-2 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
                             isCopied
                               ? 'bg-emerald-500 text-slate-950'
                               : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white'
@@ -436,7 +615,7 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
                           title="Copy Direct URL"
                         >
                           {isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                          <span>{isCopied ? 'Copied' : 'Copy'}</span>
+                          <span className="hidden sm:inline">{isCopied ? 'Copied' : 'Copy'}</span>
                         </button>
 
                         {/* Test Play Button */}
@@ -444,7 +623,7 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
                           <button
                             type="button"
                             onClick={() => {
-                              onPlayRom(blob.url, filename.replace(/\.[^/.]+$/, ''), core);
+                              onPlayRom(blob.url, gameTitle, core);
                               onClose();
                             }}
                             className="p-1.5 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-slate-950 rounded-lg transition-all cursor-pointer"
@@ -457,9 +636,9 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
                         {/* Delete Button */}
                         <button
                           type="button"
-                          onClick={() => handleDelete(blob.url)}
+                          onClick={() => handleDelete(blob.url, blob.id)}
                           className="p-1.5 bg-slate-800 hover:bg-red-950 text-slate-400 hover:text-red-300 rounded-lg transition-all cursor-pointer"
-                          title="Xóa khỏi Vercel Blob"
+                          title="Xóa vĩnh viễn"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -475,7 +654,10 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
 
         {/* Bottom Footer */}
         <div className="pt-4 border-t border-slate-800 flex items-center justify-between text-xs font-mono text-slate-400 shrink-0">
-          <span>Khu vực Admin Quán Game Xóm</span>
+          <span className="flex items-center gap-1.5">
+            <Gamepad2 className="w-4 h-4 text-amber-400" />
+            <span>Quán Game Xóm Cloud Blob Engine</span>
+          </span>
           <button
             type="button"
             onClick={onClose}

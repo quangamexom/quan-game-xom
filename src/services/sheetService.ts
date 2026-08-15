@@ -268,38 +268,93 @@ export function parseGoogleSheetCSV(csvText: string): GameItem[] {
   return parsedGames.length > 0 ? parsedGames : INITIAL_GAMES;
 }
 
+export async function fetchAdminGamesLibrary(includeHidden: boolean = false): Promise<GameItem[]> {
+  try {
+    const res = await fetch(`/api/games/admin-library${includeHidden ? '?includeHidden=true' : ''}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.success && Array.isArray(data.games)) {
+        return data.games;
+      }
+    }
+  } catch (err) {
+    // API not available, try static JSON fallback
+  }
+
+  // Fallback to local static asset
+  try {
+    const staticRes = await fetch('/assets/games-library.json');
+    if (staticRes.ok) {
+      const staticData = await staticRes.json();
+      if (Array.isArray(staticData)) {
+        return includeHidden ? staticData : staticData.filter(g => !g.isHidden);
+      }
+    }
+  } catch (err) {
+    console.warn("Failed to load admin games library from static asset:", err);
+  }
+
+  return [];
+}
+
 export async function fetchSheetData(sheetUrlOrId: string = DEFAULT_SHEET_ID, gid = '0'): Promise<GameItem[]> {
+  let baseSheetGames: GameItem[] = [];
+
   try {
     const response = await fetch('/api/sheet-games');
     if (response.ok) {
       const data = await response.json();
       if (data && data.games && Array.isArray(data.games) && data.games.length > 0) {
-        return data.games;
+        baseSheetGames = data.games;
       }
     }
   } catch (err) {
     // API endpoint unavailable (e.g. static site on Vercel)
   }
 
-  // Direct CSV fetch fallback for static hosts (Vercel, GitHub Pages)
-  try {
-    const targetId = sheetUrlOrId.includes('/')
-      ? sheetUrlOrId.split('/d/')[1]?.split('/')[0] || DEFAULT_SHEET_ID
-      : sheetUrlOrId;
-    const csvUrl = `https://docs.google.com/spreadsheets/d/${targetId}/export?format=csv&gid=${gid}`;
-    const csvRes = await fetch(csvUrl);
-    if (csvRes.ok) {
-      const csvText = await csvRes.text();
-      const sheetGames = parseGoogleSheetCSV(csvText);
-      if (sheetGames && sheetGames.length > 0) {
-        return sheetGames;
+  // Direct CSV fetch fallback for static hosts (Vercel, GitHub Pages) if API returned empty
+  if (baseSheetGames.length === 0) {
+    try {
+      const targetId = sheetUrlOrId.includes('/')
+        ? sheetUrlOrId.split('/d/')[1]?.split('/')[0] || DEFAULT_SHEET_ID
+        : sheetUrlOrId;
+      const csvUrl = `https://docs.google.com/spreadsheets/d/${targetId}/export?format=csv&gid=${gid}`;
+      const csvRes = await fetch(csvUrl);
+      if (csvRes.ok) {
+        const csvText = await csvRes.text();
+        const sheetGames = parseGoogleSheetCSV(csvText);
+        if (sheetGames && sheetGames.length > 0) {
+          baseSheetGames = sheetGames;
+        }
       }
+    } catch (err) {
+      console.warn("Direct CSV fetch fallback error, using pre-loaded dataset:", err);
     }
-  } catch (err) {
-    console.warn("Direct CSV fetch fallback error, using pre-loaded dataset:", err);
   }
 
-  return INITIAL_GAMES;
+  if (baseSheetGames.length === 0) {
+    baseSheetGames = INITIAL_GAMES;
+  }
+
+  // 3. Fetch Admin Blob Uploaded Games & Merge on Top
+  try {
+    const adminGames = await fetchAdminGamesLibrary(false);
+    if (adminGames && adminGames.length > 0) {
+      const existingIds = new Set(baseSheetGames.map(g => g.id.toLowerCase()));
+      const existingUrls = new Set(baseSheetGames.map(g => g.romUrl || ''));
+      
+      const newAdminGames = adminGames.filter(g => 
+        !existingIds.has(g.id.toLowerCase()) && 
+        (!g.romUrl || !existingUrls.has(g.romUrl))
+      );
+
+      return [...newAdminGames, ...baseSheetGames];
+    }
+  } catch (adminErr) {
+    console.warn("Failed to merge admin games library:", adminErr);
+  }
+
+  return baseSheetGames;
 }
 
 export async function fetchSnesGamesFromSheet(sheetUrlOrId: string = SNES_SHEET_ID, gid = '0'): Promise<GameItem[]> {
@@ -319,21 +374,37 @@ export async function fetchSnesGamesFromSheet(sheetUrlOrId: string = SNES_SHEET_
     // API endpoint unavailable, try direct CSV fetch
   }
 
+  let sheetGames: GameItem[] = [];
   try {
     const csvUrl = `https://docs.google.com/spreadsheets/d/${targetId}/export?format=csv&gid=${gid}`;
     const csvRes = await fetch(csvUrl);
     if (csvRes.ok) {
       const csvText = await csvRes.text();
-      const sheetGames = parseGoogleSheetCSV(csvText);
-      const withRom = sheetGames.filter(g => g.romUrl && g.romUrl.trim().length > 0);
+      const parsed = parseGoogleSheetCSV(csvText);
+      const withRom = parsed.filter(g => g.romUrl && g.romUrl.trim().length > 0);
       if (withRom.length > 0) {
-        return withRom;
+        sheetGames = withRom;
       }
     }
   } catch (err) {
     console.warn("Direct SNES CSV fetch fallback warning:", err);
   }
 
-  return DEFAULT_SNES_TEST_GAMES;
+  const baseSnes = sheetGames.length > 0 ? sheetGames : DEFAULT_SNES_TEST_GAMES;
+
+  // Merge admin-uploaded SNES games
+  try {
+    const adminGames = await fetchAdminGamesLibrary(false);
+    const adminSnes = adminGames.filter(g => g.emulatorCore === 'snes' || g.system === 'snes' || !g.emulatorCore);
+    if (adminSnes.length > 0) {
+      const existingUrls = new Set(baseSnes.map(g => g.romUrl));
+      const newAdminSnes = adminSnes.filter(g => !existingUrls.has(g.romUrl));
+      return [...newAdminSnes, ...baseSnes];
+    }
+  } catch (err) {
+    console.warn("Failed to merge admin SNES games:", err);
+  }
+
+  return baseSnes;
 }
 

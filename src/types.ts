@@ -31,6 +31,8 @@ export interface GameItem {
   onlinePlayUrl?: string;
   romUrl?: string; // Direct ROM URL for EmulatorJS
   emulatorCore?: string; // e.g. 'snes', 'nes', 'gba'
+  system?: string;
+  isHidden?: boolean;
   
   // LaunchBox metadata
   developer?: string;
