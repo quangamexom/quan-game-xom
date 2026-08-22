@@ -43,7 +43,7 @@ export default function App() {
 
   const loadLibraryGames = async () => {
     try {
-      const res = await fetch('/api/games/admin-library');
+      const res = await fetch('/api/games/admin-library?sync=true');
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.games) && data.games.length > 0) {

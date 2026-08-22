@@ -35,6 +35,7 @@ import { useAdminMode } from '../hooks/useAdminMode';
 import { AdminRomManagerModal } from './AdminRomManagerModal';
 import { requestSafeAction } from '../utils/emulatorManager';
 import { copyTextToClipboard, getGameShareUrl } from '../utils/shareUtils';
+import { LoadingWordsSpinner } from './LoadingWordsSpinner';
 
 export interface PresetRom {
   id: string;
@@ -282,8 +283,13 @@ export const EmulatorZone: React.FC = () => {
   const [isCopiedInviteLink, setIsCopiedInviteLink] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'play' | 'library' | 'saves' | 'netplay'>('library');
 
-  // Netplay Waiting Room State Machine ('idle' | 'hosting_wait' | 'both_ready')
-  const [netplayWaitingState, setNetplayWaitingState] = useState<'idle' | 'hosting_wait' | 'both_ready'>('idle');
+  // Netplay Waiting Room State Machine ('idle' | 'host_waiting' | 'joiner_waiting')
+  const [netplayWaitingState, setNetplayWaitingState] = useState<'idle' | 'host_waiting' | 'joiner_waiting'>('idle');
+  const [netplayRoomStatus, setNetplayRoomStatus] = useState<any>(null);
+  const [isJoinerReady, setIsJoinerReady] = useState<boolean>(false);
+  const [isStartingHost, setIsStartingHost] = useState<boolean>(false);
+  const [isPreloadingRom, setIsPreloadingRom] = useState<boolean>(false);
+  const preloadedBlobUrlRef = useRef<string | null>(null);
   const [waitingGame, setWaitingGame] = useState<{
     romUrl: string;
     title: string;
@@ -393,7 +399,15 @@ export const EmulatorZone: React.FC = () => {
     setNetplayRoom('');
     setNetplayRole('p1');
     setNetplayWaitingState('idle');
+    setNetplayRoomStatus(null);
+    setIsJoinerReady(false);
+    setIsStartingHost(false);
+    setIsPreloadingRom(false);
     setWaitingGame(null);
+    if (preloadedBlobUrlRef.current && preloadedBlobUrlRef.current.startsWith('blob:')) {
+      try { URL.revokeObjectURL(preloadedBlobUrlRef.current); } catch (e) {}
+      preloadedBlobUrlRef.current = null;
+    }
     if (waitingPollTimerRef.current) {
       clearInterval(waitingPollTimerRef.current);
       waitingPollTimerRef.current = null;
@@ -414,7 +428,26 @@ export const EmulatorZone: React.FC = () => {
     }
   };
 
-  // Start hosting a Netplay session (Waiting room state machine before core boot)
+  // Helper to preload ROM binary in background without mounting emulator iframe
+  const preloadRomBackground = async (romUrl: string) => {
+    if (!romUrl || romUrl.trim().length === 0) return null;
+    try {
+      setIsPreloadingRom(true);
+      const cleanUrl = normalizeRomUrl(romUrl);
+      console.log(`[ROM Preloader] Pre-fetching binary in background: ${cleanUrl}`);
+      const { blobUrl } = await fetchRomAsBlobUrl(cleanUrl);
+      preloadedBlobUrlRef.current = blobUrl;
+      console.log(`[ROM Preloader] ROM binary successfully pre-cached:`, blobUrl);
+      setIsPreloadingRom(false);
+      return blobUrl;
+    } catch (err) {
+      console.warn(`[ROM Preloader Warning] Could not preload ROM:`, err);
+      setIsPreloadingRom(false);
+      return null;
+    }
+  };
+
+  // Start hosting a Netplay session (2-Step Waiting Room: Host P1)
   const startHostingNetplay = async (game: { romUrl: string; title: string; core?: string; id?: string; coverArt?: string }, customRoom?: string) => {
     const room = customRoom?.trim() || netplayRoom.trim() || ('QGX-' + Math.random().toString(36).substring(2, 8).toUpperCase());
     
@@ -422,6 +455,10 @@ export const EmulatorZone: React.FC = () => {
     if (activeBlobUrlRef.current && activeBlobUrlRef.current.startsWith('blob:')) {
       try { URL.revokeObjectURL(activeBlobUrlRef.current); } catch (e) {}
       activeBlobUrlRef.current = null;
+    }
+    if (preloadedBlobUrlRef.current && preloadedBlobUrlRef.current.startsWith('blob:')) {
+      try { URL.revokeObjectURL(preloadedBlobUrlRef.current); } catch (e) {}
+      preloadedBlobUrlRef.current = null;
     }
 
     setNetplayRoom(room);
@@ -437,7 +474,17 @@ export const EmulatorZone: React.FC = () => {
       id: game.id,
       coverArt: game.coverArt
     });
-    setNetplayWaitingState('hosting_wait');
+    setNetplayWaitingState('host_waiting');
+    setNetplayRoomStatus({
+      roomId: room,
+      p1Ready: true,
+      p2Joined: false,
+      p2Ready: false,
+      started: false,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    });
+    setIsStartingHost(false);
     setActiveTab('play');
     setIsPlaying(false);
     setCurrentRomUrl(null);
@@ -457,21 +504,157 @@ export const EmulatorZone: React.FC = () => {
       }
     }, 150);
 
-    // Register room on server / Vercel Blob
+    // 1. Preload ROM binary in background immediately
+    preloadRomBackground(game.romUrl);
+
+    // 2. Register room on server / Vercel Blob
     try {
-      await fetch('/api/netplay/create-room', {
+      const res = await fetch('/api/netplay/create-room', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ room, gameId: game.id })
       });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status) setNetplayRoomStatus(data.status);
+      }
     } catch (err) {
       console.warn('[Netplay Create Room API Warning]:', err);
     }
   };
 
-  // Poll room status while waiting for Player 2
+  // Join a Netplay session (2-Step Waiting Room: Joiner P2)
+  const startJoinerNetplay = async (game: { romUrl: string; title: string; core?: string; id?: string; coverArt?: string }, room: string) => {
+    const cleanRoom = room.trim().toUpperCase();
+    
+    // Teardown any running emulator before opening waiting room
+    if (activeBlobUrlRef.current && activeBlobUrlRef.current.startsWith('blob:')) {
+      try { URL.revokeObjectURL(activeBlobUrlRef.current); } catch (e) {}
+      activeBlobUrlRef.current = null;
+    }
+    if (preloadedBlobUrlRef.current && preloadedBlobUrlRef.current.startsWith('blob:')) {
+      try { URL.revokeObjectURL(preloadedBlobUrlRef.current); } catch (e) {}
+      preloadedBlobUrlRef.current = null;
+    }
+
+    setNetplayRoom(cleanRoom);
+    setNetplayRole('p2');
+    setIsNetplayActive(true);
+    setCurrentGameId(game.id || null);
+    setCurrentRomName(game.title);
+    setSelectedCore(game.core || 'snes');
+    setWaitingGame({
+      romUrl: game.romUrl,
+      title: game.title,
+      core: game.core || 'snes',
+      id: game.id,
+      coverArt: game.coverArt
+    });
+    setNetplayWaitingState('joiner_waiting');
+    setIsJoinerReady(false);
+    setNetplayRoomStatus({
+      roomId: cleanRoom,
+      p1Ready: true,
+      p2Joined: true,
+      p2Ready: false,
+      started: false,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    });
+    setActiveTab('play');
+    setIsPlaying(false);
+    setCurrentRomUrl(null);
+    setRomError(null);
+    setIsLoadingRom(false);
+
+    // Scroll to player area
+    setTimeout(() => {
+      if (playerContainerRef.current) {
+        playerContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 150);
+
+    // 1. Preload ROM binary in background immediately
+    preloadRomBackground(game.romUrl);
+
+    // 2. Notify server that P2 joined
+    try {
+      const res = await fetch('/api/netplay/join-room', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ room: cleanRoom })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status) setNetplayRoomStatus(data.status);
+      }
+    } catch (err) {
+      console.warn('[Netplay Join Room API Warning]:', err);
+    }
+  };
+
+  // Joiner clicks "Sẵn Sàng" button
+  const handleJoinerSetReady = async () => {
+    if (!netplayRoom) return;
+    setIsJoinerReady(true);
+    try {
+      const res = await fetch('/api/netplay/set-ready', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ room: netplayRoom, role: 'p2' })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status) setNetplayRoomStatus(data.status);
+      }
+    } catch (err) {
+      console.warn('[Netplay Set Ready API Warning]:', err);
+    }
+  };
+
+  // Host clicks "Bắt Đầu Chơi" button
+  const handleHostStartGame = async () => {
+    if (!netplayRoom || !waitingGame || isStartingHost) return;
+    setIsStartingHost(true);
+    try {
+      await fetch('/api/netplay/start-room', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ room: netplayRoom })
+      });
+    } catch (err) {
+      console.warn('[Netplay Start Room API Warning]:', err);
+    }
+
+    setNetplayWaitingState('idle');
+    const targetRom = preloadedBlobUrlRef.current || waitingGame.romUrl;
+    launchRom(
+      targetRom,
+      waitingGame.title,
+      waitingGame.core,
+      waitingGame.id,
+      { isNetplay: true, room: netplayRoom, role: 'p1' }
+    );
+  };
+
+  // Cancel / Exit Netplay waiting room & cleanup Blob storage
+  const handleCancelNetplayRoom = async () => {
+    const roomToCancel = netplayRoom;
+    if (roomToCancel) {
+      try {
+        fetch('/api/netplay/delete-room', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ room: roomToCancel })
+        }).catch(() => {});
+      } catch (e) {}
+    }
+    terminateActiveEmulator();
+  };
+
+  // 2-Step Waiting Room Polling Effect (Every 2 seconds)
   useEffect(() => {
-    if (netplayWaitingState !== 'hosting_wait' || !netplayRoom || !waitingGame) {
+    if (netplayWaitingState === 'idle' || !netplayRoom || !waitingGame) {
       if (waitingPollTimerRef.current) {
         clearInterval(waitingPollTimerRef.current);
         waitingPollTimerRef.current = null;
@@ -484,25 +667,26 @@ export const EmulatorZone: React.FC = () => {
         const res = await fetch(`/api/netplay/room-status?room=${encodeURIComponent(netplayRoom)}&t=${Date.now()}`);
         if (res.ok) {
           const data = await res.json();
-          if (data.success && data.status && data.status.p2Ready) {
-            console.log(`🎉 [Netplay Room] Player 2 joined room [${netplayRoom}]! Transitioning to both_ready...`);
-            setNetplayWaitingState('both_ready');
-            if (waitingPollTimerRef.current) {
-              clearInterval(waitingPollTimerRef.current);
-              waitingPollTimerRef.current = null;
-            }
+          if (data.success && data.status) {
+            setNetplayRoomStatus(data.status);
 
-            // Small delay to show connected status on UI before emulator launch
-            setTimeout(() => {
+            // Joiner watches for Host starting the game
+            if (netplayWaitingState === 'joiner_waiting' && data.status.started) {
+              console.log(`🚀 [Netplay Joiner] Room [${netplayRoom}] has started! Launching core immediately with preloaded ROM...`);
+              if (waitingPollTimerRef.current) {
+                clearInterval(waitingPollTimerRef.current);
+                waitingPollTimerRef.current = null;
+              }
               setNetplayWaitingState('idle');
+              const targetRom = preloadedBlobUrlRef.current || waitingGame.romUrl;
               launchRom(
-                waitingGame.romUrl,
+                targetRom,
                 waitingGame.title,
                 waitingGame.core,
                 waitingGame.id,
-                { isNetplay: true, room: netplayRoom, role: 'p1' }
+                { isNetplay: true, room: netplayRoom, role: 'p2' }
               );
-            }, 1200);
+            }
           }
         }
       } catch (err) {
@@ -511,7 +695,7 @@ export const EmulatorZone: React.FC = () => {
     };
 
     pollRoomStatus();
-    const interval = setInterval(pollRoomStatus, 1800);
+    const interval = setInterval(pollRoomStatus, 2000);
     waitingPollTimerRef.current = interval;
 
     return () => {
@@ -744,13 +928,32 @@ export const EmulatorZone: React.FC = () => {
           autoLoadedKeyRef.current = loadKey;
           console.log(`[Deep Linking] Auto loading: ${matchedGame.title} (Netplay: ${isNetplayFlag ? `Room ${urlNetplayRoom} / ${urlRole}` : 'Single-Player'})`);
           
-          launchRom(
-            matchedGame.romUrl,
-            matchedGame.title,
-            matchedGame.emulatorCore || 'snes',
-            matchedGame.id,
-            isNetplayFlag && urlNetplayRoom ? { isNetplay: true, room: urlNetplayRoom, role: urlRole } : undefined
-          );
+          if (isNetplayFlag && urlNetplayRoom) {
+            if (urlRole === 'p2') {
+              startJoinerNetplay({
+                romUrl: matchedGame.romUrl,
+                title: matchedGame.title,
+                core: matchedGame.emulatorCore || 'snes',
+                id: matchedGame.id,
+                coverArt: matchedGame.coverArt
+              }, urlNetplayRoom);
+            } else {
+              startHostingNetplay({
+                romUrl: matchedGame.romUrl,
+                title: matchedGame.title,
+                core: matchedGame.emulatorCore || 'snes',
+                id: matchedGame.id,
+                coverArt: matchedGame.coverArt
+              }, urlNetplayRoom);
+            }
+          } else {
+            launchRom(
+              matchedGame.romUrl,
+              matchedGame.title,
+              matchedGame.emulatorCore || 'snes',
+              matchedGame.id
+            );
+          }
 
           // Smooth scroll to emulator container after short delay
           setTimeout(() => {
@@ -773,20 +976,27 @@ export const EmulatorZone: React.FC = () => {
   // Global Event Listener for launch commands from other components
   useEffect(() => {
     const handleLaunchEvent = (e: any) => {
-      const { romUrl, title, core, gameId, isNetplay, room, role } = e.detail || {};
+      const { romUrl, title, core, gameId, isNetplay, room, role, coverArt } = e.detail || {};
       if (romUrl) {
-        // If current session is active Netplay, preserve it unless explicitly overridden
+        // If current session is active Netplay, route to 2-step waiting room
         const shouldNetplay = isNetplay || ((isNetplayActive || isNetplayInitializingRef.current) && Boolean(netplayRoom));
         const effectiveRoom = (room || netplayRoom || '').trim();
         const effectiveRole = role || netplayRole || 'p2';
 
-        launchRom(
-          romUrl, 
-          title, 
-          core || 'snes', 
-          gameId, 
-          shouldNetplay && effectiveRoom ? { isNetplay: true, room: effectiveRoom, role: effectiveRole } : undefined
-        );
+        if (shouldNetplay && effectiveRoom) {
+          if (effectiveRole === 'p2') {
+            startJoinerNetplay({ romUrl, title, core: core || 'snes', id: gameId, coverArt }, effectiveRoom);
+          } else {
+            startHostingNetplay({ romUrl, title, core: core || 'snes', id: gameId, coverArt }, effectiveRoom);
+          }
+        } else {
+          launchRom(
+            romUrl, 
+            title, 
+            core || 'snes', 
+            gameId
+          );
+        }
       }
     };
 
@@ -1153,18 +1363,18 @@ export const EmulatorZone: React.FC = () => {
                       <button
                         id={`btn-netplay-snes-${game.id}`}
                         onClick={() => {
-                          const room = netplayRoom || 'QGX-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-                          setNetplayRoom(room);
-                          setNetplayRole('p1');
-                          setIsNetplayActive(true);
-                          launchRom(game.romUrl || '', game.title, 'snes', game.id, {
-                            isNetplay: true,
-                            room,
-                            role: 'p1'
-                          });
+                          startHostingNetplay(
+                            {
+                              romUrl: game.romUrl || '',
+                              title: game.title,
+                              core: 'snes',
+                              id: game.id,
+                              coverArt: game.coverArt
+                            }
+                          );
                         }}
                         className="py-3 px-3.5 bg-slate-900 hover:bg-slate-800 border border-cyan-500/40 hover:border-cyan-400 text-cyan-300 font-bold rounded-xl text-xs font-mono transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                        title="Tạo phòng chơi 2 người trực tuyến qua mạng"
+                        title="Tạo phòng chờ chơi 2 người trực tuyến qua mạng"
                       >
                         <Users className="w-4 h-4 text-cyan-400" />
                         <span className="hidden xs:inline">Netplay 2P</span>
@@ -1425,20 +1635,39 @@ export const EmulatorZone: React.FC = () => {
 
           {/* EMULATORJS IFRAME CONTAINER, LOADING SPINNER & ERROR STATE */}
           <div className="relative w-full aspect-[4/3] max-h-[720px] bg-black rounded-3xl border border-amber-500/30 overflow-hidden shadow-2xl flex items-center justify-center">
-            {/* NETPLAY WAITING ROOM OVERLAY (STATE MACHINE: 'hosting_wait' | 'both_ready') */}
+            {/* NETPLAY WAITING ROOM OVERLAY (2-STEP HANDSHAKE: 'host_waiting' | 'joiner_waiting') */}
             {netplayWaitingState !== 'idle' ? (
               <div className="absolute inset-0 z-30 bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center space-y-5 overflow-y-auto">
                 <div className="flex flex-col items-center gap-2">
                   <div className="w-16 h-16 rounded-3xl bg-amber-500/10 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-[0_0_30px_rgba(245,158,11,0.25)]">
                     <Users className="w-8 h-8 animate-pulse" />
                   </div>
-                  <h3 className="text-lg sm:text-xl font-black text-white font-display uppercase tracking-tight">
-                    PHÒNG CHỜ NETPLAY (ONLINE 2 NGƯỜI)
+                  <h3 className="text-lg sm:text-xl font-black text-white font-display uppercase tracking-tight flex items-center gap-2">
+                    <span>PHÒNG CHỜ NETPLAY</span>
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-mono font-bold ${
+                      netplayWaitingState === 'host_waiting'
+                        ? 'bg-amber-500 text-slate-950'
+                        : 'bg-cyan-500 text-slate-950'
+                    }`}>
+                      {netplayWaitingState === 'host_waiting' ? 'HOST / P1' : 'JOINER / P2'}
+                    </span>
                   </h3>
                   <p className="text-xs text-slate-300 max-w-md font-body">
-                    {netplayWaitingState === 'both_ready'
-                      ? '🎉 Player 2 đã vào phòng! Đang đồng bộ và khởi động game cho cả 2 người chơi...'
-                      : '👑 Bạn là Chủ Phòng (Player 1). Hãy gửi mã phòng hoặc link mời cho Bạn bè (Player 2) để cùng chiến game!'}
+                    {netplayWaitingState === 'host_waiting' ? (
+                      netplayRoomStatus?.p2Ready ? (
+                        <span className="text-emerald-300 font-bold">🎉 Player 2 đã sẵn sàng! Bấm "Bắt Đầu Chơi" để cùng vào trận ngay!</span>
+                      ) : netplayRoomStatus?.p2Joined ? (
+                        <span className="text-amber-300">👤 Player 2 đã vào phòng! Đang chờ Player 2 bấm Sẵn Sàng...</span>
+                      ) : (
+                        '👑 Bạn là Chủ Phòng (Player 1). Hãy gửi mã phòng hoặc link mời cho Bạn bè (Player 2) để cùng chiến game!'
+                      )
+                    ) : (
+                      isJoinerReady ? (
+                        <span className="text-emerald-300 font-bold">✅ Bạn đã sẵn sàng! Đang chờ Chủ phòng (Host) bấm Bắt Đầu... (Game sẽ tự khởi động)</span>
+                      ) : (
+                        `🎮 Bạn đã kết nối vào phòng [${netplayRoom}]. Hãy bấm "Sẵn Sàng" để Host biết bạn đã chuẩn bị xong!`
+                      )
+                    )}
                   </p>
                 </div>
 
@@ -1476,62 +1705,113 @@ export const EmulatorZone: React.FC = () => {
                     <div className="bg-slate-950/80 p-2.5 rounded-xl border border-emerald-500/40 text-left space-y-1">
                       <div className="flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                        <span className="text-xs font-mono font-bold text-emerald-400 uppercase">Player 1 (Host)</span>
+                        <span className="text-xs font-mono font-bold text-emerald-400 uppercase">
+                          Player 1 (Host)
+                        </span>
                       </div>
-                      <span className="text-[11px] text-slate-300 font-body block">✅ Đã sẵn sàng (Bạn)</span>
+                      <span className="text-[11px] text-slate-300 font-body block">
+                        {netplayWaitingState === 'host_waiting' ? '✅ Đã sẵn sàng (Bạn)' : '👑 Chủ Phòng'}
+                      </span>
                     </div>
 
                     <div className={`p-2.5 rounded-xl border text-left space-y-1 ${
-                      netplayWaitingState === 'both_ready'
+                      (netplayWaitingState === 'host_waiting' && netplayRoomStatus?.p2Ready) ||
+                      (netplayWaitingState === 'joiner_waiting' && isJoinerReady)
                         ? 'bg-slate-950/80 border-emerald-500/40'
                         : 'bg-slate-950/80 border-amber-500/30'
                     }`}>
                       <div className="flex items-center gap-1.5">
-                        <span className={`w-2 h-2 rounded-full ${netplayWaitingState === 'both_ready' ? 'bg-emerald-400' : 'bg-amber-400 animate-ping'}`} />
-                        <span className="text-xs font-mono font-bold text-amber-300 uppercase">Player 2 (Khách)</span>
+                        <span className={`w-2 h-2 rounded-full ${
+                          (netplayWaitingState === 'host_waiting' && netplayRoomStatus?.p2Ready) ||
+                          (netplayWaitingState === 'joiner_waiting' && isJoinerReady)
+                            ? 'bg-emerald-400'
+                            : 'bg-amber-400 animate-ping'
+                        }`} />
+                        <span className="text-xs font-mono font-bold text-amber-300 uppercase">
+                          Player 2 (Khách)
+                        </span>
                       </div>
                       <span className="text-[11px] text-slate-300 font-body block truncate">
-                        {netplayWaitingState === 'both_ready' ? '✅ Đã kết nối!' : '⏳ Đang chờ vào...'}
+                        {netplayWaitingState === 'host_waiting' ? (
+                          netplayRoomStatus?.p2Ready
+                            ? '✅ Đã sẵn sàng!'
+                            : netplayRoomStatus?.p2Joined
+                            ? '🟡 Đã vào phòng'
+                            : '⏳ Đang chờ vào...'
+                        ) : (
+                          isJoinerReady ? '✅ Đã sẵn sàng (Bạn)' : '🟡 Chưa bấm sẵn sàng'
+                        )}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Buttons */}
+                {/* Buttons and Actions */}
                 <div className="flex flex-col items-center gap-2.5 max-w-md w-full">
-                  <button
-                    type="button"
-                    onClick={handleCopyInviteLink}
-                    className="w-full py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-mono font-black text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 shadow-lg cursor-pointer transition-all"
-                  >
-                    {isCopiedInviteLink ? <Check className="w-4 h-4" /> : <Link2 className="w-4 h-4" />}
-                    <span>{isCopiedInviteLink ? 'ĐÃ CHÉP LINK MỜI!' : 'SAO CHÉP LINK MỜI BẠN BÈ (P2)'}</span>
-                  </button>
+                  {netplayWaitingState === 'host_waiting' ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleCopyInviteLink}
+                        className="w-full py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-mono font-black text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 shadow-lg cursor-pointer transition-all active:scale-95"
+                      >
+                        {isCopiedInviteLink ? <Check className="w-4 h-4 text-white" /> : <Link2 className="w-4 h-4" />}
+                        <span>{isCopiedInviteLink ? 'ĐÃ CHÉP LINK MỜI!' : 'SAO CHÉP LINK MỜI BẠN BÈ (P2)'}</span>
+                      </button>
 
-                  <div className="flex items-center gap-2 w-full">
+                      {/* Start Game Button: Disabled until P2 is Ready */}
+                      <button
+                        type="button"
+                        id="btn-host-start-game"
+                        onClick={handleHostStartGame}
+                        disabled={!netplayRoomStatus?.p2Ready || isStartingHost}
+                        className={`w-full py-3.5 rounded-xl font-mono font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-xl ${
+                          netplayRoomStatus?.p2Ready && !isStartingHost
+                            ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 shadow-[0_0_25px_rgba(245,158,11,0.5)] animate-pulse border border-amber-300 cursor-pointer active:scale-95'
+                            : 'bg-slate-900 border border-slate-800 text-slate-500 opacity-50 cursor-not-allowed'
+                        }`}
+                      >
+                        <Play className="w-4 h-4 fill-current" />
+                        <span>
+                          {isStartingHost
+                            ? 'ĐANG KHỞI ĐỘNG PHÒNG CHƠI...'
+                            : netplayRoomStatus?.p2Ready
+                            ? '🚀 BẮT ĐẦU CHƠI NGAY'
+                            : '⏳ Chờ Player 2 Sẵn Sàng...'}
+                        </span>
+                      </button>
+                    </>
+                  ) : (
+                    /* Joiner Waiting View */
+                    <>
+                      <button
+                        type="button"
+                        id="btn-joiner-ready"
+                        onClick={handleJoinerSetReady}
+                        disabled={isJoinerReady}
+                        className={`w-full py-3.5 rounded-xl font-mono font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-xl ${
+                          !isJoinerReady
+                            ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-[0_0_20px_rgba(16,185,129,0.4)] cursor-pointer active:scale-95'
+                            : 'bg-slate-900 border border-emerald-500/40 text-emerald-300 opacity-80 cursor-default'
+                        }`}
+                      >
+                        <Check className="w-4 h-4" />
+                        <span>
+                          {isJoinerReady
+                            ? '⏳ ĐÃ SẴN SÀNG (ĐANG CHỜ HOST BẮT ĐẦU...)'
+                            : '✅ BẤM ĐỂ SẴN SÀNG'}
+                        </span>
+                      </button>
+                    </>
+                  )}
+
+                  <div className="flex items-center gap-2 w-full pt-1">
                     <button
                       type="button"
-                      onClick={() => {
-                        setNetplayWaitingState('idle');
-                        if (waitingGame) {
-                          launchRom(waitingGame.romUrl, waitingGame.title, waitingGame.core, waitingGame.id, {
-                            isNetplay: true,
-                            room: netplayRoom,
-                            role: 'p1'
-                          });
-                        }
-                      }}
-                      className="flex-1 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 text-xs font-mono font-bold rounded-xl transition-all cursor-pointer"
+                      onClick={handleCancelNetplayRoom}
+                      className="w-full py-2.5 px-3.5 bg-slate-900 hover:bg-red-950/80 border border-slate-800 hover:border-red-500/50 text-slate-400 hover:text-red-200 text-xs font-mono font-bold rounded-xl transition-all cursor-pointer"
                     >
-                      Khởi Động Ngay (Bỏ Qua Chờ)
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={terminateActiveEmulator}
-                      className="py-2 px-3.5 bg-slate-900 hover:bg-red-950/80 border border-slate-700 hover:border-red-500/50 text-slate-300 hover:text-red-200 text-xs font-mono font-bold rounded-xl transition-all cursor-pointer"
-                    >
-                      Hủy Phòng
+                      {netplayWaitingState === 'host_waiting' ? 'Hủy Phòng' : 'Rời Phòng'}
                     </button>
                   </div>
                 </div>
@@ -1542,24 +1822,36 @@ export const EmulatorZone: React.FC = () => {
             <AnimatePresence>
               {isLoadingRom && (
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 z-20 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center gap-4 p-6 text-center"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="absolute inset-0 z-20 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center gap-5 p-6 text-center"
                 >
-                  <div className="relative flex items-center justify-center">
-                    <Loader2 className="w-12 h-12 text-amber-400 animate-spin" />
-                    <Gamepad2 className="w-6 h-6 text-amber-300 absolute" />
-                  </div>
+                  {/* Uiverse Animated Words Spinner */}
+                  <LoadingWordsSpinner
+                    prefix="đang"
+                    words={
+                      isNetplayActive
+                        ? ['kết nối netplay', 'tải rom snes', 'đồng bộ p2p', 'ghép phòng chơi', 'chuẩn bị game']
+                        : ['tải rom', 'kết nối máy chủ', 'khởi động core', 'đồng bộ dữ liệu', 'chuẩn bị game']
+                    }
+                    color={isNetplayActive ? '#22D3EE' : '#f59e0b'}
+                    bgColor="#05070e"
+                  />
 
-                  <div className="space-y-1 max-w-md">
-                    <h4 className="text-base font-bold text-white font-display uppercase tracking-wide">
-                      {isNetplayActive ? `Đang Chuẩn Bị Netplay (${netplayRole === 'p1' ? 'Chủ Phòng P1' : 'Khách P2'})` : 'Đang Tải ROM SNES'}
+                  <div className="space-y-1.5 max-w-md">
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-300 font-mono uppercase tracking-wider">
+                      {isNetplayActive ? `🎮 Netplay Mode (${netplayRole === 'p1' ? 'Chủ Phòng P1' : 'Khách P2'})` : '🕹️ Giả Lập SNES 16-Bit'}
                     </h4>
-                    <p className="text-xs font-mono text-amber-300">
-                      {loadingStepText || "Đang kết nối ROM..."}
-                    </p>
-                    <p className="text-[11px] text-slate-400 font-body mt-2">
+
+                    {loadingStepText && (
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs font-mono text-amber-300">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                        <span>{loadingStepText}</span>
+                      </div>
+                    )}
+
+                    <p className="text-[11px] text-slate-400 font-body mt-2 leading-relaxed">
                       {isNetplayActive 
                         ? `Hệ thống nạp nhị phân ROM đầy đủ trước khi khởi tạo Netplay phòng [${netplayRoom}], đảm bảo đồng bộ mạng không bị giật lag.`
                         : 'Trình duyệt đang nạp ROM vào bộ nhớ nhị phân an toàn vượt lỗi CORS.'
@@ -1911,19 +2203,22 @@ export const EmulatorZone: React.FC = () => {
                           room
                         );
                       } else {
-                        setNetplayRoom(room);
-                        setIsNetplayActive(true);
-                        launchRom(game.romUrl || '', game.title, 'snes', game.id, {
-                          isNetplay: true,
-                          room,
-                          role: 'p2'
-                        });
+                        startJoinerNetplay(
+                          {
+                            romUrl: game.romUrl || '',
+                            title: game.title,
+                            core: 'snes',
+                            id: game.id,
+                            coverArt: game.coverArt
+                          },
+                          room
+                        );
                       }
                     }}
                     className="w-full py-2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold rounded-xl text-xs font-mono uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow cursor-pointer"
                   >
                     <Play className="w-3.5 h-3.5 fill-slate-950" />
-                    <span>{netplayRole === 'p1' ? 'Mở Phòng Chờ Netplay' : 'Vào Game Với Mã Phòng'}</span>
+                    <span>{netplayRole === 'p1' ? 'Mở Phòng Chờ Netplay (P1)' : 'Vào Phòng Chờ (P2)'}</span>
                   </button>
                 </div>
               ))}

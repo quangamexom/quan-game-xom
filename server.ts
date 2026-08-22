@@ -10,11 +10,14 @@ import {
   addGameToLibrary, 
   updateGameInLibrary, 
   removeGameFromLibrary,
-  uploadImageToBlob
+  uploadImageToBlob,
+  syncAllBlobsToLibrary
 } from "./src/services/metadataStorage.ts";
 import {
   createNetplayRoom,
-  markPlayerJoined,
+  joinNetplayRoom,
+  setPlayerReady,
+  startNetplayRoom,
   getRoomStatus,
   deleteNetplayRoom
 } from "./src/services/netplayRoomStorage.ts";
@@ -610,6 +613,16 @@ function getSystemMeta(systemCode: string = 'snes') {
 app.get("/api/games/admin-library", async (req, res) => {
   try {
     const includeHidden = req.query.includeHidden === 'true';
+    const shouldSync = req.query.sync === 'true';
+
+    if (shouldSync && process.env.BLOB_READ_WRITE_TOKEN) {
+      try {
+        await syncAllBlobsToLibrary();
+      } catch (syncErr) {
+        console.warn("[Auto-Sync on Library Fetch Warning]:", syncErr);
+      }
+    }
+
     const allGames = await readGamesLibrary();
     const result = includeHidden ? allGames : allGames.filter(g => !g.isHidden);
     
@@ -856,6 +869,20 @@ app.delete("/api/admin/blob/delete", async (req, res) => {
   }
 });
 
+// Auto-Scan & Sync all ROMs from Vercel Blob Storage to Games Library
+app.post(["/api/admin/blob/sync-all", "/api/games/sync-blob"], async (req, res) => {
+  try {
+    const result = await syncAllBlobsToLibrary();
+    return res.json(result);
+  } catch (err: any) {
+    console.error("[Sync Blobs API Error]:", err);
+    return res.status(500).json({
+      success: false,
+      error: err.message || "Lỗi khi đồng bộ ROM từ Vercel Blob."
+    });
+  }
+});
+
 // Update Game Description in Library (Admin 2-way synchronization)
 app.post("/api/admin/games/update-description", async (req, res) => {
   try {
@@ -898,7 +925,7 @@ app.post("/api/admin/games/update-description", async (req, res) => {
   }
 });
 
-// Netplay Waiting Room Endpoints (Signaling for P1 host & P2 join synchronization)
+// Netplay Waiting Room Endpoints (2-Step Waiting Room Synchronization)
 app.post("/api/netplay/create-room", async (req, res) => {
   try {
     const { room, gameId } = req.body;
@@ -915,15 +942,43 @@ app.post("/api/netplay/create-room", async (req, res) => {
 
 app.post("/api/netplay/join-room", async (req, res) => {
   try {
-    const { room, role } = req.body;
+    const { room } = req.body;
     if (!room) {
       return res.status(400).json({ success: false, error: "Mã phòng không hợp lệ" });
     }
-    const status = await markPlayerJoined(room, role || 'p2');
+    const status = await joinNetplayRoom(room);
     return res.json({ success: true, room, status });
   } catch (err: any) {
     console.error("[Join Netplay Room Error]:", err);
     return res.status(500).json({ success: false, error: err.message || "Lỗi tham gia phòng Netplay" });
+  }
+});
+
+app.post("/api/netplay/set-ready", async (req, res) => {
+  try {
+    const { room, role } = req.body;
+    if (!room) {
+      return res.status(400).json({ success: false, error: "Mã phòng không hợp lệ" });
+    }
+    const status = await setPlayerReady(room, role || 'p2');
+    return res.json({ success: true, room, status });
+  } catch (err: any) {
+    console.error("[Set Ready Netplay Room Error]:", err);
+    return res.status(500).json({ success: false, error: err.message || "Lỗi cập nhật trạng thái Sẵn Sàng" });
+  }
+});
+
+app.post("/api/netplay/start-room", async (req, res) => {
+  try {
+    const { room } = req.body;
+    if (!room) {
+      return res.status(400).json({ success: false, error: "Mã phòng không hợp lệ" });
+    }
+    const status = await startNetplayRoom(room);
+    return res.json({ success: true, room, status });
+  } catch (err: any) {
+    console.error("[Start Netplay Room Error]:", err);
+    return res.status(500).json({ success: false, error: err.message || "Lỗi khởi động phòng Netplay" });
   }
 });
 
@@ -941,9 +996,9 @@ app.get("/api/netplay/room-status", async (req, res) => {
   }
 });
 
-app.delete("/api/netplay/delete-room", async (req, res) => {
+app.all(["/api/netplay/delete-room", "/api/netplay/leave-room"], async (req, res) => {
   try {
-    const { room } = req.body;
+    const room = (req.body?.room || req.query?.room) as string;
     if (room) {
       await deleteNetplayRoom(room);
     }

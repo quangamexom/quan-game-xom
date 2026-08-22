@@ -67,6 +67,7 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
   // Blob & Metadata List
   const [blobs, setBlobs] = useState<BlobListItem[]>([]);
   const [isLoadingBlobs, setIsLoadingBlobs] = useState(false);
+  const [isSyncingBlobs, setIsSyncingBlobs] = useState(false);
   const [hasToken, setHasToken] = useState<boolean>(true);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
@@ -105,6 +106,33 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
       console.warn("Load blobs error:", err);
     } finally {
       setIsLoadingBlobs(false);
+    }
+  };
+
+  const handleSyncAllBlobs = async () => {
+    setIsSyncingBlobs(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    try {
+      const res = await fetch('/api/admin/blob/sync-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSuccessMessage(data.message || `Đã đồng bộ thành công ${data.totalGames} game từ Vercel Blob!`);
+        await loadBlobs();
+        if (onGameUpdated) onGameUpdated();
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('qgx_games_updated'));
+        }
+      } else {
+        setErrorMessage(data.error || data.message || 'Lỗi đồng bộ từ Vercel Blob.');
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Lỗi kết nối khi đồng bộ Vercel Blob.');
+    } finally {
+      setIsSyncingBlobs(false);
     }
   };
 
@@ -521,21 +549,34 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
 
           {/* Section 2: Uploaded ROMs on Vercel Blob with Visibility Toggle */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <span className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
                 <FileCode className="w-4 h-4 text-amber-400" />
                 <span>2. Quản lý ROM đã upload ({blobs.length} game)</span>
               </span>
 
-              <button
-                type="button"
-                onClick={loadBlobs}
-                disabled={isLoadingBlobs}
-                className="text-[11px] font-mono text-amber-400 hover:text-amber-300 flex items-center gap-1 cursor-pointer"
-              >
-                <RefreshCw className={`w-3 h-3 ${isLoadingBlobs ? 'animate-spin' : ''}`} />
-                <span>Làm mới</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSyncAllBlobs}
+                  disabled={isSyncingBlobs}
+                  className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 rounded-lg text-[11px] font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm disabled:opacity-50"
+                  title="Tự động quét toàn bộ file ROM trên Vercel Blob và cập nhật vào Thư Viện"
+                >
+                  <Cloud className={`w-3.5 h-3.5 text-amber-400 ${isSyncingBlobs ? 'animate-bounce' : ''}`} />
+                  <span>{isSyncingBlobs ? 'Đang Quét & Đồng Bộ...' : 'Đồng Bộ Game Mới Từ Blob'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={loadBlobs}
+                  disabled={isLoadingBlobs}
+                  className="text-[11px] font-mono text-slate-400 hover:text-amber-300 flex items-center gap-1 cursor-pointer px-2 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
+                >
+                  <RefreshCw className={`w-3 h-3 ${isLoadingBlobs ? 'animate-spin' : ''}`} />
+                  <span>Làm mới</span>
+                </button>
+              </div>
             </div>
 
             {blobs.length === 0 ? (
