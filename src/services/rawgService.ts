@@ -139,7 +139,7 @@ export function saveManualCover(gameId: string, title: string, base64DataUrl: st
       detail: { gameId, title, coverUrl: base64DataUrl }
     }));
 
-    // Post to Server API to persist to disk & gameArtMap.ts
+    // Post to Server API to persist to Vercel Blob & gameArtMap.ts
     fetch('/api/save-game-art', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -150,7 +150,19 @@ export function saveManualCover(gameId: string, title: string, base64DataUrl: st
         fileData: base64DataUrl
       })
     })
-      .then(() => loadServerArtMap())
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.finalImageSrc) {
+            localStorage.setItem(keyById, data.finalImageSrc);
+            localStorage.setItem(keyByTitle, data.finalImageSrc);
+            window.dispatchEvent(new CustomEvent('game-cover-updated', {
+              detail: { gameId, title, coverUrl: data.finalImageSrc }
+            }));
+          }
+        }
+        return loadServerArtMap();
+      })
       .catch((err) => console.warn('Failed to post manual cover to server:', err));
   } catch (e) {
     console.warn('Failed to save manual cover to localStorage:', e);
@@ -204,7 +216,7 @@ export function saveManualBanner(gameId: string, title: string, base64DataUrl: s
       detail: { gameId, title, bannerUrl: base64DataUrl }
     }));
 
-    // Post to Server API to persist to disk & gameArtMap.ts
+    // Post to Server API to persist to Vercel Blob & gameArtMap.ts
     fetch('/api/save-game-art', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -215,7 +227,19 @@ export function saveManualBanner(gameId: string, title: string, base64DataUrl: s
         fileData: base64DataUrl
       })
     })
-      .then(() => loadServerArtMap())
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.finalImageSrc) {
+            localStorage.setItem(keyById, data.finalImageSrc);
+            localStorage.setItem(keyByTitle, data.finalImageSrc);
+            window.dispatchEvent(new CustomEvent('game-banner-updated', {
+              detail: { gameId, title, bannerUrl: data.finalImageSrc }
+            }));
+          }
+        }
+        return loadServerArtMap();
+      })
       .catch((err) => console.warn('Failed to post manual banner to server:', err));
   } catch (e) {
     console.warn('Failed to save manual banner to localStorage:', e);

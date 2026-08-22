@@ -9,7 +9,8 @@ import {
   writeGamesLibrary, 
   addGameToLibrary, 
   updateGameInLibrary, 
-  removeGameFromLibrary 
+  removeGameFromLibrary,
+  uploadImageToBlob
 } from "./src/services/metadataStorage.ts";
 
 const app = express();
@@ -227,31 +228,41 @@ app.post("/api/save-game-art", async (req, res) => {
     let finalImageSrc = fileData || imageUrl;
     const isBanner = imageType === "banner";
 
-    // A. Handle base64 image saving to disk as image files in /public/assets/covers
+    // A. Handle base64 image: Upload directly to Vercel Blob (Permanent Cloud Storage) & fallback to disk
     if (finalImageSrc && finalImageSrc.startsWith("data:image/")) {
       try {
-        const matches = finalImageSrc.match(/^data:image\/([a-zA-Z0-9\+\=]+);base64,(.+)$/);
+        const matches = finalImageSrc.match(/^data:image\/([a-zA-Z0-9\+\=\-]+);base64,(.+)$/);
         if (matches && matches[2]) {
           const rawExt = matches[1];
           const ext = rawExt.includes("svg") ? "svg" : rawExt.includes("jpeg") || rawExt.includes("jpg") ? "jpg" : rawExt.includes("webp") ? "webp" : "png";
           const buffer = Buffer.from(matches[2], "base64");
-          
+          const mimeType = rawExt.includes("svg") ? "image/svg+xml" : `image/${ext}`;
+          const safeFilenameKey = cleanKey.replace(/[^a-z0-9]/g, '_');
+          const blobPath = `covers/${safeFilenameKey}-${isBanner ? 'banner' : 'cover'}.${ext}`;
+
+          // 1. Upload to Vercel Blob if token exists
+          const blobUrl = await uploadImageToBlob(blobPath, buffer, mimeType);
+          if (blobUrl) {
+            finalImageSrc = blobUrl;
+          }
+
+          // 2. Also write to local disk as fallback
           const publicCoversDir = path.join(process.cwd(), "public/assets/covers");
           const srcCoversDir = path.join(process.cwd(), "src/assets/covers");
           
           if (!fs.existsSync(publicCoversDir)) fs.mkdirSync(publicCoversDir, { recursive: true });
           if (!fs.existsSync(srcCoversDir)) fs.mkdirSync(srcCoversDir, { recursive: true });
 
-          const safeFilenameKey = cleanKey.replace(/[^a-z0-9]/g, '_');
           const filename = `${safeFilenameKey}-${isBanner ? 'banner' : 'cover'}.${ext}`;
-          
           fs.writeFileSync(path.join(publicCoversDir, filename), buffer);
           fs.writeFileSync(path.join(srcCoversDir, filename), buffer);
 
-          finalImageSrc = `/assets/covers/${filename}?t=${Date.now()}`;
+          if (!blobUrl) {
+            finalImageSrc = `/assets/covers/${filename}?t=${Date.now()}`;
+          }
         }
       } catch (fileWriteErr) {
-        console.warn("[Save Game Cover File Disk Warning]:", fileWriteErr);
+        console.warn("[Save Game Cover File Disk/Blob Warning]:", fileWriteErr);
       }
     }
 
@@ -409,14 +420,24 @@ app.post("/api/save-logo", async (req, res) => {
 
     let finalLogoUrl = rawLogo;
 
-    // Handle base64 image saving to disk
+    // Handle base64 image: Upload to Vercel Blob (Permanent Cloud Storage) & fallback to disk
     if (rawLogo.startsWith("data:image/")) {
       try {
-        const matches = rawLogo.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
+        const matches = rawLogo.match(/^data:image\/([a-zA-Z0-9\+\=\-]+);base64,(.+)$/);
         if (matches && matches[2]) {
-          const ext = matches[1] === "svg+xml" ? "svg" : matches[1] || "png";
+          const rawExt = matches[1];
+          const ext = rawExt === "svg+xml" || rawExt.includes("svg") ? "svg" : rawExt.includes("jpeg") || rawExt.includes("jpg") ? "jpg" : rawExt.includes("webp") ? "webp" : "png";
           const buffer = Buffer.from(matches[2], "base64");
-          
+          const mimeType = ext === "svg" ? "image/svg+xml" : `image/${ext}`;
+          const blobPath = `logos/logo-qgx-${Date.now()}.${ext}`;
+
+          // 1. Upload to Vercel Blob
+          const blobUrl = await uploadImageToBlob(blobPath, buffer, mimeType);
+          if (blobUrl) {
+            finalLogoUrl = blobUrl;
+          }
+
+          // 2. Local disk fallback
           const publicLogoDir = path.join(process.cwd(), "public/assets/logo");
           const srcLogoDir = path.join(process.cwd(), "src/assets/logo");
           
@@ -427,10 +448,12 @@ app.post("/api/save-logo", async (req, res) => {
           fs.writeFileSync(path.join(publicLogoDir, filename), buffer);
           fs.writeFileSync(path.join(srcLogoDir, filename), buffer);
 
-          finalLogoUrl = `/assets/logo/${filename}?t=${Date.now()}`;
+          if (!blobUrl) {
+            finalLogoUrl = `/assets/logo/${filename}?t=${Date.now()}`;
+          }
         }
       } catch (fileWriteErr) {
-        console.warn("[Save Logo File Disk Warning]:", fileWriteErr);
+        console.warn("[Save Logo File Disk/Blob Warning]:", fileWriteErr);
       }
     }
 

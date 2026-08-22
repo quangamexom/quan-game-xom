@@ -24,7 +24,9 @@ import {
   AlertTriangle,
   AlertCircle,
   ExternalLink,
-  Cloud
+  Cloud,
+  Crown,
+  Link2
 } from 'lucide-react';
 import { DEFAULT_SNES_TEST_GAMES } from '../services/sheetService';
 import { GameItem } from '../types';
@@ -32,6 +34,7 @@ import { ShareGameMenu } from './ShareGameMenu';
 import { useAdminMode } from '../hooks/useAdminMode';
 import { AdminRomManagerModal } from './AdminRomManagerModal';
 import { requestSafeAction } from '../utils/emulatorManager';
+import { copyTextToClipboard, getGameShareUrl } from '../utils/shareUtils';
 
 export interface PresetRom {
   id: string;
@@ -253,6 +256,7 @@ export const EmulatorZone: React.FC = () => {
   const [selectedCore, setSelectedCore] = useState<string>('snes');
   const [currentRomUrl, setCurrentRomUrl] = useState<string | null>(null);
   const [currentRomName, setCurrentRomName] = useState<string>('');
+  const [currentGameId, setCurrentGameId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [uploadFileName, setUploadFileName] = useState<string | null>(null);
 
@@ -270,12 +274,16 @@ export const EmulatorZone: React.FC = () => {
     originalUrl?: string;
   } | null>(null);
 
-  // Netplay State
+  // Netplay State (Online 2-Player)
+  const [isNetplayActive, setIsNetplayActive] = useState<boolean>(false);
   const [netplayRoom, setNetplayRoom] = useState<string>('');
+  const [netplayRole, setNetplayRole] = useState<'p1' | 'p2'>('p1');
   const [isCopiedRoom, setIsCopiedRoom] = useState<boolean>(false);
+  const [isCopiedInviteLink, setIsCopiedInviteLink] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'play' | 'library' | 'saves' | 'netplay'>('library');
 
   const playerContainerRef = useRef<HTMLDivElement>(null);
+  const activeBlobUrlRef = useRef<string | null>(null);
 
   const loadSnesGames = async () => {
     try {
@@ -332,8 +340,6 @@ export const EmulatorZone: React.FC = () => {
     return selectedCore;
   };
 
-  const activeBlobUrlRef = useRef<string | null>(null);
-
   // Complete and thorough teardown of active emulator session
   const terminateActiveEmulator = () => {
     console.log('🛑 [Emulator Teardown] Terminating active game session, destroying canvas & stopping audio...');
@@ -363,6 +369,7 @@ export const EmulatorZone: React.FC = () => {
     setIsPlaying(false);
     setCurrentRomUrl(null);
     setCurrentRomName('');
+    setCurrentGameId(null);
     setIsLoadingRom(false);
     setRomError(null);
     setActiveTab('library');
@@ -372,6 +379,11 @@ export const EmulatorZone: React.FC = () => {
     if (typeof window !== 'undefined') {
       window.__QGX_IS_PLAYING_EMULATOR__ = false;
       window.dispatchEvent(new CustomEvent('qgx_emulator_state_changed', { detail: { isPlaying: false } }));
+
+      // Restore URL to clean root if it had game_id or netplay params
+      if (window.location.search.includes('game_id=') || window.location.search.includes('netplay_room=')) {
+        window.history.pushState(null, '', '/');
+      }
     }
   };
 
@@ -411,7 +423,13 @@ export const EmulatorZone: React.FC = () => {
   }, []);
 
   // Launch ROM directly into EmulatorJS Engine (ArrayBuffer -> Application/octet-stream Blob -> ObjectURL)
-  const launchRom = async (romUrl: string, gameName: string, core: string = 'snes') => {
+  const launchRom = async (
+    romUrl: string, 
+    gameName: string, 
+    core: string = 'snes', 
+    gameId?: string,
+    netplayOpts?: { isNetplay?: boolean; room?: string; role?: 'p1' | 'p2' }
+  ) => {
     if (!romUrl || romUrl.trim().length === 0) {
       setRomError({
         title: "Không Có File ROM",
@@ -425,6 +443,31 @@ export const EmulatorZone: React.FC = () => {
     setRomError(null);
     setLoadingStepText(`Đang kết nối tải ROM cho ${gameName}...`);
     setActiveTab('play');
+
+    if (gameId) {
+      setCurrentGameId(gameId);
+    }
+
+    if (netplayOpts?.isNetplay) {
+      setIsNetplayActive(true);
+      if (netplayOpts.room) setNetplayRoom(netplayOpts.room);
+      if (netplayOpts.role) setNetplayRole(netplayOpts.role);
+    }
+
+    // Synchronize browser URL to /?game_id=[id_game] (&netplay_room=...)
+    if (typeof window !== 'undefined' && gameId) {
+      let targetUrl = `/?game_id=${encodeURIComponent(gameId)}`;
+      if (netplayOpts?.isNetplay || (isNetplayActive && netplayRoom)) {
+        const room = netplayOpts?.room || netplayRoom;
+        const role = netplayOpts?.role || netplayRole;
+        if (room) {
+          targetUrl += `&netplay_room=${encodeURIComponent(room)}&role=${role}`;
+        }
+      }
+      if (window.location.search !== targetUrl.replace(/^\//, '')) {
+        window.history.pushState({ gameId, isEmulator: true }, '', targetUrl);
+      }
+    }
 
     if (playerContainerRef.current) {
       playerContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -467,6 +510,81 @@ export const EmulatorZone: React.FC = () => {
       setIsPlaying(false);
     }
   };
+
+  // Feature 1: Deep Linking & Auto Load Game from URL on mount & popstate
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const checkAndAutoLoadFromUrl = () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const urlGameId = searchParams.get('game_id') || searchParams.get('game');
+      const urlNetplayRoom = searchParams.get('netplay_room') || searchParams.get('room');
+      const urlRole = (searchParams.get('role') as 'p1' | 'p2') || 'p2';
+
+      if (urlNetplayRoom) {
+        setNetplayRoom(urlNetplayRoom);
+        setIsNetplayActive(true);
+        setNetplayRole(urlRole);
+      }
+
+      if (urlGameId) {
+        // Collect all available retro games to search
+        const allCandidates = [
+          ...snesGames,
+          ...CLASSIC_PRESET_ROMS.map(presetRomToGameItem),
+          ...DEFAULT_SNES_TEST_GAMES
+        ];
+
+        const lowerTarget = urlGameId.toLowerCase().trim();
+        const matchedGame = allCandidates.find((g) => {
+          if (g.id.toLowerCase() === lowerTarget) return true;
+          if (encodeURIComponent(g.id).toLowerCase() === lowerTarget) return true;
+          const slug = g.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+          return slug === lowerTarget;
+        });
+
+        if (matchedGame && matchedGame.romUrl) {
+          console.log(`[Deep Linking] Detected game_id="${urlGameId}" on URL. Auto loading: ${matchedGame.title}`);
+          launchRom(
+            matchedGame.romUrl,
+            matchedGame.title,
+            matchedGame.emulatorCore || 'snes',
+            matchedGame.id,
+            urlNetplayRoom ? { isNetplay: true, room: urlNetplayRoom, role: urlRole } : undefined
+          );
+
+          // Smooth scroll to emulator container after short delay
+          setTimeout(() => {
+            if (playerContainerRef.current) {
+              playerContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }, 350);
+        }
+      }
+    };
+
+    checkAndAutoLoadFromUrl();
+
+    window.addEventListener('popstate', checkAndAutoLoadFromUrl);
+    return () => {
+      window.removeEventListener('popstate', checkAndAutoLoadFromUrl);
+    };
+  }, [snesGames]);
+
+  // Global Event Listener for launch commands from other components
+  useEffect(() => {
+    const handleLaunchEvent = (e: any) => {
+      const { romUrl, title, core, gameId, isNetplay, room, role } = e.detail || {};
+      if (romUrl) {
+        launchRom(romUrl, title, core || 'snes', gameId, { isNetplay, room, role });
+      }
+    };
+
+    window.addEventListener('qgx_launch_game', handleLaunchEvent);
+    return () => {
+      window.removeEventListener('qgx_launch_game', handleLaunchEvent);
+    };
+  }, []);
 
   // Handle local File ROM upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -524,6 +642,7 @@ export const EmulatorZone: React.FC = () => {
     console.log("➡️ Target Game:", ${JSON.stringify(currentRomName || 'Quán Game Xóm SNES ROM')});
     console.log("➡️ Selected Core:", ${JSON.stringify(selectedCore)}, "-> Resolved Core:", ${JSON.stringify(resolvedCore)});
     console.log("➡️ Effective ROM URL:", ${JSON.stringify(effectiveRomUrl)});
+    ${isNetplayActive && netplayRoom.trim() ? `console.log("🌐 Netplay Active:", ${JSON.stringify(netplayRoom.trim())}, "Role:", ${JSON.stringify(netplayRole)});` : ''}
     console.groupEnd();
 
     // 1. Diagnostic pre-check: verify ROM byte size & content type
@@ -553,7 +672,14 @@ export const EmulatorZone: React.FC = () => {
     window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
     window.EJS_startOnLoaded = true;
     window.EJS_color = '#f59e0b';
-    ${netplayRoom.trim() ? `window.EJS_room = ${JSON.stringify(netplayRoom.trim())};` : ''}
+    ${isNetplayActive && netplayRoom.trim() ? `
+    window.EJS_netplay = true;
+    window.EJS_netplayUrl = 'wss://netplay.emulatorjs.org';
+    window.EJS_room = ${JSON.stringify(netplayRoom.trim())};
+    window.EJS_gameId = ${JSON.stringify(currentGameId || currentRomName || 'qgx-snes-game')};
+    window.EJS_playerName = ${JSON.stringify(netplayRole === 'p1' ? 'Chủ Phòng (P1)' : 'Khách Vào (P2)')};
+    window.EJS_playerNumber = ${netplayRole === 'p1' ? 1 : 2};
+    ` : ''}
 
     // 3. Detailed Callbacks & Error Listeners
     window.EJS_onLoad = function() {
@@ -598,18 +724,34 @@ export const EmulatorZone: React.FC = () => {
   <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
 </body>
 </html>`;
-  }, [isPlaying, currentRomUrl, selectedCore, currentRomName, netplayRoom]);
+  }, [isPlaying, currentRomUrl, selectedCore, currentRomName, isNetplayActive, netplayRoom, netplayRole, currentGameId]);
 
   const handleCreateRoom = () => {
     const randomRoom = 'QGX-' + Math.random().toString(36).substring(2, 8).toUpperCase();
     setNetplayRoom(randomRoom);
+    setNetplayRole('p1');
+    setIsNetplayActive(true);
   };
 
   const handleCopyRoom = () => {
     if (!netplayRoom) return;
-    navigator.clipboard.writeText(netplayRoom);
+    copyTextToClipboard(netplayRoom);
     setIsCopiedRoom(true);
     setTimeout(() => setIsCopiedRoom(false), 2000);
+  };
+
+  const handleCopyInviteLink = () => {
+    const targetGame = snesGames.find(g => g.id === currentGameId) || snesGames[0];
+    if (!targetGame) return;
+
+    const shareUrl = getGameShareUrl(targetGame, {
+      room: netplayRoom || 'QGX-ROOM',
+      role: 'p2'
+    });
+
+    copyTextToClipboard(shareUrl);
+    setIsCopiedInviteLink(true);
+    setTimeout(() => setIsCopiedInviteLink(false), 2500);
   };
 
   return (
@@ -622,13 +764,13 @@ export const EmulatorZone: React.FC = () => {
           <div className="space-y-2 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono text-xs font-bold">
               <Gamepad2 className="w-4 h-4 text-amber-400" />
-              <span>EMULATORJS WEB ENGINE • VERCEL BLOB STORAGE DIRECT</span>
+              <span>EMULATORJS WEB ENGINE • NETPLAY 2 NGƯỜI • VERCEL BLOB STORAGE</span>
             </div>
             <h1 className="text-3xl sm:text-5xl font-display font-black text-white uppercase tracking-tight">
               KHU VỰC <span className="text-amber-400 text-glow-amber">GIẢ LẬP GAME RETRO</span>
             </h1>
             <p className="text-xs sm:text-sm font-body text-slate-300 leading-relaxed">
-              Chơi ngay game SNES & Retro kinh điển qua EmulatorJS stream trực tiếp từ kho Vercel Blob Storage tốc độ cao của Quán Game Xóm. Tải tức thì 100%, không lag, 60 FPS mượt mà!
+              Chơi ngay game SNES & Retro kinh điển trực tiếp trên trình duyệt, hỗ trợ chơi Online 2 người (Netplay) cùng bạn bè qua liên kết chia sẻ tức thì!
             </p>
           </div>
 
@@ -717,7 +859,10 @@ export const EmulatorZone: React.FC = () => {
             }`}
           >
             <Users className="w-4 h-4" />
-            <span>Chơi Online (Netplay)</span>
+            <span>Chơi Online (Netplay 2 Người)</span>
+            {isNetplayActive && netplayRoom && (
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            )}
           </button>
         </div>
       </div>
@@ -805,17 +950,38 @@ export const EmulatorZone: React.FC = () => {
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2 border-t border-slate-800">
                       <button
                         id={`btn-play-snes-${game.id}`}
-                        onClick={() => launchRom(game.romUrl || '', game.title, 'snes')}
+                        onClick={() => launchRom(game.romUrl || '', game.title, 'snes', game.id)}
                         className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs font-mono uppercase tracking-wider transition-all shadow-lg hover:shadow-amber-500/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                       >
                         <Play className="w-4 h-4 fill-slate-950" />
-                        <span>CHƠI NGAY (SNES)</span>
+                        <span>CHƠI NGAY (1P)</span>
+                      </button>
+
+                      <button
+                        id={`btn-netplay-snes-${game.id}`}
+                        onClick={() => {
+                          const room = netplayRoom || 'QGX-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+                          setNetplayRoom(room);
+                          setNetplayRole('p1');
+                          setIsNetplayActive(true);
+                          launchRom(game.romUrl || '', game.title, 'snes', game.id, {
+                            isNetplay: true,
+                            room,
+                            role: 'p1'
+                          });
+                        }}
+                        className="py-3 px-3.5 bg-slate-900 hover:bg-slate-800 border border-cyan-500/40 hover:border-cyan-400 text-cyan-300 font-bold rounded-xl text-xs font-mono transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                        title="Tạo phòng chơi 2 người trực tuyến qua mạng"
+                      >
+                        <Users className="w-4 h-4 text-cyan-400" />
+                        <span className="hidden xs:inline">Netplay 2P</span>
                       </button>
 
                       <ShareGameMenu
                         game={game}
                         variant="compact"
                         align="right"
+                        netplay={isNetplayActive && netplayRoom ? { room: netplayRoom, role: 'p2' } : undefined}
                       />
 
                       {game.downloadUrl && (
@@ -898,7 +1064,7 @@ export const EmulatorZone: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <button
                         id={`btn-launch-rom-${rom.id}`}
-                        onClick={() => launchRom(rom.romUrl, rom.title, rom.system)}
+                        onClick={() => launchRom(rom.romUrl, rom.title, rom.system, rom.id)}
                         className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs font-mono uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
                       >
                         <Play className="w-3.5 h-3.5 fill-slate-950" />
@@ -909,6 +1075,7 @@ export const EmulatorZone: React.FC = () => {
                         game={presetRomToGameItem(rom)}
                         variant="compact"
                         align="right"
+                        netplay={isNetplayActive && netplayRoom ? { room: netplayRoom, role: 'p2' } : undefined}
                       />
                     </div>
                   </div>
@@ -944,6 +1111,51 @@ export const EmulatorZone: React.FC = () => {
       {/* TAB 2: ACTIVE PLAYING EMULATORJS FRAME */}
       {activeTab === 'play' && (
         <div ref={playerContainerRef} className="space-y-4">
+          {/* Active Netplay Banner (When Netplay is Active) */}
+          {isNetplayActive && netplayRoom && (
+            <div className="p-3.5 bg-gradient-to-r from-cyan-950 via-slate-950 to-amber-950/60 rounded-2xl border border-cyan-500/50 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 rounded-full bg-emerald-400 animate-ping" />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono font-bold text-cyan-300 uppercase">
+                      🌐 NETPLAY ONLINE ĐANG BẬT
+                    </span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1 ${
+                      netplayRole === 'p1' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+                    }`}>
+                      {netplayRole === 'p1' ? <Crown className="w-3 h-3 text-amber-400" /> : <Users className="w-3 h-3 text-cyan-400" />}
+                      <span>{netplayRole === 'p1' ? 'Player 1 (Host - Chủ Phòng)' : 'Player 2 (Khách Tham Gia)'}</span>
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-mono text-slate-300">
+                    Mã Phòng: <strong className="text-amber-300 tracking-wider font-mono">{netplayRoom}</strong>
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleCopyInviteLink}
+                  className="px-3.5 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold rounded-xl text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
+                >
+                  {isCopiedInviteLink ? <Check className="w-3.5 h-3.5" /> : <Link2 className="w-3.5 h-3.5" />}
+                  <span>{isCopiedInviteLink ? 'Đã sao chép link!' : 'Copy Link Mời Bạn Bè (P2)'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsNetplayActive(false)}
+                  className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl text-xs font-mono border border-slate-700 transition-all cursor-pointer"
+                  title="Chuyển sang chế độ chơi đơn 1 người"
+                >
+                  Tắt Netplay
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between p-4 bg-slate-950 rounded-2xl border border-slate-800">
             <div className="flex items-center gap-3">
               <span className={`w-3 h-3 rounded-full ${isLoadingRom ? 'bg-amber-400 animate-spin' : 'bg-emerald-400 animate-pulse'}`} />
@@ -960,7 +1172,7 @@ export const EmulatorZone: React.FC = () => {
             <div className="flex items-center gap-2">
               <ShareGameMenu
                 game={{
-                  id: currentRomName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                  id: currentGameId || currentRomName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
                   title: currentRomName || 'Retro Emulator Game',
                   platforms: ['Other'],
                   language: 'Gốc / Tiếng Anh',
@@ -970,6 +1182,7 @@ export const EmulatorZone: React.FC = () => {
                 }}
                 variant="compact"
                 align="right"
+                netplay={isNetplayActive && netplayRoom ? { room: netplayRoom, role: 'p2' } : undefined}
               />
 
               <button
@@ -1075,7 +1288,7 @@ export const EmulatorZone: React.FC = () => {
                   {romError.originalUrl && (
                     <button
                       id="btn-retry-launch-rom"
-                      onClick={() => launchRom(romError.originalUrl || '', currentRomName, selectedCore)}
+                      onClick={() => launchRom(romError.originalUrl || '', currentRomName, selectedCore, currentGameId || undefined)}
                       className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs font-mono uppercase tracking-wider transition-all shadow-lg flex items-center gap-2 cursor-pointer"
                     >
                       <RotateCcw className="w-4 h-4" />
@@ -1120,7 +1333,7 @@ export const EmulatorZone: React.FC = () => {
 
             {isPlaying && currentRomUrl && !romError ? (
               <iframe
-                key={`${currentRomUrl}-${selectedCore}`}
+                key={`${currentRomUrl}-${selectedCore}-${isNetplayActive ? netplayRoom : 'solo'}-${netplayRole}`}
                 srcDoc={iframeSrcDoc}
                 className="w-full h-full border-0"
                 allow="autoplay; gamepad; fullscreen; microphone"
@@ -1217,57 +1430,166 @@ export const EmulatorZone: React.FC = () => {
               <Users className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white font-display">Tạo Phòng & Chia Sẻ Chơi Online (Netplay)</h2>
+              <h2 className="text-lg font-bold text-white font-display">Tạo Phòng & Chia Sẻ Chơi Online (Netplay 2 Người)</h2>
               <p className="text-xs text-slate-400 font-body">
-                Kết nối P2P WebRTC giữa 2 người chơi cùng 1 game giả lập qua mạng Internet mà không cần chung máy!
+                Kết nối P2P WebRTC giữa 2 người chơi cùng 1 game giả lập qua mạng Internet mà không cần chung máy tính!
               </p>
             </div>
           </div>
 
-          <div className="p-6 bg-slate-950 rounded-2xl border border-slate-800 space-y-4">
-            <label className="block text-xs font-mono font-bold text-slate-300 uppercase">
-              Mã Phòng Netplay (Room Code):
-            </label>
-
-            <div className="flex items-center gap-3">
-              <input
-                id="input-netplay-room"
-                type="text"
-                value={netplayRoom}
-                onChange={(e) => setNetplayRoom(e.target.value)}
-                placeholder="Nhập mã phòng hoặc bấm Tạo Mã..."
-                className="flex-1 bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-amber-300 font-mono font-bold outline-none"
-              />
-
-              <button
-                id="btn-create-netplay-room"
-                type="button"
-                onClick={handleCreateRoom}
-                className="px-4 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs font-mono uppercase tracking-wider transition-all cursor-pointer"
-              >
-                Tạo Mã Mới
-              </button>
-
-              {netplayRoom && (
+          <div className="p-6 bg-slate-950 rounded-2xl border border-slate-800 space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Host P1 Action */}
+              <div className={`p-4 rounded-2xl border transition-all ${
+                netplayRole === 'p1' ? 'border-amber-500 bg-amber-500/10' : 'border-slate-800 bg-slate-900/60'
+              }`}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2 font-mono text-xs font-bold text-amber-300">
+                    <Crown className="w-4 h-4 text-amber-400" />
+                    <span>CHỦ PHÒNG (PLAYER 1 - HOST)</span>
+                  </div>
+                  {netplayRole === 'p1' && (
+                    <span className="px-2 py-0.5 rounded bg-amber-500 text-slate-950 text-[10px] font-mono font-bold">Đang Chọn</span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-400 mb-3">
+                  Tạo mã phòng mới, gửi link cho bạn bè và điều khiển game ở vị trí Người chơi 1.
+                </p>
                 <button
-                  id="btn-copy-netplay-room"
                   type="button"
-                  onClick={handleCopyRoom}
-                  className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                  onClick={handleCreateRoom}
+                  className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs font-mono uppercase tracking-wider transition-all cursor-pointer shadow-md"
                 >
-                  {isCopiedRoom ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                  <span>{isCopiedRoom ? 'Đã chép!' : 'Sao Chép'}</span>
+                  👑 Tạo Mã Phòng Mới
                 </button>
-              )}
+              </div>
+
+              {/* Guest P2 Action */}
+              <div className={`p-4 rounded-2xl border transition-all ${
+                netplayRole === 'p2' ? 'border-cyan-500 bg-cyan-500/10' : 'border-slate-800 bg-slate-900/60'
+              }`}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2 font-mono text-xs font-bold text-cyan-300">
+                    <Users className="w-4 h-4 text-cyan-400" />
+                    <span>THAM GIA (PLAYER 2 - KHÁCH)</span>
+                  </div>
+                  {netplayRole === 'p2' && (
+                    <span className="px-2 py-0.5 rounded bg-cyan-500 text-slate-950 text-[10px] font-mono font-bold">Đang Chọn</span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-400 mb-3">
+                  Dán mã phòng do bạn bè gửi để tham gia vào game ở vị trí Người chơi 2.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNetplayRole('p2');
+                    setIsNetplayActive(true);
+                  }}
+                  className="w-full py-2.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold rounded-xl text-xs font-mono uppercase tracking-wider transition-all cursor-pointer shadow-md"
+                >
+                  🎮 Tham Gia Với Vai Trò P2
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-2">
+              <label className="block text-xs font-mono font-bold text-slate-300 uppercase">
+                Mã Phòng Netplay (Room Code):
+              </label>
+
+              <div className="flex items-center gap-3">
+                <input
+                  id="input-netplay-room"
+                  type="text"
+                  value={netplayRoom}
+                  onChange={(e) => setNetplayRoom(e.target.value)}
+                  placeholder="Nhập mã phòng (ví dụ: QGX-888888)..."
+                  className="flex-1 bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-4 py-3 text-sm text-amber-300 font-mono font-bold outline-none"
+                />
+
+                {netplayRoom && (
+                  <>
+                    <button
+                      id="btn-copy-netplay-room"
+                      type="button"
+                      onClick={handleCopyRoom}
+                      className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                      title="Sao chép mã phòng"
+                    >
+                      {isCopiedRoom ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                      <span>{isCopiedRoom ? 'Đã chép mã!' : 'Chép Mã'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleCopyInviteLink}
+                      className="px-4 py-3 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold rounded-xl text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
+                      title="Sao chép toàn bộ link web kèm mã phòng và game để gửi cho bạn bè"
+                    >
+                      {isCopiedInviteLink ? <Check className="w-4 h-4" /> : <Link2 className="w-4 h-4" />}
+                      <span>{isCopiedInviteLink ? 'Đã chép link mời!' : 'Sao Chép Link Mời (P2)'}</span>
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
 
             <div className="p-4 bg-amber-950/30 border border-amber-500/30 rounded-xl text-xs text-amber-200/90 leading-relaxed font-body">
-              <strong>💡 Hướng dẫn chơi cùng bạn bè:</strong>
-              <ol className="list-decimal list-inside space-y-1 mt-1.5 text-slate-300">
-                <li>Tạo hoặc dán mã phòng ở trên.</li>
-                <li>Chọn 1 game mẫu từ Thư viện ROM SNES và bấm Chơi Ngay.</li>
-                <li>Gửi mã phòng này cho bạn bè, họ cũng nhập đúng mã này và nạp cùng 1 file ROM để bắt đầu kết nối Netplay Player 2!</li>
+              <strong>💡 Hướng dẫn chơi cùng bạn bè siêu nhanh:</strong>
+              <ol className="list-decimal list-inside space-y-1.5 mt-2 text-slate-300">
+                <li>Bấm <strong>Tạo Mã Phòng Mới</strong> hoặc nhập mã phòng tự đặt.</li>
+                <li>Chọn 1 game SNES bên dưới và bấm <strong>Bắt Đầu Chơi Netplay</strong>.</li>
+                <li>Bấm <strong>Sao Chép Link Mời (P2)</strong> và gửi qua Facebook / Zalo / Discord cho bạn bè. Bạn bè mở link sẽ tự động vào thẳng game ở vị trí Player 2!</li>
               </ol>
+            </div>
+          </div>
+
+          {/* Direct Netplay Game Picker */}
+          <div className="space-y-3 pt-2">
+            <h3 className="text-sm font-bold text-white uppercase font-display flex items-center gap-2">
+              <Flame className="w-4 h-4 text-amber-400" />
+              <span>Chọn Game SNES 2 Người Để Bắt Đầu Phòng Chơi:</span>
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {snesGames.slice(0, 4).map((game) => (
+                <div
+                  key={game.id}
+                  className="glass-card rounded-2xl overflow-hidden border border-slate-800 hover:border-amber-400/60 p-3 flex flex-col justify-between gap-3 bg-slate-900/90"
+                >
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={game.coverArt}
+                      alt={game.title}
+                      className="w-12 h-12 rounded-xl object-cover bg-slate-950 shrink-0"
+                    />
+                    <div className="overflow-hidden">
+                      <h4 className="text-xs font-bold text-white truncate">{game.title}</h4>
+                      <span className="text-[10px] font-mono text-amber-300">SNES 2 Người</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const room = netplayRoom || 'QGX-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+                      setNetplayRoom(room);
+                      setNetplayRole('p1');
+                      setIsNetplayActive(true);
+                      launchRom(game.romUrl || '', game.title, 'snes', game.id, {
+                        isNetplay: true,
+                        room,
+                        role: 'p1'
+                      });
+                    }}
+                    className="w-full py-2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold rounded-xl text-xs font-mono uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow cursor-pointer"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-slate-950" />
+                    <span>Mở Phòng Netplay</span>
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         </div>

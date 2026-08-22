@@ -88,16 +88,19 @@ export default function App() {
   const [isDonateOpen, setIsDonateOpen] = useState<boolean>(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState<boolean>(false);
 
-  // Helper: Extract Game ID or Slug from URL pathname (/game/:id) or search query (?game=:id)
+  // Helper: Extract Game ID or Slug from URL search query (?game_id=:id or ?game=:id) or pathname (/game/:id)
   const getGameIdFromUrl = (): string | null => {
     if (typeof window === 'undefined') return null;
+    const searchParams = new URLSearchParams(window.location.search);
+    const paramId = searchParams.get('game_id') || searchParams.get('game');
+    if (paramId) return paramId;
+
     const pathname = window.location.pathname;
     const match = pathname.match(/^\/game\/(.+)$/);
     if (match && match[1]) {
       return decodeURIComponent(match[1].replace(/\/$/, ''));
     }
-    const searchParams = new URLSearchParams(window.location.search);
-    return searchParams.get('game');
+    return null;
   };
 
   // Helper: Match game by ID, encoded ID, or slugified title
@@ -119,7 +122,10 @@ export default function App() {
     if (urlId && games.length > 0) {
       const match = findGameMatch(urlId, games);
       if (match) {
-        setSelectedGame(match);
+        // If it's not an emulator ROM being loaded directly by EmulatorZone, open detail modal
+        if (!match.romUrl && !window.location.search.includes('netplay_room=')) {
+          setSelectedGame(match);
+        }
       }
     }
   }, [games]);
@@ -130,7 +136,7 @@ export default function App() {
       const urlId = getGameIdFromUrl();
       if (urlId) {
         const match = findGameMatch(urlId, games);
-        if (match) {
+        if (match && !match.romUrl) {
           setSelectedGame(match);
         }
       } else {
@@ -142,12 +148,12 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [games]);
 
-  // Open Game Detail Modal and synchronize browser URL to /game/:id
+  // Open Game Detail Modal and synchronize browser URL to /?game_id=:id
   const handleOpenGameDetail = (game: GameItem) => {
     setSelectedGame(game);
     if (typeof window !== 'undefined') {
-      const targetUrl = `/game/${encodeURIComponent(game.id)}`;
-      if (window.location.pathname !== targetUrl) {
+      const targetUrl = `/?game_id=${encodeURIComponent(game.id)}`;
+      if (window.location.search !== `?game_id=${encodeURIComponent(game.id)}`) {
         window.history.pushState({ gameId: game.id }, '', targetUrl);
       }
     }
@@ -157,7 +163,7 @@ export default function App() {
   const handleCloseGameDetail = () => {
     setSelectedGame(null);
     if (typeof window !== 'undefined') {
-      if (window.location.pathname.startsWith('/game/') || window.location.search.includes('game=')) {
+      if (window.location.pathname.startsWith('/game/') || window.location.search.includes('game_id=') || window.location.search.includes('game=')) {
         window.history.pushState(null, '', '/');
       }
     }

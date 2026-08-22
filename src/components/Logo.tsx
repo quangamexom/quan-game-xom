@@ -17,7 +17,13 @@ export const Logo: React.FC<LogoProps> = ({
   allowUpload = false
 }) => {
   const { isAdmin } = useAdminMode();
-  const [customImage, setCustomImage] = useState<string>(CUSTOM_LOGO_URL || DEFAULT_LOGO_URL);
+  const [customImage, setCustomImage] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('quan_game_xom_custom_logo');
+      if (stored) return stored;
+    }
+    return CUSTOM_LOGO_URL || DEFAULT_LOGO_URL;
+  });
   const [imgError, setImgError] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [uploadTab, setUploadTab] = useState<'file' | 'url'>('file');

@@ -36,6 +36,28 @@ const METADATA_PATHNAME = "roms-metadata/games-library.json";
  * with graceful local filesystem fallbacks when running in local dev environments.
  */
 
+export async function uploadImageToBlob(
+  pathname: string, 
+  buffer: Buffer, 
+  contentType: string = "image/png"
+): Promise<string | null> {
+  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+  if (!blobToken) return null;
+  try {
+    const blob = await put(pathname, buffer, {
+      access: "public",
+      token: blobToken,
+      addRandomSuffix: true,
+      contentType
+    });
+    console.log(`[Storage Helper] Successfully uploaded image to Vercel Blob: ${blob.url}`);
+    return blob.url;
+  } catch (err) {
+    console.warn(`[Storage Helper] Failed to upload image to Vercel Blob (${pathname}):`, err);
+    return null;
+  }
+}
+
 export async function readGamesLibrary(): Promise<PersistentGameCard[]> {
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
   let localDefaults: PersistentGameCard[] = [];

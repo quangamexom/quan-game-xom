@@ -442,6 +442,29 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto">
+              {/* Direct Retro Emulator Play Button if romUrl exists */}
+              {game.romUrl && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    window.dispatchEvent(new CustomEvent('qgx_launch_game', {
+                      detail: {
+                        romUrl: game.romUrl,
+                        title: game.title,
+                        core: game.emulatorCore || 'snes',
+                        gameId: game.id
+                      }
+                    }));
+                  }}
+                  className="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  title="Chơi trực tiếp trên trình giả lập EmulatorJS"
+                >
+                  <Gamepad2 className="w-4 h-4 fill-slate-950" />
+                  <span>CHƠI TRỰC TIẾP</span>
+                </button>
+              )}
+
               {isAdmin && (
                 <button
                   type="button"

@@ -11,20 +11,22 @@ import {
   ExternalLink,
   Sparkles
 } from 'lucide-react';
-import { copyTextToClipboard, getGameShareActions } from '../utils/shareUtils';
+import { copyTextToClipboard, getGameShareActions, NetplayShareOptions } from '../utils/shareUtils';
 
 interface ShareGameMenuProps {
   game: GameItem;
   variant?: 'icon' | 'button' | 'compact' | 'footer';
   className?: string;
   align?: 'left' | 'right' | 'center';
+  netplay?: NetplayShareOptions;
 }
 
 export const ShareGameMenu: React.FC<ShareGameMenuProps> = ({
   game,
   variant = 'button',
   className = '',
-  align = 'right'
+  align = 'right',
+  netplay
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -38,7 +40,7 @@ export const ShareGameMenu: React.FC<ShareGameMenuProps> = ({
     telegramUrl,
     zaloUrl,
     discordCopyText
-  } = getGameShareActions(game);
+  } = getGameShareActions(game, netplay);
 
   // Close dropdown on outside click or ESC key
   useEffect(() => {

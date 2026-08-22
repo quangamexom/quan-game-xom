@@ -1,16 +1,27 @@
 import { GameItem } from '../types';
 
+export interface NetplayShareOptions {
+  room?: string;
+  role?: 'p1' | 'p2';
+}
+
 /**
- * Generates the canonical absolute URL for a game's detail page
+ * Generates the canonical absolute URL for a game's play / detail page with Deep Linking & Netplay
  */
-export function getGameShareUrl(game: GameItem): string {
+export function getGameShareUrl(game: GameItem, netplay?: NetplayShareOptions): string {
   const origin = typeof window !== 'undefined' && window.location.origin
     ? window.location.origin
     : '';
   
   // Clean, URL-safe game identifier
   const safeId = encodeURIComponent(game.id);
-  return `${origin}/game/${safeId}`;
+  let url = `${origin}/?game_id=${safeId}`;
+
+  if (netplay?.room) {
+    url += `&netplay_room=${encodeURIComponent(netplay.room)}&role=${netplay.role || 'p2'}`;
+  }
+
+  return url;
 }
 
 /**
@@ -53,9 +64,12 @@ export async function copyTextToClipboard(text: string): Promise<boolean> {
 /**
  * Prepares social share links and actions for a game
  */
-export function getGameShareActions(game: GameItem) {
-  const shareUrl = getGameShareUrl(game);
-  const titleText = `${game.title} - Quán Game Xóm`;
+export function getGameShareActions(game: GameItem, netplay?: NetplayShareOptions) {
+  const shareUrl = getGameShareUrl(game, netplay);
+  const isNetplay = Boolean(netplay?.room);
+  const titleText = isNetplay
+    ? `🎮 Cùng chơi 2 người: ${game.title} (Phòng: ${netplay?.room}) - Quán Game Xóm`
+    : `${game.title} - Quán Game Xóm`;
   const encodedUrl = encodeURIComponent(shareUrl);
   const encodedText = encodeURIComponent(titleText);
 
@@ -65,6 +79,8 @@ export function getGameShareActions(game: GameItem) {
     facebookUrl: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
     telegramUrl: `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`,
     zaloUrl: `https://zalo.me/share/link?u=${encodedUrl}&t=${encodedText}`,
-    discordCopyText: `🎮 ${game.title} - Quán Game Xóm\n${shareUrl}`
+    discordCopyText: isNetplay
+      ? `🎮 CÙNG CHƠI NETPLAY ONLINE 2 NGƯỜI!\n🕹️ Game: ${game.title}\n🔑 Phòng: ${netplay?.room}\n🔗 Link vào game: ${shareUrl}`
+      : `🎮 ${game.title} - Quán Game Xóm\n${shareUrl}`
   };
 }
