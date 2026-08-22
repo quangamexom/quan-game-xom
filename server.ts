@@ -989,18 +989,20 @@ app.post("/api/netplay/start-room", async (req, res) => {
 });
 
 app.get("/api/netplay/room-status", async (req, res) => {
-  console.log('[room-status] room param:', req.query.room);
-
-  // Set anti-cache headers safely before sending response
-  if (!res.headersSent) {
-    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.setHeader("Pragma", "no-cache");
-    res.setHeader("Expires", "0");
-  }
+  console.log('[room-status] GET request received. query:', req.query, 'url:', req.url);
 
   try {
+    // 1. Set safe anti-cache headers
+    res.set({
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "Pragma": "no-cache",
+      "Expires": "0"
+    });
+
     const rawQueryRoom = Array.isArray(req.query.room) ? req.query.room[0] : (req.query.room || '');
     const room = String(rawQueryRoom).split('?')[0].split('&')[0].trim().toLowerCase();
+
+    console.log('[room-status] parsed roomId:', room);
 
     if (!room) {
       return res.status(200).json({ 
@@ -1013,6 +1015,8 @@ app.get("/api/netplay/room-status", async (req, res) => {
     }
 
     const status = await getRoomStatus(room);
+    console.log(`[room-status] getRoomStatus('${room}') returned:`, status);
+
     if (!status) {
       return res.status(200).json({ 
         success: true, 
@@ -1030,14 +1034,16 @@ app.get("/api/netplay/room-status", async (req, res) => {
       status 
     });
   } catch (err: any) {
-    console.error("[Get Netplay Room Status Error]:", err);
+    const errorMsg = err?.message || String(err);
+    const errorStack = err?.stack || "";
+    console.error("[Get Netplay Room Status Error]:", errorMsg, "\nStack:", errorStack);
+
     if (!res.headersSent) {
-      return res.status(200).json({ 
-        success: false, 
-        room: String(req.query.room || ''), 
-        exists: false, 
-        status: null, 
-        error: err?.message || "Lỗi đọc trạng thái phòng" 
+      return res.status(500).json({ 
+        success: false,
+        error: errorMsg,
+        stack: errorStack,
+        room: String(req.query.room || '')
       });
     }
   }
