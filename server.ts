@@ -18,13 +18,15 @@ const PORT = 3000;
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Normalize request URL for Vercel Serverless Function rewrites
-app.use((req, res, next) => {
-  if (req.url && !req.url.startsWith("/api") && !req.url.startsWith("/assets")) {
-    req.url = `/api${req.url}`;
-  }
-  next();
-});
+// Normalize request URL for Vercel Serverless Function rewrites (only when running on Vercel)
+if (process.env.VERCEL) {
+  app.use((req, res, next) => {
+    if (req.url && !req.url.startsWith("/api") && !req.url.startsWith("/assets")) {
+      req.url = `/api${req.url}`;
+    }
+    next();
+  });
+}
 
 // Express Static Serving for Public Uploaded Assets
 app.use("/assets", express.static(path.join(process.cwd(), "public", "assets")));
