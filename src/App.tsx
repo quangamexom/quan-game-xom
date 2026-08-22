@@ -333,6 +333,23 @@ export default function App() {
   // Pagination Logic
   const totalPages = Math.ceil(filteredGames.length / PAGE_SIZE) || 1;
 
+  // Prioritize SNES games for Hero Banner slider showcase
+  const heroFeaturedGames = useMemo(() => {
+    const isSnesGame = (g: GameItem) => {
+      return (
+        g.emulatorCore === 'snes' ||
+        g.system === 'snes' ||
+        g.platforms?.some(p => p.toLowerCase().includes('snes') || p.toLowerCase().includes('super nintendo')) ||
+        g.genres?.some(gen => gen.toLowerCase().includes('snes') || gen.toLowerCase().includes('super nintendo')) ||
+        Boolean(g.romUrl && (g.romUrl.toLowerCase().endsWith('.snes') || g.romUrl.toLowerCase().endsWith('.smc') || g.romUrl.toLowerCase().endsWith('.sfc')))
+      );
+    };
+
+    const snesList = games.filter(isSnesGame);
+    const otherList = games.filter(g => !isSnesGame(g));
+    return [...snesList, ...otherList].slice(0, 10);
+  }, [games]);
+
   useEffect(() => {
     if (currentPage > totalPages) {
       setCurrentPage(1);
@@ -392,7 +409,7 @@ export default function App() {
           onGoToArticles={() => handleCategoryChange('ARTICLES')}
           onOpenDonate={() => setIsDonateOpen(true)}
           onSelectGame={(g) => handleOpenGameDetail(g)}
-          featuredGames={games.slice(0, 10)}
+          featuredGames={heroFeaturedGames}
         />
       </div>
 

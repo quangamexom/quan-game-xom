@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { OFFICIAL_LOGO_URL } from '../data/customLogo';
+import React, { useState, useEffect } from 'react';
+import { OFFICIAL_LOGO_URL, CUSTOM_LOGO_URL } from '../data/customLogo';
 
 interface LogoProps {
   className?: string;
@@ -14,8 +14,42 @@ export const Logo: React.FC<LogoProps> = ({
   showText = true,
   onClick
 }) => {
-  const [imgSrc, setImgSrc] = useState<string>(OFFICIAL_LOGO_URL);
+  const [imgSrc, setImgSrc] = useState<string>(OFFICIAL_LOGO_URL || CUSTOM_LOGO_URL || '/assets/logo/logo-qgx-default.png');
   const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    // Initial fetch to get latest logo from server
+    fetch('/api/get-logo')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.logoUrl) {
+          setImgSrc(data.logoUrl);
+          setHasError(false);
+        }
+      })
+      .catch(() => {});
+
+    // Listen to real-time custom logo update events
+    const handleLogoUpdate = (e: any) => {
+      if (e?.detail?.logoUrl) {
+        setImgSrc(e.detail.logoUrl);
+        setHasError(false);
+      } else {
+        fetch('/api/get-logo')
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && data.logoUrl) {
+              setImgSrc(data.logoUrl);
+              setHasError(false);
+            }
+          })
+          .catch(() => {});
+      }
+    };
+
+    window.addEventListener('qgx_logo_updated', handleLogoUpdate);
+    return () => window.removeEventListener('qgx_logo_updated', handleLogoUpdate);
+  }, []);
 
   const dimensions = {
     sm: { box: 'w-9 h-9', text: 'text-xs sm:text-base' },

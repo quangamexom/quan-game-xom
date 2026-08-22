@@ -12,6 +12,12 @@ import {
   removeGameFromLibrary,
   uploadImageToBlob
 } from "./src/services/metadataStorage.ts";
+import {
+  createNetplayRoom,
+  markPlayerJoined,
+  getRoomStatus,
+  deleteNetplayRoom
+} from "./src/services/netplayRoomStorage.ts";
 
 const app = express();
 const PORT = 3000;
@@ -397,7 +403,7 @@ app.get("/api/get-logo", (req, res) => {
 
     if (fs.existsSync(customLogoPath)) {
       const content = fs.readFileSync(customLogoPath, "utf-8");
-      const match = content.match(/CUSTOM_LOGO_URL\s*=\s*['"]([^'"]+)['"]/);
+      const match = content.match(/(?:OFFICIAL_LOGO_URL|CUSTOM_LOGO_URL)\s*=\s*['"]([^'"]+)['"]/);
       if (match && match[1]) {
         logoUrl = match[1];
       }
@@ -459,7 +465,7 @@ app.post("/api/save-logo", async (req, res) => {
 
     // Always update local src/data/customLogo.ts
     const customLogoFilePath = path.join(process.cwd(), "src/data/customLogo.ts");
-    const logoFileContent = `export const DEFAULT_LOGO_URL = '/assets/logo/logo-qgx-default.png';\nexport const CUSTOM_LOGO_URL = '${finalLogoUrl.replace(/'/g, "\\'")}';\n`;
+    const logoFileContent = `export const OFFICIAL_LOGO_URL = '${finalLogoUrl.replace(/'/g, "\\'")}';\nexport const DEFAULT_LOGO_URL = '/assets/logo/logo-qgx-default.png';\nexport const CUSTOM_LOGO_URL = '${finalLogoUrl.replace(/'/g, "\\'")}';\n`;
     
     fs.writeFileSync(customLogoFilePath, logoFileContent, "utf-8");
 
@@ -847,6 +853,103 @@ app.delete("/api/admin/blob/delete", async (req, res) => {
   } catch (err: any) {
     console.error("[Vercel Blob Delete Error]:", err);
     return res.status(500).json({ success: false, error: err.message || "Lỗi khi xóa file từ Vercel Blob." });
+  }
+});
+
+// Update Game Description in Library (Admin 2-way synchronization)
+app.post("/api/admin/games/update-description", async (req, res) => {
+  try {
+    const { id, description, fallbackGame, adminToken, password } = req.body;
+    if (!id) {
+      return res.status(400).json({ success: false, error: "Thiếu ID game cần cập nhật mô tả." });
+    }
+
+    const expectedPassword = process.env.ADMIN_PASSWORD || "20266Namm$$@";
+    if (password && password !== expectedPassword) {
+      return res.status(401).json({ success: false, error: "Mật khẩu Admin không chính xác!" });
+    }
+
+    // 1. Attempt updating existing game in persistent Vercel Blob library
+    const updated = await updateGameInLibrary(id, { description });
+
+    if (!updated) {
+      // 2. Game is not yet in Blob metadata (e.g. from static INITIAL_GAMES) -> create persistent override
+      const gameToSave = {
+        ...(fallbackGame || {}),
+        id,
+        description: description || "",
+        addedDate: fallbackGame?.addedDate || new Date().toISOString().split('T')[0]
+      };
+      await addGameToLibrary(gameToSave);
+      console.log(`[Admin Update Desc] Created new Blob override record for game ${id}`);
+    } else {
+      console.log(`[Admin Update Desc] Successfully updated description for game ${id}`);
+    }
+
+    return res.json({
+      success: true,
+      id,
+      description,
+      message: "Đã cập nhật mô tả game thành công và lưu vào Vercel Blob!"
+    });
+  } catch (err: any) {
+    console.error("[Update Description API Error]:", err);
+    return res.status(500).json({ success: false, error: err.message || "Lỗi cập nhật mô tả game" });
+  }
+});
+
+// Netplay Waiting Room Endpoints (Signaling for P1 host & P2 join synchronization)
+app.post("/api/netplay/create-room", async (req, res) => {
+  try {
+    const { room, gameId } = req.body;
+    if (!room) {
+      return res.status(400).json({ success: false, error: "Mã phòng không hợp lệ" });
+    }
+    const status = await createNetplayRoom(room, { gameId });
+    return res.json({ success: true, room, status });
+  } catch (err: any) {
+    console.error("[Create Netplay Room Error]:", err);
+    return res.status(500).json({ success: false, error: err.message || "Lỗi tạo phòng Netplay" });
+  }
+});
+
+app.post("/api/netplay/join-room", async (req, res) => {
+  try {
+    const { room, role } = req.body;
+    if (!room) {
+      return res.status(400).json({ success: false, error: "Mã phòng không hợp lệ" });
+    }
+    const status = await markPlayerJoined(room, role || 'p2');
+    return res.json({ success: true, room, status });
+  } catch (err: any) {
+    console.error("[Join Netplay Room Error]:", err);
+    return res.status(500).json({ success: false, error: err.message || "Lỗi tham gia phòng Netplay" });
+  }
+});
+
+app.get("/api/netplay/room-status", async (req, res) => {
+  try {
+    const room = req.query.room as string;
+    if (!room) {
+      return res.status(400).json({ success: false, error: "Thiếu tham số 'room'" });
+    }
+    const status = await getRoomStatus(room);
+    return res.json({ success: true, room, status });
+  } catch (err: any) {
+    console.error("[Get Netplay Room Status Error]:", err);
+    return res.status(500).json({ success: false, error: err.message || "Lỗi lấy trạng thái phòng Netplay" });
+  }
+});
+
+app.delete("/api/netplay/delete-room", async (req, res) => {
+  try {
+    const { room } = req.body;
+    if (room) {
+      await deleteNetplayRoom(room);
+    }
+    return res.json({ success: true });
+  } catch (err: any) {
+    return res.json({ success: true });
   }
 });
 

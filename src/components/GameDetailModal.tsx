@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GameItem } from '../types';
-import { X, Download, Star, Monitor, Cpu, HardDrive, Gamepad2, ExternalLink, Image as ImageIcon, Sparkles, CheckCircle, Camera, RefreshCw } from 'lucide-react';
+import { X, Download, Star, Monitor, Cpu, HardDrive, Gamepad2, ExternalLink, Image as ImageIcon, Sparkles, CheckCircle, Camera, RefreshCw, Pencil, Check, Loader2 } from 'lucide-react';
 import { useGameCover, useGameBanner } from '../hooks/useGameCover';
 import { useAdminMode } from '../hooks/useAdminMode';
 import { parseGameTitle } from '../utils/titleParser';
@@ -38,6 +38,20 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
 
   const [bannerImgSrc, setBannerImgSrc] = useState<string | null>(bannerState.bannerUrl);
   const [avatarImgSrc, setAvatarImgSrc] = useState<string | null>(coverState.coverUrl);
+
+  // State for Admin Description Editing
+  const [isEditingDesc, setIsEditingDesc] = useState<boolean>(false);
+  const [descDraft, setDescDraft] = useState<string>(game?.description || '');
+  const [localDesc, setLocalDesc] = useState<string | null>(game?.description || null);
+  const [isSavingDesc, setIsSavingDesc] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (game) {
+      setDescDraft(game.description || '');
+      setLocalDesc(game.description || null);
+      setIsEditingDesc(false);
+    }
+  }, [game?.id, game?.description]);
 
   React.useEffect(() => {
     setBannerImgSrc(bannerState.bannerUrl);
@@ -104,6 +118,39 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
     } finally {
       setIsUploadingAvatar(false);
       if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
+  };
+
+  const handleSaveDescription = async () => {
+    if (!game) return;
+    setIsSavingDesc(true);
+    try {
+      const res = await fetch('/api/admin/games/update-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: game.id,
+          description: descDraft,
+          fallbackGame: game,
+          adminToken: 'qgx_admin_authenticated'
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setLocalDesc(descDraft);
+        game.description = descDraft;
+        setIsEditingDesc(false);
+        window.dispatchEvent(new CustomEvent('qgx_games_updated', {
+          detail: { id: game.id, description: descDraft }
+        }));
+      } else {
+        alert(data.error || 'Lỗi khi lưu mô tả game.');
+      }
+    } catch (err: any) {
+      console.error('Lỗi lưu mô tả:', err);
+      alert(err.message || 'Lỗi kết nối khi cập nhật mô tả game.');
+    } finally {
+      setIsSavingDesc(false);
     }
   };
 
@@ -372,10 +419,72 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                 </div>
 
                 <div className="glass-panel p-4 rounded-2xl border border-white/10 space-y-2">
-                  <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider font-mono">NỘI DUNG & NỔI BẬT:</h4>
-                  <p className="text-slate-200 leading-relaxed text-xs sm:text-sm">
-                    {game.description || `${game.title} là siêu phẩm được đông đảo cộng đồng game thủ săn đón. Tải ngay bản chuẩn sắc nét từ Quán Game Xóm, cài đặt siêu mượt không lo lỗi.`}
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                      <span>NỘI DUNG & NỔI BẬT:</span>
+                    </h4>
+                    {isAdmin && !isEditingDesc && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDescDraft(localDesc ?? (game.description || ''));
+                          setIsEditingDesc(true);
+                        }}
+                        className="px-2.5 py-1 text-[11px] font-mono font-bold text-amber-300 hover:text-slate-950 bg-amber-500/10 hover:bg-amber-400 border border-amber-500/30 hover:border-amber-400 rounded-lg transition-all flex items-center gap-1 cursor-pointer"
+                        title="Chỉnh sửa mô tả game trực tiếp (Admin 2 chiều)"
+                      >
+                        <Pencil className="w-3 h-3" />
+                        <span>Sửa Mô Tả</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {isEditingDesc ? (
+                    <div className="space-y-3 pt-1">
+                      <textarea
+                        value={descDraft}
+                        onChange={(e) => setDescDraft(e.target.value)}
+                        placeholder="Nhập nội dung, cốt truyện hoặc đặc điểm nổi bật của game..."
+                        rows={4}
+                        className="w-full bg-slate-950/90 border border-amber-500/60 focus:border-amber-400 rounded-xl p-3 text-xs sm:text-sm text-slate-100 placeholder-slate-500 font-body leading-relaxed outline-none transition-all resize-y"
+                      />
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDescDraft(localDesc ?? (game.description || ''));
+                            setIsEditingDesc(false);
+                          }}
+                          disabled={isSavingDesc}
+                          className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono font-bold transition-all cursor-pointer"
+                        >
+                          Hủy
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveDescription}
+                          disabled={isSavingDesc}
+                          className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-mono text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-md cursor-pointer disabled:opacity-50"
+                        >
+                          {isSavingDesc ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <span>Đang Lưu...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Check className="w-3.5 h-3.5 stroke-[3]" />
+                              <span>Lưu Mô Tả</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-slate-200 leading-relaxed text-xs sm:text-sm">
+                      {localDesc || game.description || `${game.title} là siêu phẩm được đông đảo cộng đồng game thủ săn đón. Tải ngay bản chuẩn sắc nét từ Quán Game Xóm, cài đặt siêu mượt không lo lỗi.`}
+                    </p>
+                  )}
                 </div>
 
                 {game.developer && (

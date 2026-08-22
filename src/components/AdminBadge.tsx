@@ -1,9 +1,11 @@
-import React from 'react';
-import { ShieldCheck, LogOut } from 'lucide-react';
+import React, { useState } from 'react';
+import { ShieldCheck, LogOut, Image as ImageIcon } from 'lucide-react';
 import { useAdminMode } from '../hooks/useAdminMode';
+import { AdminLogoModal } from './AdminLogoModal';
 
 export const AdminBadge: React.FC = () => {
   const { isAdmin, disableAdmin, toastMessage } = useAdminMode();
+  const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
 
   return (
     <>
@@ -19,9 +21,19 @@ export const AdminBadge: React.FC = () => {
         </div>
       )}
 
-      {/* Floating Admin Mode Indicator Badge (Bottom Right) */}
+      {/* Floating Admin Mode Indicator & Tools (Bottom Right) */}
       {isAdmin && (
-        <div className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-[90] animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-[90] flex items-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <button
+            type="button"
+            onClick={() => setIsLogoModalOpen(true)}
+            title="Đổi Logo Quán Game Xóm"
+            className="flex items-center gap-1.5 bg-[#090E1D]/95 hover:bg-amber-950/90 border border-amber-500/80 hover:border-amber-400 text-amber-300 rounded-full px-3 py-2 shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all cursor-pointer backdrop-blur-xl text-xs font-mono font-bold uppercase tracking-wider"
+          >
+            <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
+            <span>Đổi Logo</span>
+          </button>
+
           <button
             onClick={disableAdmin}
             title="Nhấp để thoát quyền Admin"
@@ -35,12 +47,18 @@ export const AdminBadge: React.FC = () => {
               🔓 Admin Mode
             </span>
             <span className="text-[10px] font-mono text-slate-400 group-hover:text-red-300 border-l border-amber-500/30 group-hover:border-red-500/30 pl-2">
-              Click để thoát
+              Thoát
             </span>
             <LogOut className="w-3.5 h-3.5 ml-0.5 text-slate-400 group-hover:text-red-300 transition-transform group-hover:translate-x-0.5" />
           </button>
         </div>
       )}
+
+      {/* Admin Logo Upload Modal */}
+      <AdminLogoModal
+        isOpen={isLogoModalOpen}
+        onClose={() => setIsLogoModalOpen(false)}
+      />
     </>
   );
 };
