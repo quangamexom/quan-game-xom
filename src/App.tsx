@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GameItem, FilterState } from './types';
-import { INITIAL_GAMES, DEFAULT_SHEET_URL } from './data/initialGames';
-import { fetchSheetData } from './services/sheetService';
+import { INITIAL_GAMES } from './data/initialGames';
 import { Article } from './data/articles';
 import { useScrollSpy } from './hooks/useScrollSpy';
+import { isEmulatorActive, stopActiveEmulator } from './utils/emulatorManager';
 
 import { Navbar } from './components/Navbar';
 import { HeroCoverBanner } from './components/HeroCoverBanner';
@@ -23,6 +23,8 @@ import { MobileBottomNav } from './components/MobileBottomNav';
 import { Footer } from './components/Footer';
 import { AdminBadge } from './components/AdminBadge';
 import { AdminAuthModal } from './components/AdminAuthModal';
+import { ExitGameConfirmModal } from './components/ExitGameConfirmModal';
+import { Pagination } from './components/Pagination';
 
 const SECTIONS = [
   { id: 'home-section', category: 'HOME' },
@@ -32,29 +34,44 @@ const SECTIONS = [
   { id: 'community-section', category: 'COMMUNITY' }
 ];
 
+const PAGE_SIZE = 16;
+
 export default function App() {
   const [games, setGames] = useState<GameItem[]>(INITIAL_GAMES);
   const [defaultPassword, setDefaultPassword] = useState<string>("quangamexom");
-  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
-  const syncAllGames = () => {
-    setIsSyncing(true);
-    fetchSheetData(DEFAULT_SHEET_URL)
-      .then((data) => {
-        if (data && data.length > 0) {
-          setGames(data);
+  const loadLibraryGames = async () => {
+    try {
+      const res = await fetch('/api/games/admin-library');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.games) && data.games.length > 0) {
+          const uploadedGames: GameItem[] = data.games.filter((g: any) => !g.isHidden);
+          
+          // Merge uploaded games at the beginning while keeping initial list
+          const combined = [...uploadedGames];
+          INITIAL_GAMES.forEach(initGame => {
+            if (!combined.some(g => g.id === initGame.id || (initGame.title && g.title === initGame.title))) {
+              combined.push(initGame);
+            }
+          });
+          setGames(combined);
+          return;
         }
-      })
-      .catch((err) => console.error("Sync sheet error:", err))
-      .finally(() => setIsSyncing(false));
+      }
+    } catch (err) {
+      console.warn("Load admin library error, using static INITIAL_GAMES:", err);
+    }
+    setGames(INITIAL_GAMES);
   };
 
   useEffect(() => {
-    syncAllGames();
+    loadLibraryGames();
 
     // Listen to real-time updates from Admin ROM Upload / Visibility Toggle
     const handleGameUpdate = () => {
-      syncAllGames();
+      loadLibraryGames();
     };
 
     window.addEventListener('qgx_games_updated', handleGameUpdate);
@@ -146,6 +163,54 @@ export default function App() {
     }
   };
 
+  // Exit Confirmation Modal State
+  const [exitConfirmModal, setExitConfirmModal] = useState<{
+    isOpen: boolean;
+    targetActionName?: string;
+    gameName?: string;
+    onConfirm: () => void;
+  } | null>(null);
+
+  // 1. Listen for browser beforeunload event (Closing Tab / Reload / Navigating away)
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isEmulatorActive()) {
+        e.preventDefault();
+        e.returnValue = 'Bạn có chắc chắn muốn thoát game không? Tiến trình chơi chưa lưu sẽ bị mất.';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
+  // 2. Global Event Listener for Safe Exit Confirmations across any component
+  useEffect(() => {
+    const handleExitConfirmRequest = (e: any) => {
+      const { action, targetLabel, gameTitle } = e.detail || {};
+      setExitConfirmModal({
+        isOpen: true,
+        targetActionName: targetLabel || 'chuyển hướng trang',
+        gameName: gameTitle || '',
+        onConfirm: () => {
+          setExitConfirmModal(null);
+          stopActiveEmulator();
+          if (typeof action === 'function') {
+            action();
+          }
+        }
+      });
+    };
+
+    window.addEventListener('qgx_request_exit_confirm' as any, handleExitConfirmRequest);
+    return () => {
+      window.removeEventListener('qgx_request_exit_confirm' as any, handleExitConfirmRequest);
+    };
+  }, []);
+
   // Filters State
   const [filterState, setFilterState] = useState<FilterState>({
     searchQuery: '',
@@ -158,24 +223,62 @@ export default function App() {
 
   const handleFilterChange = (newState: Partial<FilterState>) => {
     setFilterState(prev => ({ ...prev, ...newState }));
+    setCurrentPage(1);
   };
 
   const handleCategoryChange = (cat: string) => {
-    if (cat === 'HOME') {
-      setFilterState({
-        searchQuery: '',
-        selectedPlatform: 'ALL',
-        vietHoaOnly: false,
-        selectedGenre: 'ALL',
-        sortBy: 'latest',
-        viewMode: 'grid'
-      });
-      setSelectedGame(null);
-      setDownloadGame(null);
-      setSelectedArticle(null);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    const isPlaying = isEmulatorActive();
+
+    // 1. Direct navigation to EMULATOR Zone - do not stop the running game!
+    if (cat === 'EMULATOR') {
+      scrollToCategory('EMULATOR');
+      return;
     }
-    scrollToCategory(cat);
+
+    const executeCategoryNav = () => {
+      if (cat === 'HOME') {
+        setFilterState({
+          searchQuery: '',
+          selectedPlatform: 'ALL',
+          vietHoaOnly: false,
+          selectedGenre: 'ALL',
+          sortBy: 'latest',
+          viewMode: 'grid'
+        });
+        setCurrentPage(1);
+        setSelectedGame(null);
+        setDownloadGame(null);
+        setSelectedArticle(null);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        scrollToCategory('HOME');
+      } else {
+        scrollToCategory(cat);
+      }
+    };
+
+    // 2. Intercept if user is currently playing a game
+    if (isPlaying) {
+      const targetLabels: Record<string, string> = {
+        HOME: 'quay về Trang chủ',
+        GAMES: 'chuyển sang Thư viện game',
+        ARTICLES: 'xem mục Bài viết & Tin tức',
+        COMMUNITY: 'mở mục Cộng đồng & Liên hệ'
+      };
+
+      setExitConfirmModal({
+        isOpen: true,
+        targetActionName: targetLabels[cat] || `chuyển sang mục ${cat}`,
+        onConfirm: () => {
+          setExitConfirmModal(null);
+          console.log('[Navigation] User confirmed leaving game. Stopping emulator and navigating to:', cat);
+          stopActiveEmulator();
+          executeCategoryNav();
+        }
+      });
+      return;
+    }
+
+    executeCategoryNav();
   };
 
   const handleAddCustomGame = (newGame: GameItem) => {
@@ -217,8 +320,32 @@ export default function App() {
     });
   }, [games, filterState]);
 
+  // Pagination Logic
+  const totalPages = Math.ceil(filteredGames.length / PAGE_SIZE) || 1;
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(1);
+    }
+  }, [totalPages, currentPage]);
+
+  const paginatedGames = useMemo(() => {
+    const startIndex = (currentPage - 1) * PAGE_SIZE;
+    return filteredGames.slice(startIndex, startIndex + PAGE_SIZE);
+  }, [filteredGames, currentPage]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    const catalogElement = document.getElementById('game-catalog');
+    if (catalogElement) {
+      catalogElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      window.scrollTo({ top: 400, behavior: 'smooth' });
+    }
+  };
+
   const scrollToTop = () => {
-    scrollToCategory('HOME');
+    handleCategoryChange('HOME');
   };
 
   return (
@@ -262,7 +389,7 @@ export default function App() {
       {/* 3. SECTION 2: GAME CATALOG - Displays Game Grid & Filter Controls */}
       <main id="game-catalog" className="max-w-7xl mx-auto px-4 sm:px-6 py-8 border-t border-slate-900/60">
         
-        {/* Header Bar: DANH SÁCH VIỆT HOÁ + Hiển thị 1-25 + Dropdown Mới Nhất */}
+        {/* Header Bar: DANH SÁCH GAME + Hiển thị pagination count + Dropdown Mới Nhất */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 pb-4 border-b border-slate-800/80">
           <div>
             <h2 className="text-2xl sm:text-4xl font-display font-black text-white uppercase tracking-tight flex items-center gap-2">
@@ -271,7 +398,7 @@ export default function App() {
               </span>
             </h2>
             <p className="text-xs sm:text-sm font-body text-slate-400 mt-1">
-              Hiển thị 1–{Math.min(25, filteredGames.length)} của <strong className="text-amber-300 font-bold">{filteredGames.length}</strong> kết quả
+              Hiển thị <strong className="text-amber-300 font-bold">{filteredGames.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredGames.length)}</strong> của <strong className="text-amber-300 font-bold">{filteredGames.length}</strong> kết quả {totalPages > 1 && <span className="text-slate-500 font-mono text-xs">(Trang {currentPage}/{totalPages})</span>}
             </p>
           </div>
 
@@ -324,13 +451,13 @@ export default function App() {
             </motion.div>
           ) : filterState.viewMode === 'grid' ? (
             <motion.div
-              key="grid-view"
+              key={`grid-view-page-${currentPage}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 sm:gap-6"
             >
-              {filteredGames.map((game) => (
+              {paginatedGames.map((game) => (
                 <GameCard
                   key={game.id}
                   game={game}
@@ -342,13 +469,13 @@ export default function App() {
             </motion.div>
           ) : filterState.viewMode === 'launchbox' ? (
             <motion.div
-              key="launchbox-view"
+              key={`launchbox-view-page-${currentPage}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="grid grid-cols-1 lg:grid-cols-2 gap-5"
             >
-              {filteredGames.map((game) => (
+              {paginatedGames.map((game) => (
                 <LaunchBoxCard
                   key={game.id}
                   game={game}
@@ -359,7 +486,7 @@ export default function App() {
             </motion.div>
           ) : (
             <motion.div
-              key="table-view"
+              key={`table-view-page-${currentPage}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -380,11 +507,11 @@ export default function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredGames.map((game, idx) => (
+                  {paginatedGames.map((game, idx) => (
                     <GameListRow
                       key={game.id}
                       game={game}
-                      index={idx}
+                      index={(currentPage - 1) * PAGE_SIZE + idx}
                       onSelect={(g) => handleOpenGameDetail(g)}
                       onOpenDownload={(g) => setDownloadGame(g)}
                     />
@@ -394,6 +521,15 @@ export default function App() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Pagination Controls */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredGames.length}
+          pageSize={PAGE_SIZE}
+          onPageChange={handlePageChange}
+        />
 
       </main>
 
@@ -460,6 +596,19 @@ export default function App() {
       />
 
       <AdminBadge />
+
+      {/* Exit Game Confirmation Modal */}
+      <ExitGameConfirmModal
+        isOpen={Boolean(exitConfirmModal?.isOpen)}
+        targetActionName={exitConfirmModal?.targetActionName}
+        gameName={exitConfirmModal?.gameName}
+        onCancel={() => setExitConfirmModal(null)}
+        onConfirm={() => {
+          if (exitConfirmModal?.onConfirm) {
+            exitConfirmModal.onConfirm();
+          }
+        }}
+      />
 
     </div>
   );

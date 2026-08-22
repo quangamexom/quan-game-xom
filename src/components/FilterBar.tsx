@@ -97,7 +97,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                   ? 'bg-amber-500 text-slate-950 font-bold'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
-              title="Chế độ Bảng Google Sheet"
+              title="Chế độ Bảng Danh Sách (Table View)"
             >
               <Table className="w-4 h-4" />
             </button>

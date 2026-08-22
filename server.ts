@@ -845,27 +845,6 @@ app.get("/api/proxy-rom", async (req, res) => {
       }
     }
 
-    // Direct local fast-path for known bundled ROMs
-    if (targetFileId === '1i9fsfy5lM-eKcQIh1raZpx7etQlGd-Mt') {
-      const localPath1 = path.join(process.cwd(), "public", "roms", "biker-mice-from-mars.sfc");
-      const localPath2 = path.join(process.cwd(), "public", "assets", "roms", "biker-mice-from-mars.sfc");
-      const localPath = fs.existsSync(localPath1) ? localPath1 : localPath2;
-      if (fs.existsSync(localPath)) {
-        res.setHeader("Access-Control-Allow-Origin", "*");
-        res.setHeader("Content-Type", "application/octet-stream");
-        return res.sendFile(localPath);
-      }
-    } else if (targetFileId === '1QGgmop-JEIKZ6kyV2HcHjHugdzb88Q7f') {
-      const localPath1 = path.join(process.cwd(), "public", "roms", "aladdin.sfc");
-      const localPath2 = path.join(process.cwd(), "public", "assets", "roms", "aladdin.sfc");
-      const localPath = fs.existsSync(localPath1) ? localPath1 : localPath2;
-      if (fs.existsSync(localPath)) {
-        res.setHeader("Access-Control-Allow-Origin", "*");
-        res.setHeader("Content-Type", "application/octet-stream");
-        return res.sendFile(localPath);
-      }
-    }
-
     if (targetFileId) {
       rawUrl = `https://drive.google.com/uc?export=download&id=${targetFileId}`;
     }
@@ -907,6 +886,50 @@ app.get("/api/proxy-rom", async (req, res) => {
 app.get("/api/snes-games", async (req, res) => {
   const defaultTestGames = [
     {
+      id: "blob-rom-yuyuhakusho-vn",
+      title: "Yu Yu Hakusho (Việt Hóa)",
+      subtitle: "Hành Trình U Meshi • Bản dịch Tiếng Việt chuẩn SNES 16-Bit",
+      coverArt: "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop",
+      backdropArt: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200&auto=format&fit=crop",
+      platforms: ["Other"],
+      language: "Tiếng Việt 🇻🇳",
+      hasVietHoa: true,
+      releaseYear: 1994,
+      fileSize: "3.0 MB",
+      rating: 5.0,
+      genres: ["SNES", "Việt Hóa", "Đối Kháng", "Anime", "Retro"],
+      description: "Yu Yu Hakusho (Nhất Dương Chỉ / Hành Trình U Meshi) bản dịch Tiếng Việt chuẩn hệ máy Super Nintendo (SNES). Hóa thân thành Yusuke, Hiei, Kurama, Kuwabara tham gia Đại Hội Võ Thuật Bóng Tối.",
+      romUrl: "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/YuyuHakusho_VN.smc",
+      downloadUrl: "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/YuyuHakusho_VN.smc",
+      emulatorCore: "snes",
+      isFeatured: true,
+      isPopular: true,
+      isNewUpdate: true,
+      addedDate: "2026-08-22"
+    },
+    {
+      id: "blob-rom-megaman-x2-vn",
+      title: "Mega Man X2 (Việt Hóa)",
+      subtitle: "Rockman X2 • Bản dịch Tiếng Việt chuẩn SNES 16-Bit",
+      coverArt: "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=600&auto=format&fit=crop",
+      backdropArt: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200&auto=format&fit=crop",
+      platforms: ["Other"],
+      language: "Tiếng Việt 🇻🇳",
+      hasVietHoa: true,
+      releaseYear: 1994,
+      fileSize: "4.0 MB",
+      rating: 5.0,
+      genres: ["SNES", "Việt Hóa", "Hành Động", "Retro"],
+      description: "Mega Man X2 (Rockman X2) bản dịch Tiếng Việt hoàn chỉnh trên Super Nintendo (SNES). Đồng hành cùng X chiến đấu chống lại X-Hunters và phục sinh chiến binh Zero huyền thoại.",
+      romUrl: "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Mega%20Man%20X2%20VN.smc",
+      downloadUrl: "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Mega%20Man%20X2%20VN.smc",
+      emulatorCore: "snes",
+      isFeatured: true,
+      isPopular: true,
+      isNewUpdate: true,
+      addedDate: "2026-08-22"
+    },
+    {
       id: "blob-rom-battletoads-double-dragon",
       title: "Battletoads & Double Dragon",
       subtitle: "The Ultimate Team • Super Nintendo (SNES) 16-Bit",
@@ -944,50 +967,6 @@ app.get("/api/snes-games", async (req, res) => {
       description: "Game đối kháng Robot khổng lồ Megazord và quái vật kinh điển của 5 Anh Em Siêu Nhân trên hệ máy Super Nintendo (SNES).",
       romUrl: "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Mighty_Morphin_Power_Rangers_-_The_Fighting_Edition__E_.smc",
       downloadUrl: "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Mighty_Morphin_Power_Rangers_-_The_Fighting_Edition__E_.smc",
-      emulatorCore: "snes",
-      isFeatured: true,
-      isPopular: true,
-      isNewUpdate: true,
-      addedDate: "2026-08-15"
-    },
-    {
-      id: "snes-biker-mice",
-      title: "Biker Mice from Mars",
-      subtitle: "Đua xe bắn súng chuột không gian • Konami SNES",
-      coverArt: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop",
-      backdropArt: "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=600&auto=format&fit=crop",
-      platforms: ["Other"],
-      language: "Tiếng Anh ⭐",
-      hasVietHoa: false,
-      releaseYear: 1994,
-      fileSize: "1.7 MB",
-      rating: 4.95,
-      genres: ["SNES", "Retro", "Đua Xe", "Bắn Súng"],
-      description: "Game đua xe mô tô chiến đấu huyền thoại của Konami trên SNES với 3 chú chuột chiến binh Throttle, Modo và Vinnie cùng kho vũ khí tối tân.",
-      romUrl: "/roms/biker-mice-from-mars.sfc",
-      downloadUrl: "https://drive.google.com/file/d/1i9fsfy5lM-eKcQIh1raZpx7etQlGd-Mt/view?usp=sharing",
-      emulatorCore: "snes",
-      isFeatured: true,
-      isPopular: true,
-      isNewUpdate: true,
-      addedDate: "2026-08-15"
-    },
-    {
-      id: "snes-aladdin",
-      title: "Aladdin",
-      subtitle: "Disney's Aladdin • Super Nintendo (SNES) 16-Bit",
-      coverArt: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
-      backdropArt: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
-      platforms: ["Other"],
-      language: "Tiếng Anh ⭐",
-      hasVietHoa: false,
-      releaseYear: 1993,
-      fileSize: "2.0 MB",
-      rating: 4.9,
-      genres: ["SNES", "Retro", "Hành Động", "Kinh Điển"],
-      description: "Hóa thân thành Aladdin cùng chú khỉ Abu trong chuyến phiêu lưu kinh điển qua vương quốc Agrabah trên hệ máy Super Nintendo 16-bit mượt mà.",
-      romUrl: "/roms/aladdin.sfc",
-      downloadUrl: "https://drive.google.com/file/d/1QGgmop-JEIKZ6kyV2HcHjHugdzb88Q7f/view?usp=sharing",
       emulatorCore: "snes",
       isFeatured: true,
       isPopular: true,

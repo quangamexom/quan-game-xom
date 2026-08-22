@@ -26,11 +26,12 @@ import {
   ExternalLink,
   Cloud
 } from 'lucide-react';
-import { fetchSnesGamesFromSheet, DEFAULT_SNES_TEST_GAMES, SNES_SHEET_ID } from '../services/sheetService';
+import { DEFAULT_SNES_TEST_GAMES } from '../services/sheetService';
 import { GameItem } from '../types';
 import { ShareGameMenu } from './ShareGameMenu';
 import { useAdminMode } from '../hooks/useAdminMode';
 import { AdminRomManagerModal } from './AdminRomManagerModal';
+import { requestSafeAction } from '../utils/emulatorManager';
 
 export interface PresetRom {
   id: string;
@@ -54,47 +55,28 @@ export function normalizeRomUrl(rawUrl: string): string {
   // If already a relative path, convert to absolute URL
   if (trimmed.startsWith('/')) {
     if (typeof window !== 'undefined' && window.location?.origin) {
-      return `${window.location.origin}${trimmed}`;
+      return encodeURI(`${window.location.origin}${trimmed}`);
     }
-    return trimmed;
+    return encodeURI(trimmed);
   }
 
   // Check if it's a Google Drive link
   const driveMatch = trimmed.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=|uc\?export=download&id=)|id=)([a-zA-Z0-9_-]{25,})/);
   if (driveMatch && driveMatch[1]) {
     const fileId = driveMatch[1];
-    if (fileId === '1i9fsfy5lM-eKcQIh1raZpx7etQlGd-Mt') {
-      return typeof window !== 'undefined' && window.location?.origin
-        ? `${window.location.origin}/roms/biker-mice-from-mars.sfc`
-        : '/roms/biker-mice-from-mars.sfc';
-    }
-    if (fileId === '1QGgmop-JEIKZ6kyV2HcHjHugdzb88Q7f') {
-      return typeof window !== 'undefined' && window.location?.origin
-        ? `${window.location.origin}/roms/aladdin.sfc`
-        : '/roms/aladdin.sfc';
-    }
-    // Route any other Google Drive file through /api/proxy-rom?id=...
+    // Route Google Drive files through /api/proxy-rom?id=...
     if (typeof window !== 'undefined' && window.location?.origin) {
       return `${window.location.origin}/api/proxy-rom?id=${fileId}`;
     }
     return `https://drive.google.com/uc?export=download&id=${fileId}`;
   }
 
-  // Check if it is an archive.org link with broken / placeholder items
-  if (trimmed.includes('snes-romset-ultra') || trimmed.includes('archive.org')) {
-    if (trimmed.toLowerCase().includes('biker')) {
-      return typeof window !== 'undefined' && window.location?.origin
-        ? `${window.location.origin}/roms/biker-mice-from-mars.sfc`
-        : '/roms/biker-mice-from-mars.sfc';
-    }
-    if (trimmed.toLowerCase().includes('aladdin')) {
-      return typeof window !== 'undefined' && window.location?.origin
-        ? `${window.location.origin}/roms/aladdin.sfc`
-        : '/roms/aladdin.sfc';
-    }
+  // Safe URI encoding for spaces and special characters
+  try {
+    return encodeURI(decodeURI(trimmed));
+  } catch (e) {
+    return encodeURI(trimmed);
   }
-
-  return trimmed;
 }
 
 // Map user-friendly or legacy core names to exact EmulatorJS core identifiers
@@ -129,6 +111,26 @@ export function resolveEmulatorCore(core: string): string {
 
 const CLASSIC_PRESET_ROMS: PresetRom[] = [
   {
+    id: 'blob-rom-yuyuhakusho-vn',
+    title: 'Yu Yu Hakusho (Việt Hóa)',
+    system: 'snes',
+    systemName: 'Super Nintendo (SNES)',
+    romUrl: 'https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/YuyuHakusho_VN.smc',
+    coverArt: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop',
+    description: 'Yu Yu Hakusho (Nhất Dương Chỉ / Hành Trình U Meshi) bản Việt Hóa chuẩn SNES 16-bit. Đại chiến võ đài bóng tối đỉnh cao cùng Yusuke và đồng đội.',
+    isSnesSheet: true
+  },
+  {
+    id: 'blob-rom-megaman-x2-vn',
+    title: 'Mega Man X2 (Việt Hóa)',
+    system: 'snes',
+    systemName: 'Super Nintendo (SNES)',
+    romUrl: 'https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Mega%20Man%20X2%20VN.smc',
+    coverArt: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=600&auto=format&fit=crop',
+    description: 'Mega Man X2 (Rockman X2) bản Việt Hóa hoàn chỉnh trên SNES 16-bit. Đồng hành cùng X tiêu diệt binh đoàn X-Hunters và phục sinh Zero.',
+    isSnesSheet: true
+  },
+  {
     id: 'blob-rom-battletoads-double-dragon',
     title: 'Battletoads & Double Dragon',
     system: 'snes',
@@ -146,26 +148,6 @@ const CLASSIC_PRESET_ROMS: PresetRom[] = [
     romUrl: 'https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Mighty_Morphin_Power_Rangers_-_The_Fighting_Edition__E_.smc',
     coverArt: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop',
     description: 'Game đối kháng Robot khổng lồ Megazord và quái vật kinh điển của 5 Anh Em Siêu Nhân trên hệ máy Super Nintendo (SNES).',
-    isSnesSheet: true
-  },
-  {
-    id: 'snes-biker-mice-preset',
-    title: 'Biker Mice from Mars',
-    system: 'snes',
-    systemName: 'Super Nintendo (SNES)',
-    romUrl: '/roms/biker-mice-from-mars.sfc',
-    coverArt: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop',
-    description: 'Game đua xe bắn súng chuột không gian huyền thoại của Konami trên SNES với tốc độ cao và vũ khí uy lực.',
-    isSnesSheet: true
-  },
-  {
-    id: 'snes-aladdin-preset',
-    title: 'Aladdin',
-    system: 'snes',
-    systemName: 'Super Nintendo (SNES)',
-    romUrl: '/roms/aladdin.sfc',
-    coverArt: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop',
-    description: 'Game phiêu lưu hành động 16-bit kinh điển đưa bạn cùng chú khỉ Abu khám phá vương quốc Agrabah trên hệ máy SNES.',
     isSnesSheet: true
   }
 ];
@@ -263,6 +245,9 @@ export async function fetchRomAsBlobUrl(
 
 export const EmulatorZone: React.FC = () => {
   const { isAdmin } = useAdminMode();
+  const isDev = Boolean(import.meta.env.DEV);
+  const canShowAdmin = isDev || isAdmin;
+
   const [isAdminRomModalOpen, setIsAdminRomModalOpen] = useState<boolean>(false);
 
   const [selectedCore, setSelectedCore] = useState<string>('snes');
@@ -271,9 +256,8 @@ export const EmulatorZone: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [uploadFileName, setUploadFileName] = useState<string | null>(null);
 
-  // SNES Sheet State
+  // SNES / Vercel Blob Games State
   const [snesGames, setSnesGames] = useState<GameItem[]>(DEFAULT_SNES_TEST_GAMES);
-  const [isLoadingSnesSheet, setIsLoadingSnesSheet] = useState<boolean>(false);
 
   // Loading State for ROM Launch
   const [isLoadingRom, setIsLoadingRom] = useState<boolean>(false);
@@ -293,26 +277,39 @@ export const EmulatorZone: React.FC = () => {
 
   const playerContainerRef = useRef<HTMLDivElement>(null);
 
-  const refreshSnesGames = () => {
-    setIsLoadingSnesSheet(true);
-    fetchSnesGamesFromSheet(SNES_SHEET_ID)
-      .then((games) => {
-        if (games && games.length > 0) {
-          setSnesGames(games);
+  const loadSnesGames = async () => {
+    try {
+      const res = await fetch('/api/games/admin-library');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.games) && data.games.length > 0) {
+          // Merge uploaded games with default games, removing duplicates by id or romUrl
+          const uploadedSnes = data.games.filter((g: any) => 
+            !g.isHidden && (g.emulatorCore === 'snes' || g.system === 'snes' || g.genres?.includes('SNES') || g.genres?.includes('Super Nintendo (SNES)'))
+          );
+          
+          const combined = [...uploadedSnes];
+          DEFAULT_SNES_TEST_GAMES.forEach(defaultGame => {
+            if (!combined.some(g => g.id === defaultGame.id || g.romUrl === defaultGame.romUrl)) {
+              combined.push(defaultGame);
+            }
+          });
+          setSnesGames(combined);
+          return;
         }
-      })
-      .catch((err) => console.warn("Load SNES games error:", err))
-      .finally(() => {
-        setIsLoadingSnesSheet(false);
-      });
+      }
+    } catch (err) {
+      console.warn("Load Vercel Blob library error, using defaults:", err);
+    }
+    setSnesGames(DEFAULT_SNES_TEST_GAMES);
   };
 
-  // Fetch SNES Games from Google Sheet on mount & listen to updates
+  // Fetch SNES Games on mount & listen to updates
   useEffect(() => {
-    refreshSnesGames();
+    loadSnesGames();
 
     const handleUpdate = () => {
-      refreshSnesGames();
+      loadSnesGames();
     };
 
     window.addEventListener('qgx_games_updated', handleUpdate);
@@ -337,13 +334,78 @@ export const EmulatorZone: React.FC = () => {
 
   const activeBlobUrlRef = useRef<string | null>(null);
 
-  // Clean up object URLs on unmount
+  // Complete and thorough teardown of active emulator session
+  const terminateActiveEmulator = () => {
+    console.log('🛑 [Emulator Teardown] Terminating active game session, destroying canvas & stopping audio...');
+
+    // 1. Post message to iframe & clear iframe before removal to stop WebAudio/WebGL
+    if (playerContainerRef.current) {
+      const iframe = playerContainerRef.current.querySelector('iframe');
+      if (iframe) {
+        try {
+          iframe.contentWindow?.postMessage('QGX_TEARDOWN_EMULATOR', '*');
+        } catch (e) {}
+        try {
+          iframe.src = 'about:blank';
+        } catch (e) {}
+      }
+    }
+
+    // 2. Revoke any Blob Object URLs to prevent RAM leaks
+    if (activeBlobUrlRef.current && activeBlobUrlRef.current.startsWith('blob:')) {
+      try {
+        URL.revokeObjectURL(activeBlobUrlRef.current);
+      } catch (e) {}
+      activeBlobUrlRef.current = null;
+    }
+
+    // 3. Reset internal React states
+    setIsPlaying(false);
+    setCurrentRomUrl(null);
+    setCurrentRomName('');
+    setIsLoadingRom(false);
+    setRomError(null);
+    setActiveTab('library');
+    setUploadFileName(null);
+
+    // 4. Update global flags
+    if (typeof window !== 'undefined') {
+      window.__QGX_IS_PLAYING_EMULATOR__ = false;
+      window.dispatchEvent(new CustomEvent('qgx_emulator_state_changed', { detail: { isPlaying: false } }));
+    }
+  };
+
+  // Sync global state and register global teardown method & event
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.__QGX_IS_PLAYING_EMULATOR__ = isPlaying;
+      window.__QGX_STOP_EMULATOR__ = terminateActiveEmulator;
+      window.dispatchEvent(new CustomEvent('qgx_emulator_state_changed', { detail: { isPlaying } }));
+    }
+  }, [isPlaying]);
+
+  // Listen for global stop command
+  useEffect(() => {
+    const handleGlobalStop = () => {
+      terminateActiveEmulator();
+    };
+
+    window.addEventListener('qgx_stop_emulator', handleGlobalStop);
+    return () => {
+      window.removeEventListener('qgx_stop_emulator', handleGlobalStop);
+    };
+  }, []);
+
+  // Clean up object URLs and active sessions on unmount
   useEffect(() => {
     return () => {
       if (activeBlobUrlRef.current && activeBlobUrlRef.current.startsWith('blob:')) {
         try {
           URL.revokeObjectURL(activeBlobUrlRef.current);
         } catch (e) {}
+      }
+      if (typeof window !== 'undefined') {
+        window.__QGX_IS_PLAYING_EMULATOR__ = false;
       }
     };
   }, []);
@@ -354,7 +416,7 @@ export const EmulatorZone: React.FC = () => {
       setRomError({
         title: "Không Có File ROM",
         message: `Game "${gameName}" chưa có đường dẫn romUrl trong cơ sở dữ liệu.`,
-        hint: "Vui lòng upload file ROM lên Vercel Blob và cập nhật cột romUrl trong Google Sheet."
+        hint: "Vui lòng upload file ROM lên Vercel Blob Storage để kích hoạt chơi trực tiếp."
       });
       return;
     }
@@ -513,6 +575,25 @@ export const EmulatorZone: React.FC = () => {
     window.addEventListener("unhandledrejection", function(e) {
       console.error("💥 [Unhandled Promise Rejection in Emulator Frame]:", e.reason);
     });
+
+    // 4. Forceful Teardown & Audio Termination Listener
+    window.addEventListener("message", function(e) {
+      if (e.data === "QGX_TEARDOWN_EMULATOR") {
+        console.log("🛑 [Emulator Frame] Received shutdown signal. Destroying audio & video contexts...");
+        try {
+          if (window.EJS_emulator && typeof window.EJS_emulator.destroy === "function") {
+            window.EJS_emulator.destroy();
+          } else if (window.EJS_emulator && typeof window.EJS_emulator.pause === "function") {
+            window.EJS_emulator.pause();
+          }
+        } catch(err) {}
+        try {
+          var container = document.getElementById("ejs-game-container");
+          if (container) container.innerHTML = "";
+          document.body.innerHTML = "";
+        } catch(err) {}
+      }
+    });
   </script>
   <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
 </body>
@@ -547,22 +628,24 @@ export const EmulatorZone: React.FC = () => {
               KHU VỰC <span className="text-amber-400 text-glow-amber">GIẢ LẬP GAME RETRO</span>
             </h1>
             <p className="text-xs sm:text-sm font-body text-slate-300 leading-relaxed">
-              Chơi ngay game SNES & Retro kinh điển qua EmulatorJS stream trực tiếp từ kho Vercel Blob Storage tốc độ cao và Google Sheet Quán Game Xóm. Tải tức thì 100%, không lag, 60 FPS mượt mà!
+              Chơi ngay game SNES & Retro kinh điển qua EmulatorJS stream trực tiếp từ kho Vercel Blob Storage tốc độ cao của Quán Game Xóm. Tải tức thì 100%, không lag, 60 FPS mượt mà!
             </p>
           </div>
 
           {/* Quick Action Load File & Admin Upload Button */}
           <div className="shrink-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <button
-              id="btn-open-admin-blob-modal"
-              type="button"
-              onClick={() => setIsAdminRomModalOpen(true)}
-              className="px-5 py-3.5 bg-slate-900 hover:bg-slate-800 border border-amber-500/50 hover:border-amber-400 text-amber-300 hover:text-white font-bold rounded-2xl text-xs font-mono uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-              title="Upload file ROM lên Vercel Blob Storage và lấy URL công khai"
-            >
-              <Cloud className="w-4 h-4 text-amber-400" />
-              <span>ADMIN UPLOAD BLOB</span>
-            </button>
+            {canShowAdmin && (
+              <button
+                id="btn-open-admin-blob-modal"
+                type="button"
+                onClick={() => setIsAdminRomModalOpen(true)}
+                className="px-5 py-3.5 bg-slate-900 hover:bg-slate-800 border border-amber-500/50 hover:border-amber-400 text-amber-300 hover:text-white font-bold rounded-2xl text-xs font-mono uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                title="Upload file ROM lên Vercel Blob Storage và lấy URL công khai"
+              >
+                <Cloud className="w-4 h-4 text-amber-400" />
+                <span>ADMIN UPLOAD BLOB</span>
+              </button>
+            )}
 
             <label
               id="btn-upload-local-rom"
@@ -644,7 +727,7 @@ export const EmulatorZone: React.FC = () => {
       {/* TAB 1: PRESET ROM LIBRARY */}
       {activeTab === 'library' && (
         <div className="space-y-8">
-          {/* 1. FEATURED SNES GOOGLE SHEET GAMES (Aladdin & Biker Mice from Mars) */}
+          {/* 1. FEATURED SNES VERCEL BLOB GAMES */}
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-amber-500/30">
               <div className="flex items-center gap-2.5">
@@ -653,43 +736,31 @@ export const EmulatorZone: React.FC = () => {
                 </div>
                 <div>
                   <h2 className="text-xl font-display font-black text-white uppercase tracking-tight flex items-center gap-2">
-                    <span>DANH SÁCH GAME SNES CLOUD (GOOGLE SHEET)</span>
+                    <span>THƯ VIỆN GAME SNES (VERCEL BLOB)</span>
                     <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[10px] font-mono font-black">
                       CHƠI NGAY
                     </span>
                   </h2>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Dữ liệu đồng bộ từ Google Sheet SNES — Tải ROM trực tiếp từ Vercel Blob Storage tốc độ cao. Chọn là chơi ngay!
+                    Tải ROM trực tiếp từ Vercel Blob Storage tốc độ cao — Nhấp chọn là chơi trực tiếp 60 FPS mượt mà!
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5">
-                <button
-                  id="btn-snes-admin-upload"
-                  type="button"
-                  onClick={() => setIsAdminRomModalOpen(true)}
-                  className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer"
-                  title="Upload ROM mới lên Vercel Blob"
-                >
-                  <Cloud className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Upload ROM (Blob)</span>
-                </button>
-
-                <button
-                  id="btn-refresh-snes-sheet"
-                  onClick={() => {
-                    setIsLoadingSnesSheet(true);
-                    fetchSnesGamesFromSheet(SNES_SHEET_ID)
-                      .then((data) => setSnesGames(data))
-                      .finally(() => setIsLoadingSnesSheet(false));
-                  }}
-                  className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-500/40 text-amber-300 hover:text-white text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingSnesSheet ? 'animate-spin' : ''}`} />
-                  <span>Đồng bộ Sheet</span>
-                </button>
-              </div>
+              {canShowAdmin && (
+                <div className="flex items-center gap-2.5">
+                  <button
+                    id="btn-snes-admin-upload"
+                    type="button"
+                    onClick={() => setIsAdminRomModalOpen(true)}
+                    className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                    title="Upload ROM mới lên Vercel Blob"
+                  >
+                    <Cloud className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Upload ROM (Blob)</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Grid of SNES Sheet Games */}
@@ -795,8 +866,8 @@ export const EmulatorZone: React.FC = () => {
               </div>
             </div>
 
-            {/* Grid of Other Preset ROMs */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Grid of Preset ROMs */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {CLASSIC_PRESET_ROMS.map((rom) => (
                 <div
                   key={rom.id}
@@ -903,7 +974,16 @@ export const EmulatorZone: React.FC = () => {
 
               <button
                 id="btn-switch-to-library"
-                onClick={() => setActiveTab('library')}
+                onClick={() => {
+                  if (isPlaying) {
+                    requestSafeAction(() => {
+                      terminateActiveEmulator();
+                      setActiveTab('library');
+                    }, 'quay lại thư viện ROM');
+                  } else {
+                    setActiveTab('library');
+                  }
+                }}
                 className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold font-mono transition-all cursor-pointer"
               >
                 Đổi Game Khác
@@ -912,9 +992,13 @@ export const EmulatorZone: React.FC = () => {
               <button
                 id="btn-exit-emulator"
                 onClick={() => {
-                  setIsPlaying(false);
-                  setCurrentRomUrl(null);
-                  setActiveTab('library');
+                  if (isPlaying) {
+                    requestSafeAction(() => {
+                      terminateActiveEmulator();
+                    }, 'dừng phiên chơi game');
+                  } else {
+                    terminateActiveEmulator();
+                  }
                 }}
                 className="px-3.5 py-1.5 bg-red-950/80 hover:bg-red-600 border border-red-500/50 text-red-200 hover:text-white rounded-xl text-xs font-bold font-mono transition-all cursor-pointer"
               >
@@ -1194,7 +1278,7 @@ export const EmulatorZone: React.FC = () => {
         isOpen={isAdminRomModalOpen}
         onClose={() => setIsAdminRomModalOpen(false)}
         onPlayRom={(url, name, core) => launchRom(url, name, core || 'snes')}
-        onGameUpdated={refreshSnesGames}
+        onGameUpdated={loadSnesGames}
       />
     </div>
   );
