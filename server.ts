@@ -3,7 +3,6 @@ import path from "path";
 import fs from "fs";
 import { GoogleGenAI } from "@google/genai";
 import { put, list, del } from "@vercel/blob";
-import googleSheetBackup from "./src/data/googleSheetGames.json";
 import { 
   readGamesLibrary, 
   writeGamesLibrary, 
@@ -12,7 +11,7 @@ import {
   removeGameFromLibrary,
   uploadImageToBlob,
   syncAllBlobsToLibrary
-} from "./src/services/metadataStorage.ts";
+} from "./src/services/metadataStorage";
 import {
   createNetplayRoom,
   joinNetplayRoom,
@@ -20,13 +19,27 @@ import {
   startNetplayRoom,
   getRoomStatus,
   deleteNetplayRoom
-} from "./src/services/netplayRoomStorage.ts";
+} from "./src/services/netplayRoomStorage";
 
 const app = express();
 const PORT = 3000;
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Helper to safely load Google Sheet games backup without ESM json assertion issues
+function getGoogleSheetBackup(): any[] {
+  try {
+    const jsonPath = path.join(process.cwd(), "src", "data", "googleSheetGames.json");
+    if (fs.existsSync(jsonPath)) {
+      const raw = fs.readFileSync(jsonPath, "utf-8");
+      return JSON.parse(raw);
+    }
+  } catch (err) {
+    console.warn("[getGoogleSheetBackup error]:", err);
+  }
+  return [];
+}
 
 // Normalize request URL for Vercel Serverless Function rewrites (only when running on Vercel)
 if (process.env.VERCEL) {
@@ -90,21 +103,23 @@ app.post("/api/admin/verify", (req, res) => {
 // 1. Google Sheet Games route
 app.get("/api/sheet-games", async (req, res) => {
   try {
+    const backupGames = getGoogleSheetBackup();
     // Return Google Sheet games data
     return res.json({
       success: true,
-      count: googleSheetBackup.length,
+      count: backupGames.length,
       sheetId: "1VA8Wv9OQmrR4nDpf0SUFQiqC4IAoVSCswCjY37ChplM",
       sheetUrl: "https://docs.google.com/spreadsheets/d/1VA8Wv9OQmrR4nDpf0SUFQiqC4IAoVSCswCjY37ChplM/edit?gid=0#gid=0",
       syncedAt: new Date().toISOString(),
-      games: googleSheetBackup
+      games: backupGames
     });
   } catch (err: any) {
     console.error("[Sheet Games API Error]:", err);
+    const backupGames = getGoogleSheetBackup();
     return res.json({
       success: true,
-      count: googleSheetBackup.length,
-      games: googleSheetBackup
+      count: backupGames.length,
+      games: backupGames
     });
   }
 });
@@ -926,7 +941,7 @@ app.post("/api/admin/games/update-description", async (req, res) => {
 });
 
 // Netplay Waiting Room Endpoints (2-Step Waiting Room Synchronization)
-app.post("/api/netplay/create-room", async (req, res) => {
+app.post(["/api/netplay/create-room", "/netplay/create-room"], async (req, res) => {
   try {
     const rawRoom = (req.body?.room || '') as string;
     const room = rawRoom.trim().toLowerCase();
@@ -942,7 +957,7 @@ app.post("/api/netplay/create-room", async (req, res) => {
   }
 });
 
-app.post("/api/netplay/join-room", async (req, res) => {
+app.post(["/api/netplay/join-room", "/netplay/join-room"], async (req, res) => {
   try {
     const rawRoom = (req.body?.room || '') as string;
     const room = rawRoom.trim().toLowerCase();
@@ -957,7 +972,7 @@ app.post("/api/netplay/join-room", async (req, res) => {
   }
 });
 
-app.post("/api/netplay/set-ready", async (req, res) => {
+app.post(["/api/netplay/set-ready", "/netplay/set-ready"], async (req, res) => {
   try {
     const rawRoom = (req.body?.room || '') as string;
     const room = rawRoom.trim().toLowerCase();
@@ -973,7 +988,7 @@ app.post("/api/netplay/set-ready", async (req, res) => {
   }
 });
 
-app.post("/api/netplay/start-room", async (req, res) => {
+app.post(["/api/netplay/start-room", "/netplay/start-room"], async (req, res) => {
   try {
     const rawRoom = (req.body?.room || '') as string;
     const room = rawRoom.trim().toLowerCase();
@@ -988,7 +1003,7 @@ app.post("/api/netplay/start-room", async (req, res) => {
   }
 });
 
-app.get("/api/netplay/room-status", async (req, res) => {
+app.get(["/api/netplay/room-status", "/netplay/room-status"], async (req, res) => {
   console.log('[room-status] GET request received. query:', req.query, 'url:', req.url);
 
   try {
@@ -1040,16 +1055,16 @@ app.get("/api/netplay/room-status", async (req, res) => {
 
     if (!res.headersSent) {
       return res.status(500).json({ 
-        success: false,
-        error: errorMsg,
-        stack: errorStack,
-        room: String(req.query.room || '')
+        success: false, 
+        error: errorMsg, 
+        stack: errorStack, 
+        room: String(req.query.room || '') 
       });
     }
   }
 });
 
-app.all(["/api/netplay/delete-room", "/api/netplay/leave-room"], async (req, res) => {
+app.all(["/api/netplay/delete-room", "/netplay/delete-room", "/api/netplay/leave-room", "/netplay/leave-room"], async (req, res) => {
   try {
     const rawRoom = (req.body?.room || req.query?.room || '') as string;
     const room = rawRoom.trim().toLowerCase();
