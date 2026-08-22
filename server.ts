@@ -1306,9 +1306,29 @@ app.get("/api/snes-games", async (req, res) => {
   }
 });
 
-// 6. Health check
+// 6. Health check & Debug
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+app.get("/api/debug", (req, res) => {
+  res.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    source: "server_express_route",
+    runtime: {
+      nodeVersion: process.version,
+      platform: process.platform,
+      arch: process.arch,
+      isVercel: !!process.env.VERCEL,
+      vercelEnv: process.env.VERCEL_ENV || "unknown",
+      nodeEnv: process.env.NODE_ENV || "unknown",
+    },
+    environmentVariables: {
+      hasBlobToken: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
+      hasGeminiApiKey: Boolean(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY),
+    }
+  });
 });
 
 // Global Express Error Handler for structured JSON responses
