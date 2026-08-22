@@ -989,23 +989,57 @@ app.post("/api/netplay/start-room", async (req, res) => {
 });
 
 app.get("/api/netplay/room-status", async (req, res) => {
-  try {
-    const rawRoom = (req.query.room || '') as string;
-    const room = rawRoom.trim().toLowerCase();
-    if (!room) {
-      return res.status(400).json({ success: false, error: "Thiếu tham số 'room'" });
-    }
+  console.log('[room-status] room param:', req.query.room);
 
-    // Anti-cache headers to prevent intermediate proxies / browser caching
+  // Set anti-cache headers safely before sending response
+  if (!res.headersSent) {
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
+  }
+
+  try {
+    const rawQueryRoom = Array.isArray(req.query.room) ? req.query.room[0] : (req.query.room || '');
+    const room = String(rawQueryRoom).split('?')[0].split('&')[0].trim().toLowerCase();
+
+    if (!room) {
+      return res.status(200).json({ 
+        success: true, 
+        room: "", 
+        exists: false, 
+        status: null, 
+        message: "Thiếu mã phòng 'room'" 
+      });
+    }
 
     const status = await getRoomStatus(room);
-    return res.json({ success: true, room, status });
+    if (!status) {
+      return res.status(200).json({ 
+        success: true, 
+        room, 
+        exists: false, 
+        status: null,
+        message: "Phòng không tồn tại hoặc đã hết hạn"
+      });
+    }
+
+    return res.status(200).json({ 
+      success: true, 
+      room, 
+      exists: true, 
+      status 
+    });
   } catch (err: any) {
     console.error("[Get Netplay Room Status Error]:", err);
-    return res.status(500).json({ success: false, error: err.message || "Lỗi lấy trạng thái phòng Netplay" });
+    if (!res.headersSent) {
+      return res.status(200).json({ 
+        success: false, 
+        room: String(req.query.room || ''), 
+        exists: false, 
+        status: null, 
+        error: err?.message || "Lỗi đọc trạng thái phòng" 
+      });
+    }
   }
 });
 

@@ -225,34 +225,54 @@ export async function startNetplayRoom(roomId: string): Promise<NetplayRoomStatu
 }
 
 export async function getRoomStatus(roomId: string): Promise<NetplayRoomStatus | null> {
-  const cleanId = roomId.trim().toLowerCase();
+  if (!roomId) return null;
+  const cleanId = String(roomId).split('?')[0].split('&')[0].trim().toLowerCase();
+  if (!cleanId) return null;
 
-  // 1. If Vercel Blob token exists, always fetch fresh data from Blob with anti-cache headers
+  // 1. If Vercel Blob token exists, always fetch fresh data from Blob
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
   if (blobToken) {
     try {
       const { blobs } = await list({ token: blobToken, prefix: `netplay-rooms/${cleanId}` });
-      const targetBlob = blobs.find(b => b.pathname === `netplay-rooms/${cleanId}.json` || b.pathname.includes(`${cleanId}.json`));
-      if (targetBlob) {
+      const targetBlob = blobs.find(b => b.pathname === `netplay-rooms/${cleanId}.json` || b.pathname.endsWith(`/${cleanId}.json`));
+      if (targetBlob && targetBlob.url) {
         // Check age (> 15 mins)
-        if (Date.now() - new Date(targetBlob.uploadedAt).getTime() > 15 * 60 * 1000) {
-          await del(targetBlob.url, { token: blobToken });
+        if (targetBlob.uploadedAt && Date.now() - new Date(targetBlob.uploadedAt).getTime() > 15 * 60 * 1000) {
+          try {
+            await del(targetBlob.url, { token: blobToken });
+          } catch (delErr) {}
           inMemoryRooms.delete(cleanId);
           return null;
         }
 
-        const res = await fetch(`${targetBlob.url}?t=${Date.now()}`, {
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
+        try {
+          const fetchUrl = targetBlob.url.includes('?') 
+            ? `${targetBlob.url}&_t=${Date.now()}` 
+            : `${targetBlob.url}?_t=${Date.now()}`;
+          
+          const res = await fetch(fetchUrl, {
+            headers: {
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0'
+            }
+          });
+
+          if (res.ok) {
+            const data = (await res.json()) as NetplayRoomStatus;
+            if (data && data.roomId) {
+              inMemoryRooms.set(cleanId, data);
+              return data;
+            }
+          } else if (res.status === 404) {
+            console.log(`[Netplay Storage] Blob for room ${cleanId} returned 404 (room not found).`);
+            inMemoryRooms.delete(cleanId);
+            return null;
+          } else {
+            console.warn(`[Netplay Storage] Blob fetch returned status ${res.status} for ${cleanId}`);
           }
-        });
-        if (res.ok) {
-          const data: NetplayRoomStatus = await res.json();
-          inMemoryRooms.set(cleanId, data);
-          return data;
+        } catch (fetchErr) {
+          console.warn(`[Netplay Storage] Failed to fetch targetBlob url for ${cleanId}:`, fetchErr);
         }
       }
     } catch (err) {
@@ -261,14 +281,18 @@ export async function getRoomStatus(roomId: string): Promise<NetplayRoomStatus |
   }
 
   // 2. Fallback to inMemoryRooms (for local development or cache)
-  const memoryRoom = inMemoryRooms.get(cleanId);
-  if (memoryRoom) {
-    // Check if expired (> 15 mins)
-    if (Date.now() - memoryRoom.createdAt > 15 * 60 * 1000) {
-      inMemoryRooms.delete(cleanId);
-      return null;
+  try {
+    const memoryRoom = inMemoryRooms.get(cleanId);
+    if (memoryRoom) {
+      // Check if expired (> 15 mins)
+      if (Date.now() - memoryRoom.createdAt > 15 * 60 * 1000) {
+        inMemoryRooms.delete(cleanId);
+        return null;
+      }
+      return memoryRoom;
     }
-    return memoryRoom;
+  } catch (memErr) {
+    console.warn(`[Netplay Storage] Memory read error for ${cleanId}:`, memErr);
   }
 
   return null;
