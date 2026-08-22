@@ -218,13 +218,13 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           </div>
 
-          {/* ZONE 2: CENTER LOGO (DISPLAYED LARGER + CLICK TO CHANGE IMAGE) */}
+          {/* ZONE 2: CENTER LOGO (OFFICIAL PERMANENT LOGO) */}
           <div className="flex flex-col items-center justify-center shrink-0 px-2 sm:px-4">
             <div 
               onClick={() => onCategoryChange('HOME')}
               className="cursor-pointer transition-transform hover:scale-105 group"
             >
-              <Logo size="lg" showText={true} allowUpload={isAdmin} />
+              <Logo size="lg" showText={true} />
             </div>
           </div>
 

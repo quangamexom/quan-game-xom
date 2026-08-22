@@ -123,7 +123,11 @@ export default function App() {
       const match = findGameMatch(urlId, games);
       if (match) {
         // If it's not an emulator ROM being loaded directly by EmulatorZone, open detail modal
-        if (!match.romUrl && !window.location.search.includes('netplay_room=')) {
+        const isNetplayInUrl = window.location.search.includes('netplay_room=') || 
+                               window.location.search.includes('room_id=') || 
+                               window.location.search.includes('room=') || 
+                               window.location.search.includes('netplay=true');
+        if (!match.romUrl && !isNetplayInUrl) {
           setSelectedGame(match);
         }
       }

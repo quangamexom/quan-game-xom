@@ -340,6 +340,10 @@ export const EmulatorZone: React.FC = () => {
     return selectedCore;
   };
 
+  const autoLoadedKeyRef = useRef<string>('');
+  const isNetplayInitializingRef = useRef<boolean>(false);
+  const netplaySessionRef = useRef<{ isNetplay: boolean; room: string; role: 'p1' | 'p2'; gameId?: string } | null>(null);
+
   // Complete and thorough teardown of active emulator session
   const terminateActiveEmulator = () => {
     console.log('🛑 [Emulator Teardown] Terminating active game session, destroying canvas & stopping audio...');
@@ -374,6 +378,12 @@ export const EmulatorZone: React.FC = () => {
     setRomError(null);
     setActiveTab('library');
     setUploadFileName(null);
+    setIsNetplayActive(false);
+    setNetplayRoom('');
+    setNetplayRole('p1');
+    isNetplayInitializingRef.current = false;
+    netplaySessionRef.current = null;
+    autoLoadedKeyRef.current = '';
 
     // 4. Update global flags
     if (typeof window !== 'undefined') {
@@ -381,7 +391,7 @@ export const EmulatorZone: React.FC = () => {
       window.dispatchEvent(new CustomEvent('qgx_emulator_state_changed', { detail: { isPlaying: false } }));
 
       // Restore URL to clean root if it had game_id or netplay params
-      if (window.location.search.includes('game_id=') || window.location.search.includes('netplay_room=')) {
+      if (window.location.search.includes('game_id=') || window.location.search.includes('netplay_room=') || window.location.search.includes('room_id=')) {
         window.history.pushState(null, '', '/');
       }
     }
@@ -422,7 +432,34 @@ export const EmulatorZone: React.FC = () => {
     };
   }, []);
 
-  // Launch ROM directly into EmulatorJS Engine (ArrayBuffer -> Application/octet-stream Blob -> ObjectURL)
+  // Reset or Reconnect active game without losing Netplay room or role
+  const handleResetCurrentGame = () => {
+    const targetRom = activeBlobUrlRef.current || currentRomUrl || '';
+    if (!targetRom && !currentGameId) return;
+
+    const currentNetplay = (isNetplayActive || isNetplayInitializingRef.current) && netplayRoom.trim() ? {
+      isNetplay: true,
+      room: netplayRoom.trim(),
+      role: netplayRole
+    } : undefined;
+
+    console.log('[Reset Game] Re-initializing emulator with config:', {
+      gameName: currentRomName,
+      core: selectedCore,
+      gameId: currentGameId,
+      netplay: currentNetplay
+    });
+
+    launchRom(
+      targetRom,
+      currentRomName || 'SNES Game',
+      selectedCore || 'snes',
+      currentGameId || undefined,
+      currentNetplay
+    );
+  };
+
+  // Launch ROM directly into EmulatorJS Engine with strict Async/Await & simultaneous Netplay configuration
   const launchRom = async (
     romUrl: string, 
     gameName: string, 
@@ -439,33 +476,43 @@ export const EmulatorZone: React.FC = () => {
       return;
     }
 
+    const isNetplay = Boolean(netplayOpts?.isNetplay || (netplayOpts?.room && netplayOpts.room.trim().length > 0));
+    const room = (netplayOpts?.room || netplayRoom || '').trim();
+    const role = netplayOpts?.role || netplayRole || 'p2';
+
+    // 1. Enter strict loading state & unmount any previous iframe
     setIsLoadingRom(true);
+    setIsPlaying(false);
+    setCurrentRomUrl(null);
     setRomError(null);
-    setLoadingStepText(`Đang kết nối tải ROM cho ${gameName}...`);
+    setLoadingStepText(isNetplay ? `Đang chuẩn bị kết nối Netplay phòng [${room}] cho ${gameName}...` : `Đang kết nối tải ROM cho ${gameName}...`);
     setActiveTab('play');
 
     if (gameId) {
       setCurrentGameId(gameId);
     }
 
-    if (netplayOpts?.isNetplay) {
+    // 2. Synchronously lock and update Netplay state before starting async fetch
+    if (isNetplay && room) {
+      isNetplayInitializingRef.current = true;
       setIsNetplayActive(true);
-      if (netplayOpts.room) setNetplayRoom(netplayOpts.room);
-      if (netplayOpts.role) setNetplayRole(netplayOpts.role);
+      setNetplayRoom(room);
+      setNetplayRole(role);
+      netplaySessionRef.current = { isNetplay: true, room, role, gameId };
+    } else {
+      isNetplayInitializingRef.current = false;
+      setIsNetplayActive(false);
+      netplaySessionRef.current = null;
     }
 
     // Synchronize browser URL to /?game_id=[id_game] (&netplay_room=...)
     if (typeof window !== 'undefined' && gameId) {
       let targetUrl = `/?game_id=${encodeURIComponent(gameId)}`;
-      if (netplayOpts?.isNetplay || (isNetplayActive && netplayRoom)) {
-        const room = netplayOpts?.room || netplayRoom;
-        const role = netplayOpts?.role || netplayRole;
-        if (room) {
-          targetUrl += `&netplay_room=${encodeURIComponent(room)}&role=${role}`;
-        }
+      if (isNetplay && room) {
+        targetUrl += `&netplay_room=${encodeURIComponent(room)}&room_id=${encodeURIComponent(room)}&role=${role}&netplay=true`;
       }
       if (window.location.search !== targetUrl.replace(/^\//, '')) {
-        window.history.pushState({ gameId, isEmulator: true }, '', targetUrl);
+        window.history.pushState({ gameId, isEmulator: true, isNetplay, room, role }, '', targetUrl);
       }
     }
 
@@ -483,7 +530,7 @@ export const EmulatorZone: React.FC = () => {
         } catch (e) {}
       }
 
-      // Convert remote Vercel Blob or local ROM to a pure application/octet-stream Blob ObjectURL
+      // 3. Await 100% binary download and packaging into application/octet-stream Blob ObjectURL
       const { blobUrl, sizeBytes } = await fetchRomAsBlobUrl(cleanUrl, (step) => {
         setLoadingStepText(step);
       });
@@ -492,39 +539,60 @@ export const EmulatorZone: React.FC = () => {
         activeBlobUrlRef.current = blobUrl;
       }
 
-      setLoadingStepText(`Khởi động lõi giả lập ${core.toUpperCase()} (${(sizeBytes / 1024 / 1024).toFixed(2)} MB)...`);
+      setLoadingStepText(
+        isNetplay 
+          ? `Khởi động nhân Netplay ${core.toUpperCase()} (${role === 'p1' ? 'Host P1' : 'Joiner P2'} - Phòng ${room})...`
+          : `Khởi động lõi giả lập ${core.toUpperCase()} (${(sizeBytes / 1024 / 1024).toFixed(2)} MB)...`
+      );
+
+      // 4. ONLY AFTER BLOB OBJECT URL IS CREATED: Set URL and trigger iframe compilation
       setCurrentRomUrl(blobUrl);
       setCurrentRomName(gameName);
       setSelectedCore(core);
       setIsPlaying(true);
       setIsLoadingRom(false);
+      isNetplayInitializingRef.current = false;
     } catch (err: any) {
       console.error("[Launch ROM Error]:", err);
       setRomError({
-        title: "Lỗi Nạp File ROM",
+        title: isNetplay ? "Lỗi Khởi Tạo Netplay ROM" : "Lỗi Nạp File ROM",
         message: err.message || "Không thể nạp ROM vào bộ nhớ trình giả lập.",
-        hint: "Hãy thử tải lại trang hoặc nạp ROM trực tiếp từ máy tính.",
+        hint: isNetplay 
+          ? "Kiểm tra kết nối mạng và đảm bảo ROM của Chủ phòng (P1) và Khách (P2) có thể truy cập qua Vercel Blob."
+          : "Hãy thử tải lại trang hoặc nạp ROM trực tiếp từ máy tính.",
         originalUrl: romUrl
       });
       setIsLoadingRom(false);
       setIsPlaying(false);
+      isNetplayInitializingRef.current = false;
     }
   };
 
-  // Feature 1: Deep Linking & Auto Load Game from URL on mount & popstate
+  // Feature 1: Deep Linking & Auto Load Game from URL on mount & popstate with Single-Player Lock Guard
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const checkAndAutoLoadFromUrl = () => {
       const searchParams = new URLSearchParams(window.location.search);
       const urlGameId = searchParams.get('game_id') || searchParams.get('game');
-      const urlNetplayRoom = searchParams.get('netplay_room') || searchParams.get('room');
-      const urlRole = (searchParams.get('role') as 'p1' | 'p2') || 'p2';
+      const urlNetplayRoom = (searchParams.get('netplay_room') || searchParams.get('room_id') || searchParams.get('room') || '').trim();
+      const isNetplayFlag = searchParams.get('netplay') === 'true' || Boolean(urlNetplayRoom);
+      const urlRole = (searchParams.get('role') as 'p1' | 'p2') || (searchParams.get('is_p2') === 'true' ? 'p2' : (urlNetplayRoom ? 'p2' : 'p1'));
 
-      if (urlNetplayRoom) {
+      // Check if this exact session was already triggered to prevent duplicate race calls on snesGames update
+      const loadKey = `${urlGameId || ''}_${urlNetplayRoom}_${urlRole}_${isNetplayFlag}`;
+      if (autoLoadedKeyRef.current === loadKey && (isPlaying || isLoadingRom)) {
+        return;
+      }
+
+      // Netplay P2 / Joiner flow
+      if (isNetplayFlag && urlNetplayRoom) {
+        console.log(`[Netplay AutoLoad] Detected Netplay Room="${urlNetplayRoom}", Role="${urlRole}", GameId="${urlGameId}"`);
         setNetplayRoom(urlNetplayRoom);
         setIsNetplayActive(true);
         setNetplayRole(urlRole);
+        setActiveTab('play');
+        isNetplayInitializingRef.current = true;
       }
 
       if (urlGameId) {
@@ -544,13 +612,21 @@ export const EmulatorZone: React.FC = () => {
         });
 
         if (matchedGame && matchedGame.romUrl) {
-          console.log(`[Deep Linking] Detected game_id="${urlGameId}" on URL. Auto loading: ${matchedGame.title}`);
+          // SINGLE PLAYER LOCK GUARD: If Netplay is currently active or initializing, do not let generic single player overwrite it!
+          if (!isNetplayFlag && (isNetplayActive || isNetplayInitializingRef.current)) {
+            console.warn("[Single Player Blocked] Ignoring single player auto-load because Netplay session is active.");
+            return;
+          }
+
+          autoLoadedKeyRef.current = loadKey;
+          console.log(`[Deep Linking] Auto loading: ${matchedGame.title} (Netplay: ${isNetplayFlag ? `Room ${urlNetplayRoom} / ${urlRole}` : 'Single-Player'})`);
+          
           launchRom(
             matchedGame.romUrl,
             matchedGame.title,
             matchedGame.emulatorCore || 'snes',
             matchedGame.id,
-            urlNetplayRoom ? { isNetplay: true, room: urlNetplayRoom, role: urlRole } : undefined
+            isNetplayFlag && urlNetplayRoom ? { isNetplay: true, room: urlNetplayRoom, role: urlRole } : undefined
           );
 
           // Smooth scroll to emulator container after short delay
@@ -576,7 +652,18 @@ export const EmulatorZone: React.FC = () => {
     const handleLaunchEvent = (e: any) => {
       const { romUrl, title, core, gameId, isNetplay, room, role } = e.detail || {};
       if (romUrl) {
-        launchRom(romUrl, title, core || 'snes', gameId, { isNetplay, room, role });
+        // If current session is active Netplay, preserve it unless explicitly overridden
+        const shouldNetplay = isNetplay || ((isNetplayActive || isNetplayInitializingRef.current) && Boolean(netplayRoom));
+        const effectiveRoom = (room || netplayRoom || '').trim();
+        const effectiveRole = role || netplayRole || 'p2';
+
+        launchRom(
+          romUrl, 
+          title, 
+          core || 'snes', 
+          gameId, 
+          shouldNetplay && effectiveRoom ? { isNetplay: true, room: effectiveRoom, role: effectiveRole } : undefined
+        );
       }
     };
 
@@ -584,7 +671,7 @@ export const EmulatorZone: React.FC = () => {
     return () => {
       window.removeEventListener('qgx_launch_game', handleLaunchEvent);
     };
-  }, []);
+  }, [isNetplayActive, netplayRoom, netplayRole]);
 
   // Handle local File ROM upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -605,6 +692,7 @@ export const EmulatorZone: React.FC = () => {
 
     const effectiveRomUrl = normalizeRomUrl(currentRomUrl);
     const resolvedCore = resolveEmulatorCore(selectedCore || 'snes');
+    const safeGameId = currentGameId || (currentRomName ? currentRomName.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'qgx-snes-game');
 
     return `<!DOCTYPE html>
 <html>
@@ -645,26 +733,7 @@ export const EmulatorZone: React.FC = () => {
     ${isNetplayActive && netplayRoom.trim() ? `console.log("🌐 Netplay Active:", ${JSON.stringify(netplayRoom.trim())}, "Role:", ${JSON.stringify(netplayRole)});` : ''}
     console.groupEnd();
 
-    // 1. Diagnostic pre-check: verify ROM byte size & content type
-    (function verifyRom() {
-      var romUrl = ${JSON.stringify(effectiveRomUrl)};
-      if (romUrl && !romUrl.startsWith("blob:") && !romUrl.startsWith("data:")) {
-        fetch(romUrl, { method: "HEAD" })
-          .then(function(res) {
-            var len = res.headers.get("content-length");
-            var type = res.headers.get("content-type");
-            console.log("📦 [ROM Pre-flight Check] Status:", res.status, "| Content-Length:", len ? (parseInt(len) / 1024 / 1024).toFixed(2) + " MB (" + len + " bytes)" : "Unknown", "| Content-Type:", type);
-            if (type && type.includes("text/html")) {
-              console.error("⚠️ [ROM Integrity Warning] The ROM URL returned HTML instead of binary data! This will cause a black screen or crash.");
-            }
-          })
-          .catch(function(err) {
-            console.warn("⚠️ [ROM Pre-flight Check Failed]:", err.message);
-          });
-      }
-    })();
-
-    // 2. EmulatorJS Core Configuration
+    // 1. EmulatorJS Core Configuration - Injected synchronously before loader.js
     window.EJS_player = '#ejs-game-container';
     window.EJS_core = ${JSON.stringify(resolvedCore)};
     window.EJS_gameName = ${JSON.stringify(currentRomName || 'Quán Game Xóm SNES ROM')};
@@ -673,17 +742,18 @@ export const EmulatorZone: React.FC = () => {
     window.EJS_startOnLoaded = true;
     window.EJS_color = '#f59e0b';
     ${isNetplayActive && netplayRoom.trim() ? `
+    // 2. Netplay Simultaneous Boot Config (Host P1 & Joiner P2 Synchronization)
     window.EJS_netplay = true;
     window.EJS_netplayUrl = 'wss://netplay.emulatorjs.org';
     window.EJS_room = ${JSON.stringify(netplayRoom.trim())};
-    window.EJS_gameId = ${JSON.stringify(currentGameId || currentRomName || 'qgx-snes-game')};
-    window.EJS_playerName = ${JSON.stringify(netplayRole === 'p1' ? 'Chủ Phòng (P1)' : 'Khách Vào (P2)')};
+    window.EJS_gameId = ${JSON.stringify(safeGameId)};
+    window.EJS_playerName = ${JSON.stringify(netplayRole === 'p1' ? 'Chủ Phòng (P1)' : 'Khách Tham Gia (P2)')};
     window.EJS_playerNumber = ${netplayRole === 'p1' ? 1 : 2};
     ` : ''}
 
     // 3. Detailed Callbacks & Error Listeners
     window.EJS_onLoad = function() {
-      console.log("✅ [EmulatorJS] System Core loaded successfully.");
+      console.log("✅ [EmulatorJS] System Core & Netplay configuration loaded successfully.");
     };
 
     window.EJS_onGameStart = function() {
@@ -1170,6 +1240,16 @@ export const EmulatorZone: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
+              <button
+                id="btn-reset-current-game"
+                onClick={handleResetCurrentGame}
+                className="px-3.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 hover:text-amber-200 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer flex items-center gap-1.5"
+                title={isNetplayActive ? "Khởi động lại Core và kết nối lại Netplay" : "Khởi động lại Game"}
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>{isNetplayActive ? 'Reset / Kết Nối Lại' : 'Reset Game'}</span>
+              </button>
+
               <ShareGameMenu
                 game={{
                   id: currentGameId || currentRomName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
@@ -1238,20 +1318,23 @@ export const EmulatorZone: React.FC = () => {
 
                   <div className="space-y-1 max-w-md">
                     <h4 className="text-base font-bold text-white font-display uppercase tracking-wide">
-                      Đang Tải ROM SNES Qua Server Proxy
+                      {isNetplayActive ? `Đang Chuẩn Bị Netplay (${netplayRole === 'p1' ? 'Chủ Phòng P1' : 'Khách P2'})` : 'Đang Tải ROM SNES'}
                     </h4>
                     <p className="text-xs font-mono text-amber-300">
                       {loadingStepText || "Đang kết nối ROM..."}
                     </p>
                     <p className="text-[11px] text-slate-400 font-body mt-2">
-                      Trình duyệt đang tải ROM an toàn qua route /api/rom-proxy nhằm vượt lỗi CORS Google Drive.
+                      {isNetplayActive 
+                        ? `Hệ thống nạp nhị phân ROM đầy đủ trước khi khởi tạo Netplay phòng [${netplayRoom}], đảm bảo đồng bộ mạng không bị giật lag.`
+                        : 'Trình duyệt đang nạp ROM vào bộ nhớ nhị phân an toàn vượt lỗi CORS.'
+                      }
                     </p>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Error Message Container when Google Drive link is invalid or private */}
+            {/* Error Message Container when ROM link is invalid or private */}
             {romError && !isLoadingRom && (
               <div className="absolute inset-0 z-10 p-6 sm:p-10 flex flex-col items-center justify-center bg-slate-950/95 text-center overflow-y-auto">
                 <div className="p-4 rounded-3xl bg-red-500/10 border border-red-500/30 text-red-400 mb-4 inline-flex">
@@ -1288,11 +1371,17 @@ export const EmulatorZone: React.FC = () => {
                   {romError.originalUrl && (
                     <button
                       id="btn-retry-launch-rom"
-                      onClick={() => launchRom(romError.originalUrl || '', currentRomName, selectedCore, currentGameId || undefined)}
+                      onClick={() => launchRom(
+                        romError.originalUrl || '', 
+                        currentRomName, 
+                        selectedCore, 
+                        currentGameId || undefined,
+                        isNetplayActive && netplayRoom.trim() ? { isNetplay: true, room: netplayRoom.trim(), role: netplayRole } : undefined
+                      )}
                       className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs font-mono uppercase tracking-wider transition-all shadow-lg flex items-center gap-2 cursor-pointer"
                     >
                       <RotateCcw className="w-4 h-4" />
-                      <span>Thử Lại Ngay</span>
+                      <span>Thử Lại Ngay {isNetplayActive ? '(Netplay 2P)' : ''}</span>
                     </button>
                   )}
 
