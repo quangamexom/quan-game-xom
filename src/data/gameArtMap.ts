@@ -554,6 +554,26 @@ export const KNOWN_GAME_ART: Record<string, StaticGameArt> = {
     bannerImage: 'https://cdn.cloudflare.steamstatic.com/steam/apps/203140/header.jpg',
     rating: 92,
     genres: ['Lén Lút', 'Hành Động']
+  },
+  // Biker Mice from Mars (SNES)
+  'biker mice from mars': {
+    coverImage: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=1200&auto=format&fit=crop',
+    rating: 98,
+    genres: ['SNES', 'Đua Xe', 'Bắn Súng']
+  },
+  'biker mice': {
+    coverImage: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=1200&auto=format&fit=crop',
+    rating: 98,
+    genres: ['SNES', 'Đua Xe', 'Bắn Súng']
+  },
+  // Aladdin (SNES)
+  'aladdin': {
+    coverImage: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop',
+    bannerImage: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop',
+    rating: 97,
+    genres: ['SNES', 'Hành Động', 'Kinh Điển']
   }
 };
 

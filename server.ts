@@ -826,6 +826,78 @@ app.delete("/api/admin/blob/delete", async (req, res) => {
   }
 });
 
+// 4.9. Proxy ROM files from Google Drive / external sources with full CORS and streaming support
+app.get("/api/proxy-rom", async (req, res) => {
+  try {
+    let rawUrl = req.query.url as string;
+    const fileId = req.query.id as string;
+
+    if (!rawUrl && !fileId) {
+      return res.status(400).json({ error: "Missing 'url' or 'id' query parameter" });
+    }
+
+    let targetFileId = fileId;
+    if (!targetFileId && rawUrl) {
+      const driveMatch = rawUrl.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=|uc\?export=download&id=)|id=)([a-zA-Z0-9_-]{25,})/);
+      if (driveMatch && driveMatch[1]) {
+        targetFileId = driveMatch[1];
+      }
+    }
+
+    // Direct local fast-path for known bundled ROMs
+    if (targetFileId === '1i9fsfy5lM-eKcQIh1raZpx7etQlGd-Mt') {
+      const localPath = path.join(process.cwd(), "public", "assets", "roms", "biker-mice-from-mars.sfc");
+      if (fs.existsSync(localPath)) {
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("Content-Type", "application/octet-stream");
+        return res.sendFile(localPath);
+      }
+    } else if (targetFileId === '1QGgmop-JEIKZ6kyV2HcHjHugdzb88Q7f') {
+      const localPath = path.join(process.cwd(), "public", "assets", "roms", "aladdin.sfc");
+      if (fs.existsSync(localPath)) {
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("Content-Type", "application/octet-stream");
+        return res.sendFile(localPath);
+      }
+    }
+
+    if (targetFileId) {
+      rawUrl = `https://drive.google.com/uc?export=download&id=${targetFileId}`;
+    }
+
+    // Set permissive CORS headers for EmulatorJS
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "*");
+    res.setHeader("Cache-Control", "public, max-age=86400");
+
+    const response = await fetch(rawUrl, {
+      redirect: "follow",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      }
+    });
+
+    if (!response.ok) {
+      return res.status(response.status).json({ error: `Failed to fetch ROM: HTTP ${response.status}` });
+    }
+
+    const contentType = response.headers.get("content-type") || "application/octet-stream";
+    const contentLength = response.headers.get("content-length");
+    
+    res.setHeader("Content-Type", contentType);
+    if (contentLength) {
+      res.setHeader("Content-Length", contentLength);
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    return res.send(Buffer.from(arrayBuffer));
+  } catch (err: any) {
+    console.error("[Proxy ROM Error]:", err);
+    return res.status(500).json({ error: err.message || "Failed to proxy ROM file" });
+  }
+});
+
 // 5. SNES Google Sheet games endpoint (Merged with Vercel Blob SNES Games)
 app.get("/api/snes-games", async (req, res) => {
   const defaultTestGames = [
@@ -843,8 +915,8 @@ app.get("/api/snes-games", async (req, res) => {
       rating: 4.9,
       genres: ["SNES", "Hành Động", "Kinh Điển"],
       description: "Hóa thân thành Aladdin cùng chú khỉ Abu trong chuyến phiêu lưu kinh điển qua vương quốc Agrabah trên hệ máy Super Nintendo 16-bit mượt mà.",
-      romUrl: "https://archive.org/download/snes-romset-ultra/Aladdin%20%28USA%29.sfc",
-      downloadUrl: "https://archive.org/download/snes-romset-ultra/Aladdin%20%28USA%29.sfc",
+      romUrl: "/assets/roms/aladdin.sfc",
+      downloadUrl: "https://drive.google.com/file/d/1QGgmop-JEIKZ6kyV2HcHjHugdzb88Q7f/view?usp=sharing",
       emulatorCore: "snes",
       isFeatured: true,
       isPopular: true,
@@ -865,8 +937,8 @@ app.get("/api/snes-games", async (req, res) => {
       rating: 4.95,
       genres: ["SNES", "Đua Xe", "Bắn Súng"],
       description: "Game đua xe mô tô chiến đấu huyền thoại của Konami trên SNES với 3 chú chuột chiến binh Throttle, Modo và Vinnie cùng kho vũ khí tối tân.",
-      romUrl: "https://archive.org/download/snes-romset-ultra/Biker%20Mice%20from%20Mars%20%28USA%29.sfc",
-      downloadUrl: "https://archive.org/download/snes-romset-ultra/Biker%20Mice%20from%20Mars%20%28USA%29.sfc",
+      romUrl: "/assets/roms/biker-mice-from-mars.sfc",
+      downloadUrl: "https://drive.google.com/file/d/1i9fsfy5lM-eKcQIh1raZpx7etQlGd-Mt/view?usp=sharing",
       emulatorCore: "snes",
       isFeatured: true,
       isPopular: true,

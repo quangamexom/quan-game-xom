@@ -43,62 +43,110 @@ export interface PresetRom {
   isSnesSheet?: boolean;
 }
 
+export function normalizeRomUrl(rawUrl: string): string {
+  if (!rawUrl) return '';
+  const trimmed = rawUrl.trim();
+
+  if (trimmed.startsWith('blob:') || trimmed.startsWith('data:')) {
+    return trimmed;
+  }
+
+  // If already a relative path, convert to absolute URL
+  if (trimmed.startsWith('/')) {
+    if (typeof window !== 'undefined' && window.location?.origin) {
+      return `${window.location.origin}${trimmed}`;
+    }
+    return trimmed;
+  }
+
+  // Check if it's a Google Drive link
+  const driveMatch = trimmed.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=|uc\?export=download&id=)|id=)([a-zA-Z0-9_-]{25,})/);
+  if (driveMatch && driveMatch[1]) {
+    const fileId = driveMatch[1];
+    if (fileId === '1i9fsfy5lM-eKcQIh1raZpx7etQlGd-Mt') {
+      return typeof window !== 'undefined' && window.location?.origin
+        ? `${window.location.origin}/assets/roms/biker-mice-from-mars.sfc`
+        : '/assets/roms/biker-mice-from-mars.sfc';
+    }
+    if (fileId === '1QGgmop-JEIKZ6kyV2HcHjHugdzb88Q7f') {
+      return typeof window !== 'undefined' && window.location?.origin
+        ? `${window.location.origin}/assets/roms/aladdin.sfc`
+        : '/assets/roms/aladdin.sfc';
+    }
+    // Route any other Google Drive file through /api/proxy-rom?id=...
+    if (typeof window !== 'undefined' && window.location?.origin) {
+      return `${window.location.origin}/api/proxy-rom?id=${fileId}`;
+    }
+    return `https://drive.google.com/uc?export=download&id=${fileId}`;
+  }
+
+  // Check if it is an archive.org link with broken / placeholder items
+  if (trimmed.includes('snes-romset-ultra') || trimmed.includes('archive.org')) {
+    if (trimmed.toLowerCase().includes('biker')) {
+      return typeof window !== 'undefined' && window.location?.origin
+        ? `${window.location.origin}/assets/roms/biker-mice-from-mars.sfc`
+        : '/assets/roms/biker-mice-from-mars.sfc';
+    }
+    if (trimmed.toLowerCase().includes('aladdin')) {
+      return typeof window !== 'undefined' && window.location?.origin
+        ? `${window.location.origin}/assets/roms/aladdin.sfc`
+        : '/assets/roms/aladdin.sfc';
+    }
+  }
+
+  return trimmed;
+}
+
+// Map user-friendly or legacy core names to exact EmulatorJS core identifiers
+export const EMULATOR_CORE_MAP: Record<string, string> = {
+  'snes': 'snes9x',
+  'snes9x': 'snes9x',
+  'nes': 'fceumm',
+  'fceumm': 'fceumm',
+  'nestopia': 'nestopia',
+  'gba': 'mgba',
+  'mgba': 'mgba',
+  'gbc': 'gambatte',
+  'gb': 'gambatte',
+  'gambatte': 'gambatte',
+  'n64': 'mupen64plus_next',
+  'mupen64plus_next': 'mupen64plus_next',
+  'nds': 'desmume',
+  'desmume': 'desmume',
+  'melonds': 'melonds',
+  'segaMD': 'genesis_plus_gx',
+  'genesis_plus_gx': 'genesis_plus_gx',
+  'megadrive': 'genesis_plus_gx',
+  'genesis': 'genesis_plus_gx',
+  'psx': 'pcsx_rearmed',
+  'pcsx_rearmed': 'pcsx_rearmed'
+};
+
+export function resolveEmulatorCore(core: string): string {
+  const normalized = (core || '').trim().toLowerCase();
+  return EMULATOR_CORE_MAP[normalized] || EMULATOR_CORE_MAP[core] || core || 'snes9x';
+}
+
 const CLASSIC_PRESET_ROMS: PresetRom[] = [
-  {
-    id: 'snes-aladdin-preset',
-    title: 'Aladdin',
-    system: 'snes',
-    systemName: 'Super Nintendo (SNES)',
-    romUrl: 'https://drive.google.com/uc?export=download&id=1QGgmop-JEIKZ6kyV2HcHjHugdzb88Q7f',
-    coverArt: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop',
-    description: 'Game phiêu lưu hành động 16-bit kinh điển đưa bạn cùng chú khỉ Abu khám phá vương quốc Agrabah trên hệ máy SNES.',
-    isSnesSheet: true
-  },
   {
     id: 'snes-biker-mice-preset',
     title: 'Biker Mice from Mars',
     system: 'snes',
     systemName: 'Super Nintendo (SNES)',
-    romUrl: 'https://drive.google.com/file/d/1i9fsfy5lM-eKcQIh1raZpx7etQlGd-Mt/view',
+    romUrl: '/assets/roms/biker-mice-from-mars.sfc',
     coverArt: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop',
     description: 'Game đua xe bắn súng chuột không gian huyền thoại của Konami trên SNES với tốc độ cao và vũ khí uy lực.',
     isSnesSheet: true
   },
   {
-    id: 'nes-2048',
-    title: '2048 (NES Edition)',
-    system: 'nes',
-    systemName: 'Nintendo (NES)',
-    romUrl: 'https://raw.githubusercontent.com/pubby/2048-nes/master/2048.nes',
+    id: 'snes-aladdin-preset',
+    title: 'Aladdin',
+    system: 'snes',
+    systemName: 'Super Nintendo (SNES)',
+    romUrl: '/assets/roms/aladdin.sfc',
     coverArt: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop',
-    description: 'Trò chơi xếp số 2048 nổi tiếng được lập trình riêng cho hệ máy NES cổ điển.'
-  },
-  {
-    id: 'gba-celeste',
-    title: 'Celeste Classic (GBA Port)',
-    system: 'gba',
-    systemName: 'Game Boy Advance',
-    romUrl: 'https://raw.githubusercontent.com/K3333333333/celeste-gba/master/celeste.gba',
-    coverArt: 'https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?w=600&auto=format&fit=crop',
-    description: 'Bản leo núi Celeste huyền thoại được chuyển thể mượt mà lên Game Boy Advance.'
-  },
-  {
-    id: 'gbc-tobu',
-    title: 'Tobu Tobu Girl Deluxe (GBC)',
-    system: 'gbc',
-    systemName: 'Game Boy Color',
-    romUrl: 'https://raw.githubusercontent.com/tangramgames/tobu-tobu-girl-deluxe/master/tobutobugirl.gbc',
-    coverArt: 'https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=600&auto=format&fit=crop',
-    description: 'Game Arcade leo tháp phong cách Anime cực hay dành cho Game Boy Color.'
-  },
-  {
-    id: 'nes-flappy',
-    title: 'Flappy Bird (NES)',
-    system: 'nes',
-    systemName: 'Nintendo (NES)',
-    romUrl: 'https://raw.githubusercontent.com/gutiguti/flappy-bird-nes/master/flappy.nes',
-    coverArt: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=600&auto=format&fit=crop',
-    description: 'Flappy Bird phiên bản 8-bit đồ họa hoài niệm cho máy điện tử băng NES.'
+    description: 'Game phiêu lưu hành động 16-bit kinh điển đưa bạn cùng chú khỉ Abu khám phá vương quốc Agrabah trên hệ máy SNES.',
+    isSnesSheet: true
   }
 ];
 
@@ -202,7 +250,7 @@ export const EmulatorZone: React.FC = () => {
     return selectedCore;
   };
 
-  // Launch ROM directly into EmulatorJS Engine (Vercel Blob direct URL or local file ObjectURL)
+  // Launch ROM directly into EmulatorJS Engine (Vercel Blob direct URL, local assets or local file ObjectURL)
   const launchRom = (romUrl: string, gameName: string, core: string = 'snes') => {
     if (!romUrl || romUrl.trim().length === 0) {
       setRomError({
@@ -219,7 +267,7 @@ export const EmulatorZone: React.FC = () => {
     setActiveTab('play');
 
     try {
-      const cleanUrl = romUrl.trim();
+      const cleanUrl = normalizeRomUrl(romUrl);
       setCurrentRomUrl(cleanUrl);
       setCurrentRomName(gameName);
       setSelectedCore(core);
@@ -255,9 +303,12 @@ export const EmulatorZone: React.FC = () => {
     launchRom(objectUrl, cleanName, detectedCore);
   };
 
-  // Generate isolated clean HTML for EmulatorJS iframe with default controls
+  // Generate isolated clean HTML for EmulatorJS iframe with default controls and deep debugging
   const iframeSrcDoc = useMemo(() => {
     if (!isPlaying || !currentRomUrl) return '';
+
+    const effectiveRomUrl = normalizeRomUrl(currentRomUrl);
+    const resolvedCore = resolveEmulatorCore(selectedCore || 'snes');
 
     return `<!DOCTYPE html>
 <html>
@@ -277,20 +328,75 @@ export const EmulatorZone: React.FC = () => {
     #ejs-game-container {
       width: 100%;
       height: 100%;
+      display: block;
+      position: relative;
+    }
+    #ejs-game-container canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block !important;
+      object-fit: contain;
     }
   </style>
 </head>
 <body>
   <div id="ejs-game-container"></div>
   <script>
+    console.group("🎮 [EmulatorJS Diagnostic]");
+    console.log("➡️ Target Game:", ${JSON.stringify(currentRomName || 'Quán Game Xóm SNES ROM')});
+    console.log("➡️ Selected Core:", ${JSON.stringify(selectedCore)}, "-> Resolved Core:", ${JSON.stringify(resolvedCore)});
+    console.log("➡️ Effective ROM URL:", ${JSON.stringify(effectiveRomUrl)});
+    console.groupEnd();
+
+    // 1. Diagnostic pre-check: verify ROM byte size & content type
+    (function verifyRom() {
+      var romUrl = ${JSON.stringify(effectiveRomUrl)};
+      if (romUrl && !romUrl.startsWith("blob:") && !romUrl.startsWith("data:")) {
+        fetch(romUrl, { method: "HEAD" })
+          .then(function(res) {
+            var len = res.headers.get("content-length");
+            var type = res.headers.get("content-type");
+            console.log("📦 [ROM Pre-flight Check] Status:", res.status, "| Content-Length:", len ? (parseInt(len) / 1024 / 1024).toFixed(2) + " MB (" + len + " bytes)" : "Unknown", "| Content-Type:", type);
+            if (type && type.includes("text/html")) {
+              console.error("⚠️ [ROM Integrity Warning] The ROM URL returned HTML instead of binary data! This will cause a black screen or crash.");
+            }
+          })
+          .catch(function(err) {
+            console.warn("⚠️ [ROM Pre-flight Check Failed]:", err.message);
+          });
+      }
+    })();
+
+    // 2. EmulatorJS Core Configuration
     window.EJS_player = '#ejs-game-container';
-    window.EJS_core = ${JSON.stringify(selectedCore || 'snes')};
+    window.EJS_core = ${JSON.stringify(resolvedCore)};
     window.EJS_gameName = ${JSON.stringify(currentRomName || 'Quán Game Xóm SNES ROM')};
-    window.EJS_gameUrl = ${JSON.stringify(currentRomUrl)};
+    window.EJS_gameUrl = ${JSON.stringify(effectiveRomUrl)};
     window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
     window.EJS_startOnLoaded = true;
     window.EJS_color = '#f59e0b';
     ${netplayRoom.trim() ? `window.EJS_room = ${JSON.stringify(netplayRoom.trim())};` : ''}
+
+    // 3. Detailed Callbacks & Error Listeners
+    window.EJS_onLoad = function() {
+      console.log("✅ [EmulatorJS] System Core loaded successfully.");
+    };
+
+    window.EJS_onGameStart = function() {
+      console.log("🚀 [EmulatorJS] Game execution loop started! Audio/Video initialized.");
+    };
+
+    window.EJS_onLogError = function(err) {
+      console.error("❌ [EmulatorJS Engine Error Callback]:", err);
+    };
+
+    window.addEventListener("error", function(e) {
+      console.error("💥 [Window Error in Emulator Frame]:", e.message, "at", e.filename, ":", e.lineno);
+    });
+
+    window.addEventListener("unhandledrejection", function(e) {
+      console.error("💥 [Unhandled Promise Rejection in Emulator Frame]:", e.reason);
+    });
   </script>
   <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
 </body>
