@@ -18,7 +18,8 @@ export function getGameShareUrl(game: GameItem, netplay?: NetplayShareOptions): 
   let url = `${origin}/?game_id=${safeId}`;
 
   if (netplay?.room) {
-    url += `&netplay_room=${encodeURIComponent(netplay.room)}&room_id=${encodeURIComponent(netplay.room)}&role=${netplay.role || 'p2'}&netplay=true`;
+    const cleanRoom = netplay.room.trim().toLowerCase();
+    url += `&netplay_room=${encodeURIComponent(cleanRoom)}&room_id=${encodeURIComponent(cleanRoom)}&role=${netplay.role || 'p2'}&netplay=true`;
   }
 
   return url;

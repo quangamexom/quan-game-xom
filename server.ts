@@ -928,7 +928,9 @@ app.post("/api/admin/games/update-description", async (req, res) => {
 // Netplay Waiting Room Endpoints (2-Step Waiting Room Synchronization)
 app.post("/api/netplay/create-room", async (req, res) => {
   try {
-    const { room, gameId } = req.body;
+    const rawRoom = (req.body?.room || '') as string;
+    const room = rawRoom.trim().toLowerCase();
+    const gameId = req.body?.gameId;
     if (!room) {
       return res.status(400).json({ success: false, error: "Mã phòng không hợp lệ" });
     }
@@ -942,7 +944,8 @@ app.post("/api/netplay/create-room", async (req, res) => {
 
 app.post("/api/netplay/join-room", async (req, res) => {
   try {
-    const { room } = req.body;
+    const rawRoom = (req.body?.room || '') as string;
+    const room = rawRoom.trim().toLowerCase();
     if (!room) {
       return res.status(400).json({ success: false, error: "Mã phòng không hợp lệ" });
     }
@@ -956,11 +959,13 @@ app.post("/api/netplay/join-room", async (req, res) => {
 
 app.post("/api/netplay/set-ready", async (req, res) => {
   try {
-    const { room, role } = req.body;
+    const rawRoom = (req.body?.room || '') as string;
+    const room = rawRoom.trim().toLowerCase();
+    const role = req.body?.role || 'p2';
     if (!room) {
       return res.status(400).json({ success: false, error: "Mã phòng không hợp lệ" });
     }
-    const status = await setPlayerReady(room, role || 'p2');
+    const status = await setPlayerReady(room, role);
     return res.json({ success: true, room, status });
   } catch (err: any) {
     console.error("[Set Ready Netplay Room Error]:", err);
@@ -970,7 +975,8 @@ app.post("/api/netplay/set-ready", async (req, res) => {
 
 app.post("/api/netplay/start-room", async (req, res) => {
   try {
-    const { room } = req.body;
+    const rawRoom = (req.body?.room || '') as string;
+    const room = rawRoom.trim().toLowerCase();
     if (!room) {
       return res.status(400).json({ success: false, error: "Mã phòng không hợp lệ" });
     }
@@ -984,10 +990,17 @@ app.post("/api/netplay/start-room", async (req, res) => {
 
 app.get("/api/netplay/room-status", async (req, res) => {
   try {
-    const room = req.query.room as string;
+    const rawRoom = (req.query.room || '') as string;
+    const room = rawRoom.trim().toLowerCase();
     if (!room) {
       return res.status(400).json({ success: false, error: "Thiếu tham số 'room'" });
     }
+
+    // Anti-cache headers to prevent intermediate proxies / browser caching
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+
     const status = await getRoomStatus(room);
     return res.json({ success: true, room, status });
   } catch (err: any) {
@@ -998,7 +1011,8 @@ app.get("/api/netplay/room-status", async (req, res) => {
 
 app.all(["/api/netplay/delete-room", "/api/netplay/leave-room"], async (req, res) => {
   try {
-    const room = (req.body?.room || req.query?.room) as string;
+    const rawRoom = (req.body?.room || req.query?.room || '') as string;
+    const room = rawRoom.trim().toLowerCase();
     if (room) {
       await deleteNetplayRoom(room);
     }

@@ -47,7 +47,7 @@ export async function createNetplayRoom(roomId: string, meta?: { gameId?: string
   // Run cleanup in background
   cleanOldRooms().catch(() => {});
 
-  const cleanId = roomId.trim().toUpperCase();
+  const cleanId = roomId.trim().toLowerCase();
   const now = Date.now();
   const roomData: NetplayRoomStatus = {
     roomId: cleanId,
@@ -66,14 +66,14 @@ export async function createNetplayRoom(roomId: string, meta?: { gameId?: string
   if (blobToken) {
     try {
       const blobPath = `netplay-rooms/${cleanId}.json`;
-      await put(blobPath, JSON.stringify(roomData), {
+      const blobResult = await put(blobPath, JSON.stringify(roomData), {
         access: "public",
         token: blobToken,
         addRandomSuffix: false,
         allowOverwrite: true,
         contentType: "application/json"
       });
-      console.log(`[Netplay Storage] Created room on Vercel Blob: ${cleanId}`);
+      console.log(`[Netplay Storage] Created room on Vercel Blob: ${cleanId} -> URL: ${blobResult.url}`);
     } catch (err) {
       console.warn(`[Netplay Storage] Failed to save room to Vercel Blob (${cleanId}):`, err);
     }
@@ -83,7 +83,7 @@ export async function createNetplayRoom(roomId: string, meta?: { gameId?: string
 }
 
 export async function joinNetplayRoom(roomId: string): Promise<NetplayRoomStatus | null> {
-  const cleanId = roomId.trim().toUpperCase();
+  const cleanId = roomId.trim().toLowerCase();
   let room = inMemoryRooms.get(cleanId);
 
   if (!room) {
@@ -112,14 +112,14 @@ export async function joinNetplayRoom(roomId: string): Promise<NetplayRoomStatus
   if (blobToken) {
     try {
       const blobPath = `netplay-rooms/${cleanId}.json`;
-      await put(blobPath, JSON.stringify(room), {
+      const blobResult = await put(blobPath, JSON.stringify(room), {
         access: "public",
         token: blobToken,
         addRandomSuffix: false,
         allowOverwrite: true,
         contentType: "application/json"
       });
-      console.log(`[Netplay Storage] Player 2 joined room ${cleanId}`);
+      console.log(`[Netplay Storage] Player 2 joined room on Vercel Blob: ${cleanId} -> URL: ${blobResult.url}`);
     } catch (err) {
       console.warn(`[Netplay Storage] Failed to update room on Vercel Blob (${cleanId}):`, err);
     }
@@ -129,7 +129,7 @@ export async function joinNetplayRoom(roomId: string): Promise<NetplayRoomStatus
 }
 
 export async function setPlayerReady(roomId: string, role: 'p1' | 'p2' = 'p2'): Promise<NetplayRoomStatus | null> {
-  const cleanId = roomId.trim().toUpperCase();
+  const cleanId = roomId.trim().toLowerCase();
   let room = inMemoryRooms.get(cleanId);
 
   if (!room) {
@@ -162,14 +162,14 @@ export async function setPlayerReady(roomId: string, role: 'p1' | 'p2' = 'p2'): 
   if (blobToken) {
     try {
       const blobPath = `netplay-rooms/${cleanId}.json`;
-      await put(blobPath, JSON.stringify(room), {
+      const blobResult = await put(blobPath, JSON.stringify(room), {
         access: "public",
         token: blobToken,
         addRandomSuffix: false,
         allowOverwrite: true,
         contentType: "application/json"
       });
-      console.log(`[Netplay Storage] Player ${role} is ready in room ${cleanId}`);
+      console.log(`[Netplay Storage] Player ${role} is READY in room on Vercel Blob: ${cleanId} (p2Ready: ${room.p2Ready}) -> URL: ${blobResult.url}`);
     } catch (err) {
       console.warn(`[Netplay Storage] Failed to update ready state on Vercel Blob (${cleanId}):`, err);
     }
@@ -179,7 +179,7 @@ export async function setPlayerReady(roomId: string, role: 'p1' | 'p2' = 'p2'): 
 }
 
 export async function startNetplayRoom(roomId: string): Promise<NetplayRoomStatus | null> {
-  const cleanId = roomId.trim().toUpperCase();
+  const cleanId = roomId.trim().toLowerCase();
   let room = inMemoryRooms.get(cleanId);
 
   if (!room) {
@@ -208,14 +208,14 @@ export async function startNetplayRoom(roomId: string): Promise<NetplayRoomStatu
   if (blobToken) {
     try {
       const blobPath = `netplay-rooms/${cleanId}.json`;
-      await put(blobPath, JSON.stringify(room), {
+      const blobResult = await put(blobPath, JSON.stringify(room), {
         access: "public",
         token: blobToken,
         addRandomSuffix: false,
         allowOverwrite: true,
         contentType: "application/json"
       });
-      console.log(`[Netplay Storage] Room ${cleanId} marked as STARTED`);
+      console.log(`[Netplay Storage] Room ${cleanId} marked as STARTED on Vercel Blob -> URL: ${blobResult.url}`);
     } catch (err) {
       console.warn(`[Netplay Storage] Failed to mark room started on Vercel Blob (${cleanId}):`, err);
     }
@@ -225,31 +225,29 @@ export async function startNetplayRoom(roomId: string): Promise<NetplayRoomStatu
 }
 
 export async function getRoomStatus(roomId: string): Promise<NetplayRoomStatus | null> {
-  const cleanId = roomId.trim().toUpperCase();
-  const memoryRoom = inMemoryRooms.get(cleanId);
-  if (memoryRoom) {
-    // Check if expired (> 15 mins)
-    if (Date.now() - memoryRoom.createdAt > 15 * 60 * 1000) {
-      inMemoryRooms.delete(cleanId);
-      return null;
-    }
-    return memoryRoom;
-  }
+  const cleanId = roomId.trim().toLowerCase();
 
+  // 1. If Vercel Blob token exists, always fetch fresh data from Blob with anti-cache headers
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
   if (blobToken) {
     try {
       const { blobs } = await list({ token: blobToken, prefix: `netplay-rooms/${cleanId}` });
-      const targetBlob = blobs.find(b => b.pathname.includes(`${cleanId}.json`));
+      const targetBlob = blobs.find(b => b.pathname === `netplay-rooms/${cleanId}.json` || b.pathname.includes(`${cleanId}.json`));
       if (targetBlob) {
-        // Check age
+        // Check age (> 15 mins)
         if (Date.now() - new Date(targetBlob.uploadedAt).getTime() > 15 * 60 * 1000) {
           await del(targetBlob.url, { token: blobToken });
+          inMemoryRooms.delete(cleanId);
           return null;
         }
 
         const res = await fetch(`${targetBlob.url}?t=${Date.now()}`, {
-          headers: { 'Cache-Control': 'no-cache' }
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
         });
         if (res.ok) {
           const data: NetplayRoomStatus = await res.json();
@@ -262,18 +260,29 @@ export async function getRoomStatus(roomId: string): Promise<NetplayRoomStatus |
     }
   }
 
+  // 2. Fallback to inMemoryRooms (for local development or cache)
+  const memoryRoom = inMemoryRooms.get(cleanId);
+  if (memoryRoom) {
+    // Check if expired (> 15 mins)
+    if (Date.now() - memoryRoom.createdAt > 15 * 60 * 1000) {
+      inMemoryRooms.delete(cleanId);
+      return null;
+    }
+    return memoryRoom;
+  }
+
   return null;
 }
 
 export async function deleteNetplayRoom(roomId: string): Promise<boolean> {
-  const cleanId = roomId.trim().toUpperCase();
+  const cleanId = roomId.trim().toLowerCase();
   inMemoryRooms.delete(cleanId);
 
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
   if (blobToken) {
     try {
       const { blobs } = await list({ token: blobToken, prefix: `netplay-rooms/${cleanId}` });
-      const targetBlob = blobs.find(b => b.pathname.includes(`${cleanId}.json`));
+      const targetBlob = blobs.find(b => b.pathname === `netplay-rooms/${cleanId}.json` || b.pathname.includes(`${cleanId}.json`));
       if (targetBlob) {
         await del(targetBlob.url, { token: blobToken });
         console.log(`[Netplay Storage] Deleted room from Vercel Blob: ${cleanId}`);
@@ -285,3 +294,4 @@ export async function deleteNetplayRoom(roomId: string): Promise<boolean> {
 
   return true;
 }
+

@@ -449,7 +449,8 @@ export const EmulatorZone: React.FC = () => {
 
   // Start hosting a Netplay session (2-Step Waiting Room: Host P1)
   const startHostingNetplay = async (game: { romUrl: string; title: string; core?: string; id?: string; coverArt?: string }, customRoom?: string) => {
-    const room = customRoom?.trim() || netplayRoom.trim() || ('QGX-' + Math.random().toString(36).substring(2, 8).toUpperCase());
+    const rawRoom = customRoom?.trim() || netplayRoom.trim() || ('qgx-' + Math.random().toString(36).substring(2, 8));
+    const room = rawRoom.toLowerCase();
     
     // Teardown any running emulator before opening waiting room
     if (activeBlobUrlRef.current && activeBlobUrlRef.current.startsWith('blob:')) {
@@ -509,6 +510,7 @@ export const EmulatorZone: React.FC = () => {
 
     // 2. Register room on server / Vercel Blob
     try {
+      console.log(`[Netplay Host] 👑 Calling POST /api/netplay/create-room for room="${room}"...`);
       const res = await fetch('/api/netplay/create-room', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -516,7 +518,10 @@ export const EmulatorZone: React.FC = () => {
       });
       if (res.ok) {
         const data = await res.json();
+        console.log(`[Netplay Host] ✅ Create-room response:`, data);
         if (data.status) setNetplayRoomStatus(data.status);
+      } else {
+        console.error(`[Netplay Host] ❌ Create-room failed: HTTP ${res.status}`);
       }
     } catch (err) {
       console.warn('[Netplay Create Room API Warning]:', err);
@@ -525,7 +530,7 @@ export const EmulatorZone: React.FC = () => {
 
   // Join a Netplay session (2-Step Waiting Room: Joiner P2)
   const startJoinerNetplay = async (game: { romUrl: string; title: string; core?: string; id?: string; coverArt?: string }, room: string) => {
-    const cleanRoom = room.trim().toUpperCase();
+    const cleanRoom = room.trim().toLowerCase();
     
     // Teardown any running emulator before opening waiting room
     if (activeBlobUrlRef.current && activeBlobUrlRef.current.startsWith('blob:')) {
@@ -579,6 +584,7 @@ export const EmulatorZone: React.FC = () => {
 
     // 2. Notify server that P2 joined
     try {
+      console.log(`[Netplay Joiner] 🎮 Calling POST /api/netplay/join-room for room="${cleanRoom}"...`);
       const res = await fetch('/api/netplay/join-room', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -586,7 +592,10 @@ export const EmulatorZone: React.FC = () => {
       });
       if (res.ok) {
         const data = await res.json();
+        console.log(`[Netplay Joiner] ✅ Join-room response:`, data);
         if (data.status) setNetplayRoomStatus(data.status);
+      } else {
+        console.error(`[Netplay Joiner] ❌ Join-room failed: HTTP ${res.status}`);
       }
     } catch (err) {
       console.warn('[Netplay Join Room API Warning]:', err);
@@ -596,16 +605,21 @@ export const EmulatorZone: React.FC = () => {
   // Joiner clicks "Sẵn Sàng" button
   const handleJoinerSetReady = async () => {
     if (!netplayRoom) return;
+    const cleanRoom = netplayRoom.trim().toLowerCase();
     setIsJoinerReady(true);
+    console.log(`[Netplay Joiner] 🚀 Calling POST /api/netplay/set-ready for room="${cleanRoom}" (role: p2)...`);
     try {
       const res = await fetch('/api/netplay/set-ready', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ room: netplayRoom, role: 'p2' })
+        body: JSON.stringify({ room: cleanRoom, role: 'p2' })
       });
       if (res.ok) {
         const data = await res.json();
+        console.log(`[Netplay Joiner] ✅ Set-ready response received:`, data);
         if (data.status) setNetplayRoomStatus(data.status);
+      } else {
+        console.error(`[Netplay Joiner] ❌ Set-ready failed with HTTP ${res.status}`);
       }
     } catch (err) {
       console.warn('[Netplay Set Ready API Warning]:', err);
@@ -615,13 +629,19 @@ export const EmulatorZone: React.FC = () => {
   // Host clicks "Bắt Đầu Chơi" button
   const handleHostStartGame = async () => {
     if (!netplayRoom || !waitingGame || isStartingHost) return;
+    const cleanRoom = netplayRoom.trim().toLowerCase();
     setIsStartingHost(true);
+    console.log(`[Netplay Host] 🚀 Calling POST /api/netplay/start-room for room="${cleanRoom}"...`);
     try {
-      await fetch('/api/netplay/start-room', {
+      const res = await fetch('/api/netplay/start-room', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ room: netplayRoom })
+        body: JSON.stringify({ room: cleanRoom })
       });
+      if (res.ok) {
+        const data = await res.json();
+        console.log(`[Netplay Host] ✅ Start-room response:`, data);
+      }
     } catch (err) {
       console.warn('[Netplay Start Room API Warning]:', err);
     }
@@ -633,13 +653,13 @@ export const EmulatorZone: React.FC = () => {
       waitingGame.title,
       waitingGame.core,
       waitingGame.id,
-      { isNetplay: true, room: netplayRoom, role: 'p1' }
+      { isNetplay: true, room: cleanRoom, role: 'p1' }
     );
   };
 
   // Cancel / Exit Netplay waiting room & cleanup Blob storage
   const handleCancelNetplayRoom = async () => {
-    const roomToCancel = netplayRoom;
+    const roomToCancel = (netplayRoom || '').trim().toLowerCase();
     if (roomToCancel) {
       try {
         fetch('/api/netplay/delete-room', {
@@ -662,17 +682,28 @@ export const EmulatorZone: React.FC = () => {
       return;
     }
 
+    const cleanRoom = netplayRoom.trim().toLowerCase();
+
     const pollRoomStatus = async () => {
       try {
-        const res = await fetch(`/api/netplay/room-status?room=${encodeURIComponent(netplayRoom)}&t=${Date.now()}`);
+        console.log(`[Netplay Poll Request] 📡 Polling GET /api/netplay/room-status for room="${cleanRoom}" (Role: ${netplayRole}, State: ${netplayWaitingState})...`);
+        const res = await fetch(`/api/netplay/room-status?room=${encodeURIComponent(cleanRoom)}&t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        });
         if (res.ok) {
           const data = await res.json();
+          console.log(`[Netplay Poll Response] 📥 Room status received for [${cleanRoom}]:`, data);
           if (data.success && data.status) {
+            console.log(`[Netplay Poll Status Check] Room [${cleanRoom}] -> p1Ready: ${data.status.p1Ready}, p2Joined: ${data.status.p2Joined}, p2Ready: ${data.status.p2Ready}, started: ${data.status.started}`);
             setNetplayRoomStatus(data.status);
 
             // Joiner watches for Host starting the game
             if (netplayWaitingState === 'joiner_waiting' && data.status.started) {
-              console.log(`🚀 [Netplay Joiner] Room [${netplayRoom}] has started! Launching core immediately with preloaded ROM...`);
+              console.log(`🚀 [Netplay Joiner] Room [${cleanRoom}] has started! Launching core immediately with preloaded ROM...`);
               if (waitingPollTimerRef.current) {
                 clearInterval(waitingPollTimerRef.current);
                 waitingPollTimerRef.current = null;
@@ -684,10 +715,12 @@ export const EmulatorZone: React.FC = () => {
                 waitingGame.title,
                 waitingGame.core,
                 waitingGame.id,
-                { isNetplay: true, room: netplayRoom, role: 'p2' }
+                { isNetplay: true, room: cleanRoom, role: 'p2' }
               );
             }
           }
+        } else {
+          console.warn(`[Netplay Poll Warning] HTTP ${res.status} when polling room status for ${cleanRoom}`);
         }
       } catch (err) {
         console.warn('[Netplay Poll Warning]:', err);
@@ -699,10 +732,11 @@ export const EmulatorZone: React.FC = () => {
     waitingPollTimerRef.current = interval;
 
     return () => {
+      console.log(`[Netplay Poll Cleanup] Cleaning polling interval for room="${cleanRoom}"`);
       clearInterval(interval);
       waitingPollTimerRef.current = null;
     };
-  }, [netplayWaitingState, netplayRoom, waitingGame]);
+  }, [netplayWaitingState, netplayRoom, waitingGame?.romUrl, waitingGame?.title, waitingGame?.core, waitingGame?.id]);
 
   // Sync global state and register global teardown method & event
   useEffect(() => {
@@ -882,7 +916,7 @@ export const EmulatorZone: React.FC = () => {
     const checkAndAutoLoadFromUrl = () => {
       const searchParams = new URLSearchParams(window.location.search);
       const urlGameId = searchParams.get('game_id') || searchParams.get('game');
-      const urlNetplayRoom = (searchParams.get('netplay_room') || searchParams.get('room_id') || searchParams.get('room') || '').trim();
+      const urlNetplayRoom = (searchParams.get('netplay_room') || searchParams.get('room_id') || searchParams.get('room') || '').trim().toLowerCase();
       const isNetplayFlag = searchParams.get('netplay') === 'true' || Boolean(urlNetplayRoom);
       const urlRole = (searchParams.get('role') as 'p1' | 'p2') || (searchParams.get('is_p2') === 'true' ? 'p2' : (urlNetplayRoom ? 'p2' : 'p1'));
 
@@ -1130,7 +1164,7 @@ export const EmulatorZone: React.FC = () => {
   }, [isPlaying, currentRomUrl, selectedCore, currentRomName, isNetplayActive, netplayRoom, netplayRole, currentGameId]);
 
   const handleCreateRoom = () => {
-    const randomRoom = 'QGX-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    const randomRoom = 'qgx-' + Math.random().toString(36).substring(2, 8).toLowerCase();
     setNetplayRoom(randomRoom);
     setNetplayRole('p1');
     setIsNetplayActive(true);
@@ -1138,20 +1172,35 @@ export const EmulatorZone: React.FC = () => {
 
   const handleCopyRoom = () => {
     if (!netplayRoom) return;
-    copyTextToClipboard(netplayRoom);
+    const cleanRoom = netplayRoom.trim().toLowerCase();
+    copyTextToClipboard(cleanRoom);
     setIsCopiedRoom(true);
     setTimeout(() => setIsCopiedRoom(false), 2000);
   };
 
   const handleCopyInviteLink = () => {
-    const targetGame = snesGames.find(g => g.id === currentGameId) || snesGames[0];
+    const cleanRoom = (netplayRoom || 'qgx-room').trim().toLowerCase();
+    const targetGame = waitingGame
+      ? {
+          id: waitingGame.id || currentGameId || 'qgx-game',
+          title: waitingGame.title,
+          coverArt: waitingGame.coverArt || '',
+          platforms: ['Other'],
+          language: 'Gốc / Tiếng Anh',
+          hasVietHoa: false,
+          fileSize: 'SNES ROM',
+          description: waitingGame.title
+        } as GameItem
+      : (snesGames.find(g => g.id === currentGameId) || snesGames[0]);
+
     if (!targetGame) return;
 
     const shareUrl = getGameShareUrl(targetGame, {
-      room: netplayRoom || 'QGX-ROOM',
+      room: cleanRoom,
       role: 'p2'
     });
 
+    console.log(`[Netplay Share] Generated Invite Link for P2: ${shareUrl}`);
     copyTextToClipboard(shareUrl);
     setIsCopiedInviteLink(true);
     setTimeout(() => setIsCopiedInviteLink(false), 2500);
@@ -2190,7 +2239,7 @@ export const EmulatorZone: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      const room = netplayRoom || 'QGX-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+                      const room = (netplayRoom || 'qgx-' + Math.random().toString(36).substring(2, 8)).trim().toLowerCase();
                       if (netplayRole === 'p1') {
                         startHostingNetplay(
                           {
