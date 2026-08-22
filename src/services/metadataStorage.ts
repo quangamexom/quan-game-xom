@@ -38,6 +38,19 @@ const METADATA_PATHNAME = "roms-metadata/games-library.json";
 
 export async function readGamesLibrary(): Promise<PersistentGameCard[]> {
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+  let localDefaults: PersistentGameCard[] = [];
+
+  // Read local defaults from public/assets/games-library.json
+  try {
+    const publicPath = path.join(process.cwd(), "public", "assets", "games-library.json");
+    if (fs.existsSync(publicPath)) {
+      const content = fs.readFileSync(publicPath, "utf-8");
+      const parsed = JSON.parse(content);
+      if (Array.isArray(parsed)) localDefaults = parsed;
+    }
+  } catch (diskErr) {
+    console.warn("[Local Disk Storage Helper Read Warning]:", diskErr);
+  }
 
   // 1. Try reading directly from Vercel Blob (Primary Cloud Persistence)
   if (blobToken) {
@@ -51,8 +64,11 @@ export async function readGamesLibrary(): Promise<PersistentGameCard[]> {
         });
         if (res.ok) {
           const listData = await res.json();
-          if (Array.isArray(listData)) {
-            return listData;
+          if (Array.isArray(listData) && listData.length > 0) {
+            // Merge remote with local defaults by romUrl/id
+            const existingUrls = new Set(listData.map(g => g.romUrl || g.id));
+            const missingFromRemote = localDefaults.filter(g => !existingUrls.has(g.romUrl) && !existingUrls.has(g.id));
+            return [...listData, ...missingFromRemote];
           }
         }
       }
@@ -61,25 +77,7 @@ export async function readGamesLibrary(): Promise<PersistentGameCard[]> {
     }
   }
 
-  // 2. Fallback to reading from local filesystem (Dev / Standalone container mode)
-  try {
-    const publicPath = path.join(process.cwd(), "public", "assets", "games-library.json");
-    if (fs.existsSync(publicPath)) {
-      const content = fs.readFileSync(publicPath, "utf-8");
-      const parsed = JSON.parse(content);
-      if (Array.isArray(parsed)) return parsed;
-    }
-    const srcPath = path.join(process.cwd(), "src", "data", "adminGamesLibrary.json");
-    if (fs.existsSync(srcPath)) {
-      const content = fs.readFileSync(srcPath, "utf-8");
-      const parsed = JSON.parse(content);
-      if (Array.isArray(parsed)) return parsed;
-    }
-  } catch (diskErr) {
-    console.warn("[Local Disk Storage Helper Read Warning]:", diskErr);
-  }
-
-  return [];
+  return localDefaults;
 }
 
 export async function writeGamesLibrary(games: PersistentGameCard[]): Promise<boolean> {
@@ -94,6 +92,7 @@ export async function writeGamesLibrary(games: PersistentGameCard[]): Promise<bo
         access: "public",
         token: blobToken,
         addRandomSuffix: false,
+        allowOverwrite: true,
         contentType: "application/json"
       });
       console.log(`[Storage Helper] Successfully saved ${games.length} games to Vercel Blob (${METADATA_PATHNAME})`);

@@ -65,13 +65,13 @@ export function normalizeRomUrl(rawUrl: string): string {
     const fileId = driveMatch[1];
     if (fileId === '1i9fsfy5lM-eKcQIh1raZpx7etQlGd-Mt') {
       return typeof window !== 'undefined' && window.location?.origin
-        ? `${window.location.origin}/assets/roms/biker-mice-from-mars.sfc`
-        : '/assets/roms/biker-mice-from-mars.sfc';
+        ? `${window.location.origin}/roms/biker-mice-from-mars.sfc`
+        : '/roms/biker-mice-from-mars.sfc';
     }
     if (fileId === '1QGgmop-JEIKZ6kyV2HcHjHugdzb88Q7f') {
       return typeof window !== 'undefined' && window.location?.origin
-        ? `${window.location.origin}/assets/roms/aladdin.sfc`
-        : '/assets/roms/aladdin.sfc';
+        ? `${window.location.origin}/roms/aladdin.sfc`
+        : '/roms/aladdin.sfc';
     }
     // Route any other Google Drive file through /api/proxy-rom?id=...
     if (typeof window !== 'undefined' && window.location?.origin) {
@@ -84,13 +84,13 @@ export function normalizeRomUrl(rawUrl: string): string {
   if (trimmed.includes('snes-romset-ultra') || trimmed.includes('archive.org')) {
     if (trimmed.toLowerCase().includes('biker')) {
       return typeof window !== 'undefined' && window.location?.origin
-        ? `${window.location.origin}/assets/roms/biker-mice-from-mars.sfc`
-        : '/assets/roms/biker-mice-from-mars.sfc';
+        ? `${window.location.origin}/roms/biker-mice-from-mars.sfc`
+        : '/roms/biker-mice-from-mars.sfc';
     }
     if (trimmed.toLowerCase().includes('aladdin')) {
       return typeof window !== 'undefined' && window.location?.origin
-        ? `${window.location.origin}/assets/roms/aladdin.sfc`
-        : '/assets/roms/aladdin.sfc';
+        ? `${window.location.origin}/roms/aladdin.sfc`
+        : '/roms/aladdin.sfc';
     }
   }
 
@@ -129,11 +129,31 @@ export function resolveEmulatorCore(core: string): string {
 
 const CLASSIC_PRESET_ROMS: PresetRom[] = [
   {
+    id: 'blob-rom-battletoads-double-dragon',
+    title: 'Battletoads & Double Dragon',
+    system: 'snes',
+    systemName: 'Super Nintendo (SNES)',
+    romUrl: 'https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Battletoads___Double_Dragon_-_The_Ultimate_Team__E_.smc',
+    coverArt: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop',
+    description: 'Game đối kháng kết hợp kinh điển giữa binh đoàn ếch chiến binh Battletoads và anh em song long Billy & Jimmy của Double Dragon trên Super Nintendo 16-bit.',
+    isSnesSheet: true
+  },
+  {
+    id: 'blob-rom-power-rangers-fighting',
+    title: 'Mighty Morphin Power Rangers',
+    system: 'snes',
+    systemName: 'Super Nintendo (SNES)',
+    romUrl: 'https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Mighty_Morphin_Power_Rangers_-_The_Fighting_Edition__E_.smc',
+    coverArt: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop',
+    description: 'Game đối kháng Robot khổng lồ Megazord và quái vật kinh điển của 5 Anh Em Siêu Nhân trên hệ máy Super Nintendo (SNES).',
+    isSnesSheet: true
+  },
+  {
     id: 'snes-biker-mice-preset',
     title: 'Biker Mice from Mars',
     system: 'snes',
     systemName: 'Super Nintendo (SNES)',
-    romUrl: '/assets/roms/biker-mice-from-mars.sfc',
+    romUrl: '/roms/biker-mice-from-mars.sfc',
     coverArt: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop',
     description: 'Game đua xe bắn súng chuột không gian huyền thoại của Konami trên SNES với tốc độ cao và vũ khí uy lực.',
     isSnesSheet: true
@@ -143,7 +163,7 @@ const CLASSIC_PRESET_ROMS: PresetRom[] = [
     title: 'Aladdin',
     system: 'snes',
     systemName: 'Super Nintendo (SNES)',
-    romUrl: '/assets/roms/aladdin.sfc',
+    romUrl: '/roms/aladdin.sfc',
     coverArt: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop',
     description: 'Game phiêu lưu hành động 16-bit kinh điển đưa bạn cùng chú khỉ Abu khám phá vương quốc Agrabah trên hệ máy SNES.',
     isSnesSheet: true
@@ -175,6 +195,71 @@ export const presetRomToGameItem = (rom: PresetRom): GameItem => ({
   romUrl: rom.romUrl,
   downloadUrl: rom.romUrl
 });
+
+/**
+ * Helper to fetch ROM as binary ArrayBuffer, package it as application/octet-stream Blob,
+ * and create a clean local Object URL. This completely solves Vercel Blob "unknown" content-type
+ * header and CORS or download-trigger issues in production.
+ */
+export async function fetchRomAsBlobUrl(
+  url: string,
+  onStepUpdate?: (text: string) => void
+): Promise<{ blobUrl: string; sizeBytes: number }> {
+  // If already a local blob/data URL, return directly
+  if (url.startsWith('blob:') || url.startsWith('data:')) {
+    return { blobUrl: url, sizeBytes: 0 };
+  }
+
+  const cleanUrl = normalizeRomUrl(url);
+
+  try {
+    if (onStepUpdate) onStepUpdate(`Đang kết nối nạp dữ liệu ROM từ ${cleanUrl.includes('vercel-storage') ? 'Vercel Blob Storage' : 'máy chủ'}...`);
+    console.log(`[ROM Fetcher] Fetching binary data from: ${cleanUrl}`);
+
+    let response: Response;
+    try {
+      response = await fetch(cleanUrl);
+    } catch (networkErr: any) {
+      console.warn(`[ROM Fetcher] Direct fetch failed (${networkErr.message}). Attempting proxy fallback...`);
+      response = await fetch(`/api/proxy-rom?url=${encodeURIComponent(cleanUrl)}`);
+    }
+
+    if (!response.ok) {
+      // If direct fetch returned error, try server proxy fallback
+      if (!cleanUrl.startsWith('/') && !cleanUrl.includes('/api/proxy-rom')) {
+        console.warn(`[ROM Fetcher] Direct fetch returned ${response.status}. Attempting proxy fallback...`);
+        response = await fetch(`/api/proxy-rom?url=${encodeURIComponent(cleanUrl)}`);
+      }
+    }
+
+    if (!response.ok) {
+      throw new Error(`Máy chủ phản hồi mã lỗi HTTP ${response.status} (${response.statusText || 'Không tìm thấy file ROM'})`);
+    }
+
+    if (onStepUpdate) onStepUpdate(`Đang tạo vùng nhớ nhị phân ROM (ArrayBuffer -> Blob)...`);
+    const arrayBuffer = await response.arrayBuffer();
+    const sizeBytes = arrayBuffer.byteLength;
+
+    if (sizeBytes < 512) {
+      // Check if it returned a short HTML error text instead of a game
+      const textDecoder = new TextDecoder();
+      const firstChunk = textDecoder.decode(arrayBuffer.slice(0, 200));
+      if (firstChunk.includes('<html') || firstChunk.includes('<!DOCTYPE') || firstChunk.includes('Error')) {
+        throw new Error('Dữ liệu tải về là trang web HTML thay vì file ROM game binary.');
+      }
+    }
+
+    console.log(`[ROM Fetcher] Successfully packaged ${(sizeBytes / 1024 / 1024).toFixed(2)} MB (${sizeBytes} bytes) into application/octet-stream Blob.`);
+
+    // Force application/octet-stream MIME type
+    const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
+    const blobUrl = URL.createObjectURL(blob);
+    return { blobUrl, sizeBytes };
+  } catch (err: any) {
+    console.error('[ROM Fetcher Error]:', err);
+    throw err;
+  }
+}
 
 export const EmulatorZone: React.FC = () => {
   const { isAdmin } = useAdminMode();
@@ -250,8 +335,21 @@ export const EmulatorZone: React.FC = () => {
     return selectedCore;
   };
 
-  // Launch ROM directly into EmulatorJS Engine (Vercel Blob direct URL, local assets or local file ObjectURL)
-  const launchRom = (romUrl: string, gameName: string, core: string = 'snes') => {
+  const activeBlobUrlRef = useRef<string | null>(null);
+
+  // Clean up object URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (activeBlobUrlRef.current && activeBlobUrlRef.current.startsWith('blob:')) {
+        try {
+          URL.revokeObjectURL(activeBlobUrlRef.current);
+        } catch (e) {}
+      }
+    };
+  }, []);
+
+  // Launch ROM directly into EmulatorJS Engine (ArrayBuffer -> Application/octet-stream Blob -> ObjectURL)
+  const launchRom = async (romUrl: string, gameName: string, core: string = 'snes') => {
     if (!romUrl || romUrl.trim().length === 0) {
       setRomError({
         title: "Không Có File ROM",
@@ -263,25 +361,43 @@ export const EmulatorZone: React.FC = () => {
 
     setIsLoadingRom(true);
     setRomError(null);
-    setLoadingStepText(`Đang khởi động ${gameName} trên EmulatorJS Core (${core.toUpperCase()})...`);
+    setLoadingStepText(`Đang kết nối tải ROM cho ${gameName}...`);
     setActiveTab('play');
+
+    if (playerContainerRef.current) {
+      playerContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
 
     try {
       const cleanUrl = normalizeRomUrl(romUrl);
-      setCurrentRomUrl(cleanUrl);
+
+      // Clean up previous blob URL if different
+      if (activeBlobUrlRef.current && activeBlobUrlRef.current.startsWith('blob:') && activeBlobUrlRef.current !== cleanUrl) {
+        try {
+          URL.revokeObjectURL(activeBlobUrlRef.current);
+        } catch (e) {}
+      }
+
+      // Convert remote Vercel Blob or local ROM to a pure application/octet-stream Blob ObjectURL
+      const { blobUrl, sizeBytes } = await fetchRomAsBlobUrl(cleanUrl, (step) => {
+        setLoadingStepText(step);
+      });
+
+      if (blobUrl.startsWith('blob:')) {
+        activeBlobUrlRef.current = blobUrl;
+      }
+
+      setLoadingStepText(`Khởi động lõi giả lập ${core.toUpperCase()} (${(sizeBytes / 1024 / 1024).toFixed(2)} MB)...`);
+      setCurrentRomUrl(blobUrl);
       setCurrentRomName(gameName);
       setSelectedCore(core);
       setIsPlaying(true);
       setIsLoadingRom(false);
-
-      if (playerContainerRef.current) {
-        playerContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
     } catch (err: any) {
       console.error("[Launch ROM Error]:", err);
       setRomError({
-        title: "Lỗi Khởi Động Trình Giả Lập",
-        message: err.message || "Không thể nạp ROM vào EmulatorJS.",
+        title: "Lỗi Nạp File ROM",
+        message: err.message || "Không thể nạp ROM vào bộ nhớ trình giả lập.",
         hint: "Hãy thử tải lại trang hoặc nạp ROM trực tiếp từ máy tính.",
         originalUrl: romUrl
       });

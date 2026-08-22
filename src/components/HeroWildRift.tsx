@@ -110,11 +110,11 @@ export const HeroWildRift: React.FC<HeroWildRiftProps> = ({ games, onSelectGame,
         </div>
 
         {/* Right Floating Preview Cards Section matching Screenshot 2 */}
-        <div className="lg:col-span-5 flex flex-col sm:flex-row lg:flex-col gap-4 justify-end items-end">
-          {featuredList.slice(0, 2).map((game, idx) => (
+        <div className="lg:col-span-5 flex flex-col sm:flex-row lg:flex-col gap-3 justify-end items-end">
+          {featuredList.slice(0, 4).map((game, idx) => (
             <motion.div
               key={game.id}
-              whileHover={{ scale: 1.03, y: -4 }}
+              whileHover={{ scale: 1.02, y: -2 }}
               onClick={() => {
                 setActiveIndex(idx);
                 onSelectGame(game);
@@ -123,10 +123,10 @@ export const HeroWildRift: React.FC<HeroWildRiftProps> = ({ games, onSelectGame,
                 activeIndex === idx 
                   ? 'border-indigo-500/80 shadow-[0_0_25px_rgba(99,102,241,0.4)] bg-slate-900/90' 
                   : 'border-slate-800/80 bg-slate-950/70 hover:border-slate-700'
-              } backdrop-blur-xl p-3 flex gap-3 transition-all relative group`}
+              } backdrop-blur-xl p-2.5 flex gap-3 transition-all relative group`}
             >
               {/* Thumbnail Image */}
-              <div className="w-28 h-20 rounded-xl overflow-hidden shrink-0 relative">
+              <div className="w-24 h-16 rounded-xl overflow-hidden shrink-0 relative">
                 <img
                   src={game.coverArt}
                   alt={game.title}
