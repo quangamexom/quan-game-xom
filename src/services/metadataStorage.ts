@@ -20,6 +20,8 @@ export interface PersistentGameCard {
   genres?: string[];
   description?: string;
   downloadUrl?: string;
+  mirror1Url?: string;
+  mirror2Url?: string;
   emulatorCore?: string;
   isFeatured?: boolean;
   isPopular?: boolean;
@@ -28,14 +30,46 @@ export interface PersistentGameCard {
   isHidden?: boolean;
 }
 
-const METADATA_PATHNAME = "roms-metadata/games-library.json";
+// Canonical database filename on Vercel Blob Storage
+export const GAMES_DATABASE_BLOB_PATH = "games-database.json";
+export const LEGACY_METADATA_PATH = "roms-metadata/games-library.json";
+
+// Cache in-memory for fast server responses
+let cachedDatabaseUrl: string | null = null;
+
+/**
+ * Get fallback initial games array from local files (googleSheetGames.json + DEFAULT_SNES_TEST_GAMES)
+ */
+export function getLocalDefaultGames(): PersistentGameCard[] {
+  let listData: PersistentGameCard[] = [];
+
+  // 1. Try public/assets/games-library.json
+  try {
+    const publicPath = path.join(process.cwd(), "public", "assets", "games-library.json");
+    if (fs.existsSync(publicPath)) {
+      const content = fs.readFileSync(publicPath, "utf-8");
+      const parsed = JSON.parse(content);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (err) {}
+
+  // 2. Try src/data/googleSheetGames.json
+  try {
+    const sheetPath = path.join(process.cwd(), "src", "data", "googleSheetGames.json");
+    if (fs.existsSync(sheetPath)) {
+      const content = fs.readFileSync(sheetPath, "utf-8");
+      const parsed = JSON.parse(content);
+      if (Array.isArray(parsed)) listData = parsed;
+    }
+  } catch (err) {}
+
+  return listData;
+}
 
 /**
  * Server-side metadata storage helper.
- * Reads and writes game metadata persistently to Vercel Blob,
- * with graceful local filesystem fallbacks when running in local dev environments.
+ * Reads and writes game database persistently to Vercel Blob as `games-database.json`.
  */
-
 export async function uploadImageToBlob(
   pathname: string, 
   buffer: Buffer, 
@@ -58,40 +92,73 @@ export async function uploadImageToBlob(
   }
 }
 
+/**
+ * Find the direct public URL of games-database.json on Vercel Blob
+ */
+export async function getGamesDatabaseBlobUrl(): Promise<string | null> {
+  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+  if (!blobToken) return null;
+
+  try {
+    const { blobs } = await list({ token: blobToken });
+    const dbBlob = blobs.find(b => b.pathname === GAMES_DATABASE_BLOB_PATH || b.pathname.endsWith("games-database.json"));
+    if (dbBlob) {
+      cachedDatabaseUrl = dbBlob.url;
+      return dbBlob.url;
+    }
+    // Fallback: check legacy path
+    const legacyBlob = blobs.find(b => b.pathname.includes("games-library.json"));
+    if (legacyBlob) {
+      return legacyBlob.url;
+    }
+  } catch (err) {
+    console.warn("[getGamesDatabaseBlobUrl error]:", err);
+  }
+  return cachedDatabaseUrl;
+}
+
+/**
+ * Read the complete games database from Vercel Blob Storage.
+ * Auto-initializes games-database.json on Vercel Blob if missing.
+ */
 export async function readGamesLibrary(): Promise<PersistentGameCard[]> {
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
-  let localDefaults: PersistentGameCard[] = [];
-
-  // Read local defaults from public/assets/games-library.json
-  try {
-    const publicPath = path.join(process.cwd(), "public", "assets", "games-library.json");
-    if (fs.existsSync(publicPath)) {
-      const content = fs.readFileSync(publicPath, "utf-8");
-      const parsed = JSON.parse(content);
-      if (Array.isArray(parsed)) localDefaults = parsed;
-    }
-  } catch (diskErr) {
-    console.warn("[Local Disk Storage Helper Read Warning]:", diskErr);
-  }
+  const localDefaults = getLocalDefaultGames();
 
   // 1. Try reading directly from Vercel Blob (Primary Cloud Persistence)
   if (blobToken) {
     try {
-      const { blobs } = await list({ token: blobToken, prefix: "roms-metadata/" });
-      const metadataBlob = blobs.find(b => b.pathname.includes("games-library.json"));
+      const { blobs } = await list({ token: blobToken });
+      
+      // Look for primary database blob first
+      let metadataBlob = blobs.find(b => b.pathname === GAMES_DATABASE_BLOB_PATH || b.pathname.endsWith("games-database.json"));
+      
+      // If not found, check legacy metadata
+      if (!metadataBlob) {
+        metadataBlob = blobs.find(b => b.pathname.includes("games-library.json"));
+      }
+
       if (metadataBlob) {
-        // Fetch latest version bypassing edge/proxy cache
+        cachedDatabaseUrl = metadataBlob.url;
+        // Fetch latest version bypassing CDN/proxy edge cache
         const res = await fetch(`${metadataBlob.url}?t=${Date.now()}`, {
-          headers: { 'Cache-Control': 'no-cache' }
+          headers: { 
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
         });
         if (res.ok) {
           const listData = await res.json();
           if (Array.isArray(listData) && listData.length > 0) {
-            // Merge remote with local defaults by romUrl/id
-            const existingUrls = new Set(listData.map(g => g.romUrl || g.id));
-            const missingFromRemote = localDefaults.filter(g => !existingUrls.has(g.romUrl) && !existingUrls.has(g.id));
-            return [...listData, ...missingFromRemote];
+            return listData;
           }
+        }
+      } else {
+        // Database file doesn't exist on Vercel Blob yet -> Auto-initialize and upload!
+        console.log(`[Storage Helper] Initializing ${GAMES_DATABASE_BLOB_PATH} on Vercel Blob...`);
+        if (localDefaults.length > 0) {
+          await writeGamesLibrary(localDefaults);
+          return localDefaults;
         }
       }
     } catch (blobErr) {
@@ -102,30 +169,34 @@ export async function readGamesLibrary(): Promise<PersistentGameCard[]> {
   return localDefaults;
 }
 
+/**
+ * Write/Overwrite the games database to Vercel Blob Storage (games-database.json)
+ */
 export async function writeGamesLibrary(games: PersistentGameCard[]): Promise<boolean> {
   const jsonContent = JSON.stringify(games, null, 2);
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
   let writeSuccess = false;
 
-  // 1. Always attempt saving to Vercel Blob Storage first if token exists
+  // 1. Always save to Vercel Blob Storage first as games-database.json
   if (blobToken) {
     try {
-      await put(METADATA_PATHNAME, Buffer.from(jsonContent), {
+      const result = await put(GAMES_DATABASE_BLOB_PATH, Buffer.from(jsonContent), {
         access: "public",
         token: blobToken,
         addRandomSuffix: false,
         allowOverwrite: true,
         contentType: "application/json"
       });
-      console.log(`[Storage Helper] Successfully saved ${games.length} games to Vercel Blob (${METADATA_PATHNAME})`);
+      cachedDatabaseUrl = result.url;
+      console.log(`[Storage Helper] Successfully saved ${games.length} games to Vercel Blob (${GAMES_DATABASE_BLOB_PATH}): ${result.url}`);
       writeSuccess = true;
     } catch (blobErr) {
-      console.error("[Storage Helper] Error writing metadata to Vercel Blob:", blobErr);
-      throw new Error(`Failed to write game metadata to Vercel Blob: ${(blobErr as Error).message}`);
+      console.error("[Storage Helper] Error writing games-database.json to Vercel Blob:", blobErr);
+      throw new Error(`Failed to write games database to Vercel Blob: ${(blobErr as Error).message}`);
     }
   }
 
-  // 2. Also write to local disk (safely ignored if filesystem is read-only like on Vercel Serverless)
+  // 2. Also write to local disk if running in writable environment
   try {
     const publicAssetsDir = path.join(process.cwd(), "public", "assets");
     const srcDataDir = path.join(process.cwd(), "src", "data");
@@ -135,10 +206,9 @@ export async function writeGamesLibrary(games: PersistentGameCard[]): Promise<bo
     fs.writeFileSync(path.join(publicAssetsDir, "games-library.json"), jsonContent, "utf-8");
     fs.writeFileSync(path.join(srcDataDir, "adminGamesLibrary.json"), jsonContent, "utf-8");
     if (!blobToken) {
-      writeSuccess = true; // In local dev without blob token, disk save is considered success
+      writeSuccess = true;
     }
   } catch (fsErr) {
-    // Read-only filesystem is expected on Vercel Lambda
     if (!blobToken) {
       console.warn("[Storage Helper] Disk write warning (ephemeral/read-only filesystem):", fsErr);
     }
@@ -147,20 +217,45 @@ export async function writeGamesLibrary(games: PersistentGameCard[]): Promise<bo
   return writeSuccess;
 }
 
+/**
+ * Step 1-2-3 2-way Admin Sync: Add game to database
+ * (1) Fetch games-database.json from Blob
+ * (2) Upsert game object
+ * (3) Overwrite games-database.json on Blob
+ */
 export async function addGameToLibrary(game: PersistentGameCard): Promise<PersistentGameCard[]> {
   const currentLibrary = await readGamesLibrary();
   // Filter out any duplicate by ID or ROM URL
-  const updated = currentLibrary.filter(g => g.id !== game.id && g.romUrl !== game.romUrl);
+  const updated = currentLibrary.filter(g => g.id !== game.id && (!game.romUrl || g.romUrl !== game.romUrl));
   // Prepend newest game
   updated.unshift(game);
   await writeGamesLibrary(updated);
   return updated;
 }
 
+/**
+ * Step 1-2-3 2-way Admin Sync: Update game in database
+ * (1) Fetch games-database.json from Blob
+ * (2) Update game object
+ * (3) Overwrite games-database.json on Blob
+ */
 export async function updateGameInLibrary(id: string, updates: Partial<PersistentGameCard>): Promise<PersistentGameCard | null> {
   const currentLibrary = await readGamesLibrary();
-  const gameIndex = currentLibrary.findIndex(g => g.id === id || g.romUrl === id);
-  if (gameIndex === -1) return null;
+  const gameIndex = currentLibrary.findIndex(g => g.id === id || (g.romUrl && g.romUrl === id));
+  
+  if (gameIndex === -1) {
+    // If not found in current library, create a new record and append
+    const newEntry: PersistentGameCard = {
+      id,
+      title: updates.title || id,
+      system: updates.system || 'snes',
+      romUrl: updates.romUrl || '',
+      ...updates
+    };
+    currentLibrary.unshift(newEntry);
+    await writeGamesLibrary(currentLibrary);
+    return newEntry;
+  }
 
   currentLibrary[gameIndex] = {
     ...currentLibrary[gameIndex],
@@ -171,6 +266,12 @@ export async function updateGameInLibrary(id: string, updates: Partial<Persisten
   return currentLibrary[gameIndex];
 }
 
+/**
+ * Step 1-2-3 2-way Admin Sync: Remove game from database
+ * (1) Fetch games-database.json from Blob
+ * (2) Filter out game
+ * (3) Overwrite games-database.json on Blob
+ */
 export async function removeGameFromLibrary(idOrUrl: string): Promise<PersistentGameCard[]> {
   const currentLibrary = await readGamesLibrary();
   const updated = currentLibrary.filter(g => g.id !== idOrUrl && g.romUrl !== idOrUrl);
@@ -185,6 +286,7 @@ export interface SyncBlobsResult {
   totalGames: number;
   newGamesAdded: number;
   syncedGames: PersistentGameCard[];
+  databaseBlobUrl?: string | null;
   message: string;
 }
 
@@ -313,7 +415,7 @@ const EXT_SYSTEM_MAP: Record<string, { system: string; systemName: string; platf
 
 /**
  * Scan all ROM blobs in Vercel Blob Storage and automatically register any new ROMs
- * into the persistent games library metadata.
+ * into games-database.json on Vercel Blob.
  */
 export async function syncAllBlobsToLibrary(): Promise<SyncBlobsResult> {
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
@@ -327,6 +429,7 @@ export async function syncAllBlobsToLibrary(): Promise<SyncBlobsResult> {
       totalGames: currentLibrary.length,
       newGamesAdded: 0,
       syncedGames: currentLibrary,
+      databaseBlobUrl: null,
       message: "Chưa cấu hình BLOB_READ_WRITE_TOKEN. Đang sử dụng danh sách game hiện hành."
     };
   }
@@ -338,8 +441,8 @@ export async function syncAllBlobsToLibrary(): Promise<SyncBlobsResult> {
     // 2. Filter for ROM files
     const romBlobs = blobs.filter(b => {
       const lower = b.pathname.toLowerCase();
-      // Skip metadata or cover images
-      if (lower.includes('roms-metadata') || lower.includes('covers/') || lower.includes('logo/')) return false;
+      // Skip database files or cover images
+      if (lower.includes('roms-metadata') || lower.includes('games-database') || lower.includes('covers/') || lower.includes('logo/')) return false;
       return Object.keys(EXT_SYSTEM_MAP).some(ext => lower.endsWith(ext));
     });
 
@@ -405,10 +508,9 @@ export async function syncAllBlobsToLibrary(): Promise<SyncBlobsResult> {
       }
     }
 
-    // 3. Save merged library if new games were discovered
-    if (newGamesCount > 0) {
-      await writeGamesLibrary(updatedLibrary);
-    }
+    // 3. Save merged library to Vercel Blob games-database.json
+    await writeGamesLibrary(updatedLibrary);
+    const dbUrl = await getGamesDatabaseBlobUrl();
 
     return {
       success: true,
@@ -417,9 +519,10 @@ export async function syncAllBlobsToLibrary(): Promise<SyncBlobsResult> {
       totalGames: updatedLibrary.length,
       newGamesAdded: newGamesCount,
       syncedGames: updatedLibrary,
+      databaseBlobUrl: dbUrl,
       message: newGamesCount > 0
-        ? `Đã đồng bộ thành công! Tìm thấy và thêm ${newGamesCount} game mới từ Vercel Blob Storage.`
-        : `Đã kiểm tra Vercel Blob: Thư viện game (${updatedLibrary.length} game) đã hoàn toàn đồng bộ và cập nhật mới nhất!`
+        ? `Đã đồng bộ thành công! Tìm thấy và thêm ${newGamesCount} game mới từ Vercel Blob Storage vào games-database.json.`
+        : `Đã kiểm tra Vercel Blob: Thư viện games-database.json (${updatedLibrary.length} game) đã hoàn toàn đồng bộ và cập nhật mới nhất!`
     };
   } catch (err: any) {
     console.error("[Sync Blobs Error]:", err);
@@ -430,7 +533,9 @@ export async function syncAllBlobsToLibrary(): Promise<SyncBlobsResult> {
       totalGames: currentLibrary.length,
       newGamesAdded: 0,
       syncedGames: currentLibrary,
+      databaseBlobUrl: null,
       message: `Lỗi đồng bộ từ Vercel Blob: ${err.message || err}`
     };
   }
 }
+

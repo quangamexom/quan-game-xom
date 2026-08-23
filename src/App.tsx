@@ -43,16 +43,23 @@ export default function App() {
 
   const loadLibraryGames = async () => {
     try {
-      const res = await fetch('/api/games/admin-library?sync=true');
+      // 1. Fetch persistent games database from API / Vercel Blob with cache busting
+      const res = await fetch(`/api/games-database?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.games) && data.games.length > 0) {
-          const uploadedGames: GameItem[] = data.games.filter((g: any) => !g.isHidden);
+          const visibleGames: GameItem[] = data.games.filter((g: any) => !g.isHidden);
           
-          // Merge uploaded games at the beginning while keeping initial list
-          const combined = [...uploadedGames];
+          // Merge dynamic games from database, keeping fallback games if any are missing
+          const combined = [...visibleGames];
           INITIAL_GAMES.forEach(initGame => {
-            if (!combined.some(g => g.id === initGame.id || (initGame.title && g.title === initGame.title))) {
+            if (!combined.some(g => g.id === initGame.id || (initGame.title && g.title.toLowerCase().trim() === initGame.title.toLowerCase().trim()))) {
               combined.push(initGame);
             }
           });
@@ -61,7 +68,7 @@ export default function App() {
         }
       }
     } catch (err) {
-      console.warn("Load admin library error, using static INITIAL_GAMES:", err);
+      console.warn("Load dynamic games database error, using static fallback:", err);
     }
     setGames(INITIAL_GAMES);
   };
@@ -69,13 +76,19 @@ export default function App() {
   useEffect(() => {
     loadLibraryGames();
 
-    // Listen to real-time updates from Admin ROM Upload / Visibility Toggle
-    const handleGameUpdate = () => {
+    // Listen to real-time mutations from Admin ROM Upload, Description Edit, Cover/Banner Art & Visibility Toggle
+    const handleGameUpdate = (e?: Event) => {
       loadLibraryGames();
     };
 
     window.addEventListener('qgx_games_updated', handleGameUpdate);
-    return () => window.removeEventListener('qgx_games_updated', handleGameUpdate);
+    window.addEventListener('game-cover-updated', handleGameUpdate);
+    window.addEventListener('game-banner-updated', handleGameUpdate);
+    return () => {
+      window.removeEventListener('qgx_games_updated', handleGameUpdate);
+      window.removeEventListener('game-cover-updated', handleGameUpdate);
+      window.removeEventListener('game-banner-updated', handleGameUpdate);
+    };
   }, []);
 
   // Scroll Spy Hook for Intelligent Navbar Active Highlight & Smooth Scrolling
@@ -333,7 +346,7 @@ export default function App() {
   // Pagination Logic
   const totalPages = Math.ceil(filteredGames.length / PAGE_SIZE) || 1;
 
-  // Prioritize SNES games for Hero Banner slider showcase
+  // Prioritize and showcase exclusively SNES games for Hero Banner slider
   const heroFeaturedGames = useMemo(() => {
     const isSnesGame = (g: GameItem) => {
       return (
@@ -346,8 +359,7 @@ export default function App() {
     };
 
     const snesList = games.filter(isSnesGame);
-    const otherList = games.filter(g => !isSnesGame(g));
-    return [...snesList, ...otherList].slice(0, 10);
+    return snesList.length > 0 ? snesList : games.slice(0, 10);
   }, [games]);
 
   useEffect(() => {

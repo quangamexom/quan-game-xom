@@ -33,6 +33,8 @@ import { GameItem } from '../types';
 import { ShareGameMenu } from './ShareGameMenu';
 import { useAdminMode } from '../hooks/useAdminMode';
 import { AdminRomManagerModal } from './AdminRomManagerModal';
+import { ImageUploadModal } from './ImageUploadModal';
+import { EditDescriptionModal } from './EditDescriptionModal';
 import { requestSafeAction } from '../utils/emulatorManager';
 import { copyTextToClipboard, getGameShareUrl } from '../utils/shareUtils';
 import { LoadingWordsSpinner } from './LoadingWordsSpinner';
@@ -253,6 +255,9 @@ export const EmulatorZone: React.FC = () => {
   const canShowAdmin = isDev || isAdmin;
 
   const [isAdminRomModalOpen, setIsAdminRomModalOpen] = useState<boolean>(false);
+  const [editingCoverGame, setEditingCoverGame] = useState<GameItem | null>(null);
+  const [editingDescGame, setEditingDescGame] = useState<GameItem | null>(null);
+  const [openShareMenuId, setOpenShareMenuId] = useState<string | null>(null);
 
   const [selectedCore, setSelectedCore] = useState<string>('snes');
   const [currentRomUrl, setCurrentRomUrl] = useState<string | null>(null);
@@ -304,18 +309,24 @@ export const EmulatorZone: React.FC = () => {
 
   const loadSnesGames = async () => {
     try {
-      const res = await fetch('/api/games/admin-library');
+      const res = await fetch(`/api/games-database?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.games) && data.games.length > 0) {
-          // Merge uploaded games with default games, removing duplicates by id or romUrl
-          const uploadedSnes = data.games.filter((g: any) => 
-            !g.isHidden && (g.emulatorCore === 'snes' || g.system === 'snes' || g.genres?.includes('SNES') || g.genres?.includes('Super Nintendo (SNES)'))
+          // Filter playable retro games from database
+          const dynamicPlayable = data.games.filter((g: any) => 
+            !g.isHidden && (g.romUrl || g.emulatorCore || g.system === 'snes' || g.genres?.some((genre: string) => genre.toLowerCase().includes('snes') || genre.toLowerCase().includes('retro')))
           );
           
-          const combined = [...uploadedSnes];
+          const combined = [...dynamicPlayable];
           DEFAULT_SNES_TEST_GAMES.forEach(defaultGame => {
-            if (!combined.some(g => g.id === defaultGame.id || g.romUrl === defaultGame.romUrl)) {
+            if (!combined.some(g => g.id === defaultGame.id || (defaultGame.romUrl && g.romUrl === defaultGame.romUrl))) {
               combined.push(defaultGame);
             }
           });
@@ -324,7 +335,7 @@ export const EmulatorZone: React.FC = () => {
         }
       }
     } catch (err) {
-      console.warn("Load Vercel Blob library error, using defaults:", err);
+      console.warn("Load dynamic games database for Emulator error, using defaults:", err);
     }
     setSnesGames(DEFAULT_SNES_TEST_GAMES);
   };
@@ -1366,9 +1377,12 @@ export const EmulatorZone: React.FC = () => {
                 <div
                   key={game.id}
                   id={`card-snes-${game.id}`}
-                  className="group relative glass-card rounded-3xl overflow-hidden border border-amber-500/40 hover:border-amber-400 transition-all duration-300 flex flex-col sm:flex-row shadow-2xl hover:shadow-amber-500/20 bg-gradient-to-br from-slate-900/90 via-slate-950/90 to-amber-950/30"
+                  className={`group glass-card rounded-3xl overflow-visible border border-amber-500/40 hover:border-amber-400 transition-all duration-300 flex flex-col sm:flex-row shadow-2xl hover:shadow-amber-500/20 bg-gradient-to-br from-slate-900/90 via-slate-950/90 to-amber-950/30 ${
+                    openShareMenuId === game.id ? 'relative z-50' : 'relative z-10'
+                  }`}
                 >
-                  <div className="relative sm:w-2/5 aspect-[4/3] sm:aspect-auto overflow-hidden bg-slate-950 shrink-0">
+                  {/* Left Cover Art Frame */}
+                  <div className="relative sm:w-2/5 aspect-[4/3] sm:aspect-auto overflow-hidden rounded-t-3xl sm:rounded-tr-none sm:rounded-l-3xl bg-slate-950 shrink-0">
                     <img
                       src={game.coverArt}
                       alt={game.title}
@@ -1378,17 +1392,59 @@ export const EmulatorZone: React.FC = () => {
                       <Zap className="w-3 h-3 text-amber-400" />
                       <span>SNES 16-BIT</span>
                     </div>
+
+                    {/* Admin Change Cover Button on Cover */}
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingCoverGame(game);
+                        }}
+                        title="Đổi ảnh bìa game (Lưu lên Vercel Blob)"
+                        className="absolute bottom-3 right-3 px-2.5 py-1 rounded-xl bg-slate-950/90 hover:bg-amber-400 text-amber-300 hover:text-slate-950 border border-amber-500/80 text-[10px] font-mono font-bold flex items-center gap-1.5 transition-all shadow-lg backdrop-blur-md cursor-pointer z-20"
+                      >
+                        <Upload className="w-3 h-3" />
+                        <span>Đổi ảnh</span>
+                      </button>
+                    )}
                   </div>
 
-                  <div className="p-5 flex flex-col justify-between flex-1 gap-4">
+                  <div className="p-5 flex flex-col justify-between flex-1 gap-4 rounded-b-3xl sm:rounded-bl-none sm:rounded-r-3xl">
                     <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">
-                          Cloud ROM Direct
-                        </span>
-                        <span className="text-[10px] font-mono text-slate-400">
-                          {game.fileSize || 'SNES ROM'}
-                        </span>
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">
+                            Cloud ROM Direct
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-400">
+                            {game.fileSize || 'SNES ROM'}
+                          </span>
+                        </div>
+
+                        {/* Admin Action Badges */}
+                        {isAdmin && (
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setEditingDescGame(game)}
+                              className="px-2 py-0.5 rounded-lg bg-amber-500/20 hover:bg-amber-500 hover:text-slate-950 border border-amber-500/40 text-amber-300 text-[10px] font-mono font-bold flex items-center gap-1 transition-all cursor-pointer"
+                              title="Sửa nội dung mô tả game"
+                            >
+                              <Sparkles className="w-2.5 h-2.5" />
+                              <span>Sửa mô tả</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingCoverGame(game)}
+                              className="px-2 py-0.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500 hover:text-slate-950 border border-cyan-500/40 text-cyan-300 text-[10px] font-mono font-bold flex items-center gap-1 transition-all cursor-pointer"
+                              title="Đổi ảnh bìa game"
+                            >
+                              <Upload className="w-2.5 h-2.5" />
+                              <span>Đổi ảnh</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       <h3 className="text-lg font-bold text-white group-hover:text-amber-300 transition-colors font-display">
@@ -1434,6 +1490,7 @@ export const EmulatorZone: React.FC = () => {
                         variant="compact"
                         align="right"
                         netplay={isNetplayActive && netplayRoom ? { room: netplayRoom, role: 'p2' } : undefined}
+                        onOpenChange={(isOpen) => setOpenShareMenuId(isOpen ? game.id : null)}
                       />
 
                       {game.downloadUrl && (
@@ -1490,9 +1547,11 @@ export const EmulatorZone: React.FC = () => {
                 <div
                   key={rom.id}
                   id={`card-preset-${rom.id}`}
-                  className="group glass-card rounded-2xl overflow-hidden border border-slate-800 hover:border-amber-500/50 transition-all duration-300 flex flex-col h-full shadow-lg hover:shadow-2xl hover:shadow-amber-500/10"
+                  className={`group glass-card rounded-2xl overflow-visible border border-slate-800 hover:border-amber-500/50 transition-all duration-300 flex flex-col h-full shadow-lg hover:shadow-2xl hover:shadow-amber-500/10 ${
+                    openShareMenuId === rom.id ? 'relative z-50' : 'relative z-10'
+                  }`}
                 >
-                  <div className="relative aspect-[16/9] overflow-hidden bg-slate-950">
+                  <div className="relative aspect-[16/9] overflow-hidden rounded-t-2xl bg-slate-950">
                     <img
                       src={rom.coverArt}
                       alt={rom.title}
@@ -1528,6 +1587,7 @@ export const EmulatorZone: React.FC = () => {
                         variant="compact"
                         align="right"
                         netplay={isNetplayActive && netplayRoom ? { room: netplayRoom, role: 'p2' } : undefined}
+                        onOpenChange={(isOpen) => setOpenShareMenuId(isOpen ? rom.id : null)}
                       />
                     </div>
                   </div>
@@ -2283,6 +2343,39 @@ export const EmulatorZone: React.FC = () => {
         onPlayRom={(url, name, core) => launchRom(url, name, core || 'snes')}
         onGameUpdated={loadSnesGames}
       />
+
+      {/* Admin Edit Description Modal */}
+      {isAdmin && editingDescGame && (
+        <EditDescriptionModal
+          game={editingDescGame}
+          isOpen={Boolean(editingDescGame)}
+          onClose={() => setEditingDescGame(null)}
+          onSuccess={(newDesc) => {
+            setSnesGames(prev =>
+              prev.map(g => (g.id === editingDescGame.id ? { ...g, description: newDesc } : g))
+            );
+            setEditingDescGame(null);
+            loadSnesGames();
+          }}
+        />
+      )}
+
+      {/* Admin Cover Upload Modal */}
+      {isAdmin && editingCoverGame && (
+        <ImageUploadModal
+          game={editingCoverGame}
+          imageType="cover"
+          isOpen={Boolean(editingCoverGame)}
+          onClose={() => setEditingCoverGame(null)}
+          onSuccess={(newUrl) => {
+            setSnesGames(prev =>
+              prev.map(g => (g.id === editingCoverGame.id ? { ...g, coverArt: newUrl } : g))
+            );
+            setEditingCoverGame(null);
+            loadSnesGames();
+          }}
+        />
+      )}
     </div>
   );
 };

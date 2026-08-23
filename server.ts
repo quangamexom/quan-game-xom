@@ -10,7 +10,9 @@ import {
   updateGameInLibrary, 
   removeGameFromLibrary,
   uploadImageToBlob,
-  syncAllBlobsToLibrary
+  syncAllBlobsToLibrary,
+  getGamesDatabaseBlobUrl,
+  GAMES_DATABASE_BLOB_PATH
 } from "./src/services/metadataStorage";
 import {
   createNetplayRoom,
@@ -104,7 +106,6 @@ app.post("/api/admin/verify", (req, res) => {
 app.get("/api/sheet-games", async (req, res) => {
   try {
     const backupGames = getGoogleSheetBackup();
-    // Return Google Sheet games data
     return res.json({
       success: true,
       count: backupGames.length,
@@ -121,6 +122,39 @@ app.get("/api/sheet-games", async (req, res) => {
       count: backupGames.length,
       games: backupGames
     });
+  }
+});
+
+// 1b. Persistent Vercel Blob Games Database API (Dynamic Fetching for All Users)
+app.get(["/api/games-database", "/api/games/database"], async (req, res) => {
+  try {
+    const shouldSync = req.query.sync === 'true';
+    if (shouldSync && process.env.BLOB_READ_WRITE_TOKEN) {
+      try {
+        await syncAllBlobsToLibrary();
+      } catch (syncErr) {
+        console.warn("[Auto-Sync on Database Fetch Warning]:", syncErr);
+      }
+    }
+
+    const games = await readGamesLibrary();
+    const blobUrl = await getGamesDatabaseBlobUrl();
+
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+
+    return res.json({
+      success: true,
+      count: games.length,
+      blobUrl,
+      databasePath: GAMES_DATABASE_BLOB_PATH,
+      timestamp: Date.now(),
+      games
+    });
+  } catch (err: any) {
+    console.error("[Games Database API Error]:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to load games database" });
   }
 });
 
@@ -341,6 +375,25 @@ app.post("/api/save-game-art", async (req, res) => {
     }
 
     fs.writeFileSync(artMapPath, fileContent, "utf-8");
+
+    // C2. Also synchronize cover/banner directly into games-database.json on Vercel Blob
+    try {
+      const currentLibrary = await readGamesLibrary();
+      const matchedGame = currentLibrary.find(g => 
+        (gameId && g.id === gameId) ||
+        g.title.toLowerCase().trim() === title.toLowerCase().trim() ||
+        g.title.toLowerCase().includes(cleanKey) ||
+        cleanKey.includes(g.title.toLowerCase())
+      );
+      if (matchedGame) {
+        await updateGameInLibrary(matchedGame.id, {
+          [isBanner ? 'backdropArt' : 'coverArt']: finalImageSrc
+        });
+        console.log(`[Save Game Art] Synchronized updated ${imageType} to games-database.json for game ${matchedGame.id}`);
+      }
+    } catch (dbSyncErr) {
+      console.warn("[Save Game Art Blob Database Sync Warning]:", dbSyncErr);
+    }
 
     // D. Attempt GitHub API Commit if GITHUB_TOKEN & GITHUB_REPO present
     let savedToGithub = false;
@@ -639,13 +692,19 @@ app.get("/api/games/admin-library", async (req, res) => {
     }
 
     const allGames = await readGamesLibrary();
+    const blobUrl = await getGamesDatabaseBlobUrl();
     const result = includeHidden ? allGames : allGames.filter(g => !g.isHidden);
     
     // Send standard cache control headers (no-cache for always-fresh metadata)
-    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
     return res.json({
       success: true,
       count: result.length,
+      blobUrl,
+      databasePath: GAMES_DATABASE_BLOB_PATH,
+      timestamp: Date.now(),
       games: result
     });
   } catch (err: any) {
