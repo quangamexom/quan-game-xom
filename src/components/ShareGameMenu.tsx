@@ -19,6 +19,7 @@ interface ShareGameMenuProps {
   className?: string;
   align?: 'left' | 'right' | 'center';
   netplay?: NetplayShareOptions;
+  onOpenChange?: (isOpen: boolean) => void;
 }
 
 export const ShareGameMenu: React.FC<ShareGameMenuProps> = ({
@@ -26,13 +27,22 @@ export const ShareGameMenu: React.FC<ShareGameMenuProps> = ({
   variant = 'button',
   className = '',
   align = 'right',
-  netplay
+  netplay,
+  onOpenChange
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [copiedType, setCopiedType] = useState<'link' | 'discord' | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const toggleOpen = (val?: boolean) => {
+    const nextVal = typeof val === 'boolean' ? val : !isOpen;
+    setIsOpen(nextVal);
+    if (onOpenChange) {
+      onOpenChange(nextVal);
+    }
+  };
 
   const {
     shareUrl,
@@ -46,13 +56,13 @@ export const ShareGameMenu: React.FC<ShareGameMenuProps> = ({
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
+        toggleOpen(false);
       }
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setIsOpen(false);
+        toggleOpen(false);
       }
     };
 
@@ -131,7 +141,7 @@ export const ShareGameMenu: React.FC<ShareGameMenuProps> = ({
           id={`btn-share-icon-${game.id}`}
           onClick={(e) => {
             e.stopPropagation();
-            setIsOpen(!isOpen);
+            toggleOpen();
           }}
           className="w-8 h-8 rounded-full bg-slate-900/90 hover:bg-amber-400 text-slate-300 hover:text-slate-950 border border-slate-700/80 hover:border-amber-500 flex items-center justify-center transition-all cursor-pointer shadow-lg backdrop-blur-md"
           title="Chia sẻ game này"
@@ -146,7 +156,7 @@ export const ShareGameMenu: React.FC<ShareGameMenuProps> = ({
           id={`btn-share-compact-${game.id}`}
           onClick={(e) => {
             e.stopPropagation();
-            setIsOpen(!isOpen);
+            toggleOpen();
           }}
           className="px-2.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-amber-300 border border-slate-700/80 hover:border-amber-500/50 text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer backdrop-blur-md shadow-md"
           title="Chia sẻ game"
@@ -162,7 +172,7 @@ export const ShareGameMenu: React.FC<ShareGameMenuProps> = ({
           id={`btn-share-footer-${game.id}`}
           onClick={(e) => {
             e.stopPropagation();
-            setIsOpen(!isOpen);
+            toggleOpen();
           }}
           className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/90 rounded-xl text-xs font-mono font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
           title="Chia sẻ liên kết game này"
@@ -178,7 +188,7 @@ export const ShareGameMenu: React.FC<ShareGameMenuProps> = ({
           id={`btn-share-main-${game.id}`}
           onClick={(e) => {
             e.stopPropagation();
-            setIsOpen(!isOpen);
+            toggleOpen();
           }}
           className="px-3.5 py-2 rounded-xl bg-slate-950/80 hover:bg-slate-900 text-slate-200 hover:text-white border border-slate-700 hover:border-amber-500/60 text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer shadow-lg backdrop-blur-md"
           title="Chia sẻ game"
@@ -196,7 +206,7 @@ export const ShareGameMenu: React.FC<ShareGameMenuProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -6 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className={`absolute z-50 bottom-auto top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-32px)] p-2 rounded-2xl bg-[#090D18]/95 border border-slate-800 shadow-2xl backdrop-blur-xl ${alignmentClasses}`}
+            className={`absolute z-[9999] bottom-auto top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-32px)] p-2 rounded-2xl bg-[#090D18]/95 border border-slate-800 shadow-2xl backdrop-blur-xl ${alignmentClasses}`}
           >
             {/* Header */}
             <div className="px-3 py-2 border-b border-slate-800/80 flex items-center justify-between">
