@@ -1022,6 +1022,117 @@ app.post("/api/admin/games/update-description", async (req, res) => {
   }
 });
 
+// Update Game Cover Art in Library & Upload to Vercel Blob (Admin)
+app.post("/api/admin/games/update-cover", async (req, res) => {
+  try {
+    const { id, title, fileData, imageUrl, fallbackGame, password } = req.body;
+    if (!id) {
+      return res.status(400).json({ success: false, error: "Thiếu ID game cần cập nhật ảnh bìa." });
+    }
+
+    const expectedPassword = process.env.ADMIN_PASSWORD || "20266Namm$$@";
+    if (password && password !== expectedPassword) {
+      return res.status(401).json({ success: false, error: "Mật khẩu Admin không chính xác!" });
+    }
+
+    let finalImageUrl = imageUrl;
+    const rawImage = fileData || imageUrl;
+
+    if (!rawImage) {
+      return res.status(400).json({ success: false, error: "Thiếu dữ liệu ảnh bìa (fileData hoặc imageUrl)" });
+    }
+
+    // A. If image is base64, upload to Vercel Blob
+    if (typeof rawImage === 'string' && rawImage.startsWith("data:image/")) {
+      try {
+        const matches = rawImage.match(/^data:image\/([a-zA-Z0-9\+\=\-]+);base64,(.+)$/);
+        if (matches && matches[2]) {
+          const rawExt = matches[1];
+          const ext = rawExt.includes("svg") ? "svg" : rawExt.includes("jpeg") || rawExt.includes("jpg") ? "jpg" : rawExt.includes("webp") ? "webp" : "png";
+          const buffer = Buffer.from(matches[2], "base64");
+          const mimeType = rawExt.includes("svg") ? "image/svg+xml" : `image/${ext}`;
+          const cleanId = String(id).replace(/[^a-zA-Z0-9_-]/g, '_');
+          const blobPath = `covers/cover-${cleanId}-${Date.now()}.${ext}`;
+
+          // 1. Upload to Vercel Blob
+          const blobUrl = await uploadImageToBlob(blobPath, buffer, mimeType);
+          if (blobUrl) {
+            finalImageUrl = blobUrl;
+          }
+
+          // 2. Local disk fallback
+          const publicDir = path.join(process.cwd(), "public", "assets", "covers");
+          const srcDir = path.join(process.cwd(), "src", "assets", "covers");
+          if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
+          if (!fs.existsSync(srcDir)) fs.mkdirSync(srcDir, { recursive: true });
+
+          const filename = `cover-${cleanId}.${ext}`;
+          fs.writeFileSync(path.join(publicDir, filename), buffer);
+          fs.writeFileSync(path.join(srcDir, filename), buffer);
+
+          if (!blobUrl) {
+            finalImageUrl = `/assets/covers/${filename}?t=${Date.now()}`;
+          }
+        }
+      } catch (uploadErr) {
+        console.warn("[Update Cover Disk/Blob Warning]:", uploadErr);
+      }
+    }
+
+    // B. Update in persistent games-library.json on Vercel Blob
+    const updated = await updateGameInLibrary(id, { coverArt: finalImageUrl });
+
+    if (!updated) {
+      const gameToSave = {
+        ...(fallbackGame || {}),
+        id,
+        title: title || fallbackGame?.title || id,
+        coverArt: finalImageUrl,
+        addedDate: fallbackGame?.addedDate || new Date().toISOString().split('T')[0]
+      };
+      await addGameToLibrary(gameToSave);
+      console.log(`[Admin Update Cover] Created new Blob override record for game ${id}`);
+    } else {
+      console.log(`[Admin Update Cover] Successfully updated cover for game ${id}`);
+    }
+
+    // C. Also update gameArtOverrides.json
+    if (title || fallbackGame?.title) {
+      const gameTitle = title || fallbackGame?.title;
+      const cleanKey = gameTitle.split('\n')[0]
+        .replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[⭐🇻🇳🔥💥✦⚡✨🎮👑💎]/gu, ' ')
+        .replace(/[\(\[\{].*?[\)\]\}]/g, ' ')
+        .replace(/quán game xóm|qgx edition|edition|việt hóa|việt hoá|viethoa|resynced|remastered|re-?make|repack|full iso|iso|crack/gi, ' ')
+        .replace(/[:\-\—\–\/\_\.\,]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+      
+      const overrides = getArtMapOverrides();
+      const rawLower = gameTitle.toLowerCase().trim();
+      const normKey = gameTitle.toLowerCase().replace(/[:\-\—\–\/\_\.\,]/g, ' ').replace(/\s+/g, ' ').trim();
+      const keysToUpdate = Array.from(new Set([cleanKey, rawLower, normKey])).filter(Boolean);
+
+      for (const k of keysToUpdate) {
+        overrides[k] = overrides[k] || { coverImage: finalImageUrl, rating: 95, genres: ['Game Quán Xóm'] };
+        overrides[k].coverImage = finalImageUrl;
+      }
+      saveArtMapOverrides(overrides);
+    }
+
+    return res.json({
+      success: true,
+      id,
+      coverArt: finalImageUrl,
+      url: finalImageUrl,
+      message: "Đã cập nhật ảnh bìa game thành công lên Vercel Blob Storage!"
+    });
+  } catch (err: any) {
+    console.error("[Update Cover API Error]:", err);
+    return res.status(500).json({ success: false, error: err.message || "Lỗi cập nhật ảnh bìa game" });
+  }
+});
+
 // Netplay Waiting Room Endpoints (2-Step Waiting Room Synchronization)
 app.post(["/api/netplay/create-room", "/netplay/create-room"], async (req, res) => {
   try {

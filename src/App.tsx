@@ -346,9 +346,21 @@ export default function App() {
       );
     };
 
+    const isRetroGame = (g: GameItem) => {
+      return isSnesGame(g) || 
+        g.emulatorCore === 'nes' || g.emulatorCore === 'gba' || g.emulatorCore === 'gbc' ||
+        g.platforms?.some(p => ['snes', 'nes', 'gba', 'gbc', 'n64', 'sega', 'ps1'].includes(p.toLowerCase()));
+    };
+
     const snesList = games.filter(isSnesGame);
-    const otherList = games.filter(g => !isSnesGame(g));
-    return [...snesList, ...otherList].slice(0, 10);
+    if (snesList.length > 0) {
+      return snesList.slice(0, 8);
+    }
+    const retroList = games.filter(isRetroGame);
+    if (retroList.length > 0) {
+      return retroList.slice(0, 8);
+    }
+    return games.slice(0, 8);
   }, [games]);
 
   useEffect(() => {
@@ -609,6 +621,11 @@ export default function App() {
       />
 
       {/* Modals & Drawers */}
+      <DonateModal
+        isOpen={isDonateOpen}
+        onClose={() => setIsDonateOpen(false)}
+      />
+
       <GameDetailModal
         game={selectedGame}
         onClose={handleCloseGameDetail}

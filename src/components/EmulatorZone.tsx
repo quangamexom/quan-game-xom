@@ -26,13 +26,17 @@ import {
   ExternalLink,
   Cloud,
   Crown,
-  Link2
+  Link2,
+  Edit3,
+  Camera,
+  Image as ImageIcon
 } from 'lucide-react';
 import { DEFAULT_SNES_TEST_GAMES } from '../services/sheetService';
 import { GameItem } from '../types';
 import { ShareGameMenu } from './ShareGameMenu';
 import { useAdminMode } from '../hooks/useAdminMode';
 import { AdminRomManagerModal } from './AdminRomManagerModal';
+import { EditGameDescriptionModal } from './EditGameDescriptionModal';
 import { requestSafeAction } from '../utils/emulatorManager';
 import { copyTextToClipboard, getGameShareUrl } from '../utils/shareUtils';
 import { LoadingWordsSpinner } from './LoadingWordsSpinner';
@@ -261,6 +265,34 @@ export const EmulatorZone: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [uploadFileName, setUploadFileName] = useState<string | null>(null);
 
+  // Standby / Ready Game State (Idle State before user clicks 'CHƠI NGAY')
+  const [standbyGame, setStandbyGame] = useState<{
+    id?: string;
+    title: string;
+    subtitle?: string;
+    romUrl: string;
+    core: string;
+    coverArt?: string;
+    backdropArt?: string;
+    fileSize?: string;
+    hasVietHoa?: boolean;
+    description?: string;
+  } | null>(() => {
+    const firstGame = DEFAULT_SNES_TEST_GAMES[0];
+    return firstGame ? {
+      id: firstGame.id,
+      title: firstGame.title,
+      subtitle: firstGame.subtitle,
+      romUrl: firstGame.romUrl || '',
+      core: 'snes',
+      coverArt: firstGame.coverArt,
+      backdropArt: firstGame.backdropArt,
+      fileSize: firstGame.fileSize,
+      hasVietHoa: firstGame.hasVietHoa,
+      description: firstGame.description
+    } : null;
+  });
+
   // SNES / Vercel Blob Games State
   const [snesGames, setSnesGames] = useState<GameItem[]>(DEFAULT_SNES_TEST_GAMES);
 
@@ -303,6 +335,92 @@ export const EmulatorZone: React.FC = () => {
   const activeBlobUrlRef = useRef<string | null>(null);
   const stateFileInputRef = useRef<HTMLInputElement>(null);
   const [stateActionStatus, setStateActionStatus] = useState<string | null>(null);
+
+  // Admin and Card Interactive States
+  const [editingDescGame, setEditingDescGame] = useState<GameItem | null>(null);
+  const [activeShareCardId, setActiveShareCardId] = useState<string | null>(null);
+  const [uploadingCoverGameId, setUploadingCoverGameId] = useState<string | null>(null);
+  const [coverUploadStatus, setCoverUploadStatus] = useState<string | null>(null);
+  const coverFileInputRef = useRef<HTMLInputElement>(null);
+  const coverTargetGameRef = useRef<GameItem | null>(null);
+
+  const triggerCoverUpload = (game: GameItem) => {
+    coverTargetGameRef.current = game;
+    if (coverFileInputRef.current) {
+      coverFileInputRef.current.value = '';
+      coverFileInputRef.current.click();
+    }
+  };
+
+  const handleCoverFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const targetGame = coverTargetGameRef.current;
+    if (!file || !targetGame) return;
+
+    if (!file.type.startsWith('image/')) {
+      setCoverUploadStatus('Vui lòng chọn file hình ảnh (PNG, JPG, WEBP)!');
+      setTimeout(() => setCoverUploadStatus(null), 3500);
+      return;
+    }
+
+    setUploadingCoverGameId(targetGame.id);
+    setCoverUploadStatus(`Đang upload ảnh bìa cho "${targetGame.title}" lên Vercel Blob...`);
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        const base64Data = evt.target?.result as string;
+        if (!base64Data) {
+          setUploadingCoverGameId(null);
+          setCoverUploadStatus('Lỗi đọc file ảnh.');
+          setTimeout(() => setCoverUploadStatus(null), 3000);
+          return;
+        }
+
+        try {
+          const res = await fetch('/api/admin/games/update-cover', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: targetGame.id,
+              title: targetGame.title,
+              fileData: base64Data,
+              fallbackGame: targetGame
+            })
+          });
+
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            throw new Error(data.error || 'Lỗi khi upload ảnh bìa lên máy chủ');
+          }
+
+          const newCoverUrl = data.coverArt || data.url || base64Data;
+
+          // Update SNES games list
+          setSnesGames(prev => prev.map(g => g.id === targetGame.id ? { ...g, coverArt: newCoverUrl } : g));
+
+          // Update Standby game if active
+          setStandbyGame(prev => prev && prev.id === targetGame.id ? { ...prev, coverArt: newCoverUrl } : prev);
+
+          setCoverUploadStatus(`✅ Đã cập nhật ảnh bìa mới cho "${targetGame.title}" thành công!`);
+          window.dispatchEvent(new CustomEvent('qgx_games_updated'));
+          setTimeout(() => setCoverUploadStatus(null), 4000);
+        } catch (uploadErr: any) {
+          console.error('Lỗi upload cover:', uploadErr);
+          setCoverUploadStatus(`⚠️ ${uploadErr.message || 'Lỗi khi cập nhật ảnh bìa'}`);
+          setTimeout(() => setCoverUploadStatus(null), 4000);
+        } finally {
+          setUploadingCoverGameId(null);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      console.error('Lỗi đọc file:', err);
+      setUploadingCoverGameId(null);
+      setCoverUploadStatus(`⚠️ ${err.message || 'Lỗi xử lý file'}`);
+      setTimeout(() => setCoverUploadStatus(null), 3000);
+    }
+  };
 
   // Listen for state export / import message responses from iframe
   useEffect(() => {
@@ -463,6 +581,84 @@ export const EmulatorZone: React.FC = () => {
         window.history.pushState(null, '', '/');
       }
     }
+  };
+
+  // Select a game for Standby / Idle Mode (Clean teardown of previous session, ready with 'CHƠI NGAY' button)
+  const selectStandbyGame = (game: {
+    id?: string;
+    title: string;
+    subtitle?: string;
+    romUrl: string;
+    core?: string;
+    coverArt?: string;
+    backdropArt?: string;
+    fileSize?: string;
+    hasVietHoa?: boolean;
+    description?: string;
+  }) => {
+    console.log(`🎮 [Select Standby Game] Selected: ${game.title} (Core: ${game.core || 'snes'}). Entering Ready state...`);
+
+    // 1. If currently playing a game, cleanly tear down active emulator instance
+    if (playerContainerRef.current) {
+      const iframe = playerContainerRef.current.querySelector('iframe');
+      if (iframe) {
+        try { iframe.contentWindow?.postMessage('QGX_TEARDOWN_EMULATOR', '*'); } catch (e) {}
+        try { iframe.src = 'about:blank'; } catch (e) {}
+      }
+    }
+    if (activeBlobUrlRef.current && activeBlobUrlRef.current.startsWith('blob:')) {
+      try { URL.revokeObjectURL(activeBlobUrlRef.current); } catch (e) {}
+      activeBlobUrlRef.current = null;
+    }
+
+    // 2. Reset playing & error states
+    setIsPlaying(false);
+    setIsLoadingRom(false);
+    setRomError(null);
+    setCurrentRomUrl(null);
+    setIsNetplayActive(false);
+    setNetplayWaitingState('idle');
+
+    // 3. Set standby game information
+    const resolvedCore = game.core || 'snes';
+    setStandbyGame({
+      id: game.id,
+      title: game.title,
+      subtitle: game.subtitle,
+      romUrl: game.romUrl,
+      core: resolvedCore,
+      coverArt: game.coverArt,
+      backdropArt: game.backdropArt,
+      fileSize: game.fileSize,
+      hasVietHoa: game.hasVietHoa,
+      description: game.description
+    });
+    setCurrentGameId(game.id || null);
+    setCurrentRomName(game.title);
+    setSelectedCore(resolvedCore);
+    setActiveTab('play');
+
+    if (typeof window !== 'undefined') {
+      window.__QGX_IS_PLAYING_EMULATOR__ = false;
+      window.dispatchEvent(new CustomEvent('qgx_emulator_state_changed', { detail: { isPlaying: false } }));
+
+      if (game.id) {
+        const targetUrl = `/?game_id=${encodeURIComponent(game.id)}`;
+        if (window.location.search !== `?game_id=${encodeURIComponent(game.id)}`) {
+          window.history.pushState({ gameId: game.id, isEmulator: true }, '', targetUrl);
+        }
+      }
+    }
+
+    // 4. Smooth scroll to emulator container
+    setTimeout(() => {
+      if (playerContainerRef.current) {
+        playerContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        const zone = document.getElementById('emulator-zone');
+        zone?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 80);
   };
 
   // Helper to preload ROM binary in background without mounting emulator iframe
@@ -1018,20 +1214,19 @@ export const EmulatorZone: React.FC = () => {
               }, urlNetplayRoom);
             }
           } else {
-            launchRom(
-              matchedGame.romUrl,
-              matchedGame.title,
-              matchedGame.emulatorCore || 'snes',
-              matchedGame.id
-            );
+            selectStandbyGame({
+              romUrl: matchedGame.romUrl,
+              title: matchedGame.title,
+              subtitle: matchedGame.subtitle,
+              core: matchedGame.emulatorCore || 'snes',
+              id: matchedGame.id,
+              coverArt: matchedGame.coverArt,
+              backdropArt: matchedGame.backdropArt,
+              description: matchedGame.description || matchedGame.subtitle,
+              hasVietHoa: matchedGame.hasVietHoa,
+              fileSize: matchedGame.fileSize
+            });
           }
-
-          // Smooth scroll to emulator container after short delay
-          setTimeout(() => {
-            if (playerContainerRef.current) {
-              playerContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-          }, 350);
         }
       }
     };
@@ -1044,10 +1239,26 @@ export const EmulatorZone: React.FC = () => {
     };
   }, [snesGames]);
 
-  // Global Event Listener for launch commands from other components
+  // Global Event Listener for game selection & launch commands from other components
   useEffect(() => {
     const handleLaunchEvent = (e: any) => {
-      const { romUrl, title, core, gameId, isNetplay, room, role, coverArt } = e.detail || {};
+      const {
+        romUrl,
+        title,
+        subtitle,
+        core,
+        gameId,
+        isNetplay,
+        room,
+        role,
+        coverArt,
+        backdropArt,
+        description,
+        hasVietHoa,
+        fileSize,
+        forceAutoStart
+      } = e.detail || {};
+
       if (romUrl) {
         // If current session is active Netplay, route to 2-step waiting room
         const shouldNetplay = isNetplay || ((isNetplayActive || isNetplayInitializingRef.current) && Boolean(netplayRoom));
@@ -1060,20 +1271,35 @@ export const EmulatorZone: React.FC = () => {
           } else {
             startHostingNetplay({ romUrl, title, core: core || 'snes', id: gameId, coverArt }, effectiveRoom);
           }
-        } else {
+        } else if (forceAutoStart) {
           launchRom(
             romUrl, 
             title, 
             core || 'snes', 
             gameId
           );
+        } else {
+          selectStandbyGame({
+            romUrl,
+            title,
+            subtitle,
+            core: core || 'snes',
+            id: gameId,
+            coverArt,
+            backdropArt,
+            description,
+            hasVietHoa,
+            fileSize
+          });
         }
       }
     };
 
     window.addEventListener('qgx_launch_game', handleLaunchEvent);
+    window.addEventListener('qgx_select_game_for_emulator', handleLaunchEvent);
     return () => {
       window.removeEventListener('qgx_launch_game', handleLaunchEvent);
+      window.removeEventListener('qgx_select_game_for_emulator', handleLaunchEvent);
     };
   }, [isNetplayActive, netplayRoom, netplayRole]);
 
@@ -1308,17 +1534,14 @@ export const EmulatorZone: React.FC = () => {
           <button
             id="tab-snes-play"
             onClick={() => setActiveTab('play')}
-            disabled={!isPlaying && !isLoadingRom}
             className={`px-4 py-2 rounded-xl text-xs font-display font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'play'
                 ? 'bg-amber-500 text-slate-950 shadow-lg'
-                : isPlaying || isLoadingRom
-                ? 'bg-slate-900/80 text-slate-300 hover:bg-slate-800 hover:text-white'
-                : 'opacity-40 cursor-not-allowed text-slate-500'
+                : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800 hover:text-white'
             }`}
           >
             <Play className="w-4 h-4" />
-            <span>Màn Hình Chơi Game {isPlaying && `(${currentRomName})`}</span>
+            <span>Màn Hình Chơi Game {isPlaying ? `(Đang chạy)` : standbyGame ? `(Sẵn sàng)` : ''}</span>
           </button>
 
           <button
@@ -1394,23 +1617,72 @@ export const EmulatorZone: React.FC = () => {
             </div>
 
             {/* Grid of SNES Sheet Games */}
+            {coverUploadStatus && (
+              <div className="p-3 bg-amber-500/10 border border-amber-500/40 rounded-xl text-amber-300 text-xs font-mono flex items-center justify-between gap-2 shadow-lg animate-fade-in">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>{coverUploadStatus}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCoverUploadStatus(null)}
+                  className="text-amber-400 hover:text-white px-2 py-0.5 text-[10px] font-bold border border-amber-500/30 rounded"
+                >
+                  Đóng
+                </button>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {snesGames.map((game) => (
                 <div
                   key={game.id}
                   id={`card-snes-${game.id}`}
-                  className="group relative glass-card rounded-3xl overflow-hidden border border-amber-500/40 hover:border-amber-400 transition-all duration-300 flex flex-col sm:flex-row shadow-2xl hover:shadow-amber-500/20 bg-gradient-to-br from-slate-900/90 via-slate-950/90 to-amber-950/30"
+                  onClick={() => selectStandbyGame({
+                    romUrl: game.romUrl || '',
+                    title: game.title,
+                    subtitle: game.subtitle,
+                    core: 'snes',
+                    id: game.id,
+                    coverArt: game.coverArt,
+                    backdropArt: game.backdropArt,
+                    description: game.description || game.subtitle,
+                    hasVietHoa: game.hasVietHoa,
+                    fileSize: game.fileSize
+                  })}
+                  className={`group relative glass-card rounded-3xl overflow-visible border border-amber-500/40 hover:border-amber-400 transition-all duration-300 flex flex-col sm:flex-row shadow-2xl hover:shadow-amber-500/20 bg-gradient-to-br from-slate-900/90 via-slate-950/90 to-amber-950/30 cursor-pointer ${
+                    activeShareCardId === game.id ? 'z-50 relative' : 'relative z-1'
+                  }`}
                 >
-                  <div className="relative sm:w-2/5 aspect-[4/3] sm:aspect-auto overflow-hidden bg-slate-950 shrink-0">
+                  <div className="relative sm:w-2/5 aspect-[4/3] sm:aspect-auto rounded-t-3xl sm:rounded-l-3xl sm:rounded-tr-none overflow-hidden bg-slate-950 shrink-0">
                     <img
                       src={game.coverArt}
                       alt={game.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute top-3 left-3 px-2.5 py-1 bg-slate-950/90 backdrop-blur-md rounded-lg border border-amber-400/60 text-xs font-mono font-black text-amber-300 flex items-center gap-1.5">
+                    <div className="absolute top-3 left-3 px-2.5 py-1 bg-slate-950/90 backdrop-blur-md rounded-lg border border-amber-400/60 text-xs font-mono font-black text-amber-300 flex items-center gap-1.5 z-10">
                       <Zap className="w-3 h-3 text-amber-400" />
                       <span>SNES 16-BIT</span>
                     </div>
+
+                    {/* Admin Change Cover Overlay Button */}
+                    {canShowAdmin && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          triggerCoverUpload(game);
+                        }}
+                        title="Đổi ảnh bìa (Upload lên Vercel Blob)"
+                        className="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-950/90 hover:bg-amber-400 text-amber-300 hover:text-slate-950 border border-amber-500/60 flex items-center justify-center transition-all opacity-90 group-hover:opacity-100 hover:scale-110 shadow-lg cursor-pointer z-20 backdrop-blur-md"
+                      >
+                        {uploadingCoverGameId === game.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                        ) : (
+                          <Camera className="w-4 h-4" />
+                        )}
+                      </button>
+                    )}
                   </div>
 
                   <div className="p-5 flex flex-col justify-between flex-1 gap-4">
@@ -1432,11 +1704,25 @@ export const EmulatorZone: React.FC = () => {
                       </p>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2 border-t border-slate-800">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2 border-t border-slate-800 flex-wrap">
                       <button
                         id={`btn-play-snes-${game.id}`}
-                        onClick={() => launchRom(game.romUrl || '', game.title, 'snes', game.id)}
-                        className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs font-mono uppercase tracking-wider transition-all shadow-lg hover:shadow-amber-500/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          selectStandbyGame({
+                            romUrl: game.romUrl || '',
+                            title: game.title,
+                            subtitle: game.subtitle,
+                            core: 'snes',
+                            id: game.id,
+                            coverArt: game.coverArt,
+                            backdropArt: game.backdropArt,
+                            description: game.description || game.subtitle,
+                            hasVietHoa: game.hasVietHoa,
+                            fileSize: game.fileSize
+                          });
+                        }}
+                        className="flex-1 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs font-mono uppercase tracking-wider transition-all shadow-lg hover:shadow-amber-500/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                       >
                         <Play className="w-4 h-4 fill-slate-950" />
                         <span>CHƠI NGAY</span>
@@ -1444,7 +1730,8 @@ export const EmulatorZone: React.FC = () => {
 
                       <button
                         id={`btn-netplay-snes-${game.id}`}
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           startHostingNetplay(
                             {
                               romUrl: game.romUrl || '',
@@ -1455,29 +1742,72 @@ export const EmulatorZone: React.FC = () => {
                             }
                           );
                         }}
-                        className="py-3 px-3.5 bg-slate-900 hover:bg-slate-800 border border-cyan-500/40 hover:border-cyan-400 text-cyan-300 font-bold rounded-xl text-xs font-mono transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                        className="py-2.5 px-3 bg-slate-900 hover:bg-slate-800 border border-cyan-500/40 hover:border-cyan-400 text-cyan-300 font-bold rounded-xl text-xs font-mono transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                         title="Tạo phòng chờ chơi 2 người trực tuyến qua mạng"
                       >
                         <Users className="w-4 h-4 text-cyan-400" />
                         <span className="hidden xs:inline">Netplay 2P</span>
                       </button>
 
-                      <ShareGameMenu
-                        game={game}
-                        variant="compact"
-                        align="right"
-                        netplay={isNetplayActive && netplayRoom ? { room: netplayRoom, role: 'p2' } : undefined}
-                      />
+                      {/* Admin Edit Description Button */}
+                      {canShowAdmin && (
+                        <button
+                          id={`btn-edit-desc-snes-${game.id}`}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingDescGame(game);
+                          }}
+                          className="py-2.5 px-2.5 bg-slate-900 hover:bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold rounded-xl text-xs font-mono transition-all flex items-center justify-center gap-1 cursor-pointer"
+                          title="Sửa mô tả game (Lưu vào Vercel Blob)"
+                        >
+                          <Edit3 className="w-3.5 h-3.5 text-amber-400" />
+                          <span className="text-[11px] hidden sm:inline">Mô tả</span>
+                        </button>
+                      )}
 
-                      {game.downloadUrl && (
+                      {/* Admin Change Cover Button */}
+                      {canShowAdmin && (
+                        <button
+                          id={`btn-edit-cover-snes-${game.id}`}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            triggerCoverUpload(game);
+                          }}
+                          disabled={uploadingCoverGameId === game.id}
+                          className="py-2.5 px-2.5 bg-slate-900 hover:bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold rounded-xl text-xs font-mono transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+                          title="Đổi ảnh bìa game (Upload lên Vercel Blob)"
+                        >
+                          {uploadingCoverGameId === game.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                          ) : (
+                            <Camera className="w-3.5 h-3.5 text-amber-400" />
+                          )}
+                          <span className="text-[11px] hidden sm:inline">Ảnh bìa</span>
+                        </button>
+                      )}
+
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <ShareGameMenu
+                          game={game}
+                          variant="compact"
+                          align="right"
+                          netplay={isNetplayActive && netplayRoom ? { room: netplayRoom, role: 'p2' } : undefined}
+                          onOpenChange={(open) => setActiveShareCardId(open ? game.id : null)}
+                        />
+                      </div>
+
+                      {canShowAdmin && game.downloadUrl && (
                         <a
                           href={game.downloadUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="px-3 py-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all"
-                          title="Mở link chia sẻ Google Drive"
+                          onClick={(e) => e.stopPropagation()}
+                          className="px-3 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all"
+                          title="Mở link chia sẻ Google Drive (Admin Only)"
                         >
-                          <Download className="w-4 h-4" />
+                          <Download className="w-3.5 h-3.5" />
                           <span className="sm:hidden">Tải ROM</span>
                         </a>
                       )}
@@ -1523,9 +1853,18 @@ export const EmulatorZone: React.FC = () => {
                 <div
                   key={rom.id}
                   id={`card-preset-${rom.id}`}
-                  className="group glass-card rounded-2xl overflow-hidden border border-slate-800 hover:border-amber-500/50 transition-all duration-300 flex flex-col h-full shadow-lg hover:shadow-2xl hover:shadow-amber-500/10"
+                  onClick={() => selectStandbyGame({
+                    romUrl: rom.romUrl,
+                    title: rom.title,
+                    core: rom.system,
+                    id: rom.id,
+                    coverArt: rom.coverArt,
+                    description: rom.description,
+                    fileSize: rom.systemName
+                  })}
+                  className="group glass-card rounded-2xl overflow-visible border border-slate-800 hover:border-amber-500/50 transition-all duration-300 flex flex-col h-full shadow-lg hover:shadow-2xl hover:shadow-amber-500/10 cursor-pointer"
                 >
-                  <div className="relative aspect-[16/9] overflow-hidden bg-slate-950">
+                  <div className="relative aspect-[16/9] rounded-t-2xl overflow-hidden bg-slate-950">
                     <img
                       src={rom.coverArt}
                       alt={rom.title}
@@ -1549,19 +1888,32 @@ export const EmulatorZone: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <button
                         id={`btn-launch-rom-${rom.id}`}
-                        onClick={() => launchRom(rom.romUrl, rom.title, rom.system, rom.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          selectStandbyGame({
+                            romUrl: rom.romUrl,
+                            title: rom.title,
+                            core: rom.system,
+                            id: rom.id,
+                            coverArt: rom.coverArt,
+                            description: rom.description,
+                            fileSize: rom.systemName
+                          });
+                        }}
                         className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs font-mono uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
                       >
                         <Play className="w-3.5 h-3.5 fill-slate-950" />
                         <span>CHƠI NGAY</span>
                       </button>
 
-                      <ShareGameMenu
-                        game={presetRomToGameItem(rom)}
-                        variant="compact"
-                        align="right"
-                        netplay={isNetplayActive && netplayRoom ? { room: netplayRoom, role: 'p2' } : undefined}
-                      />
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <ShareGameMenu
+                          game={presetRomToGameItem(rom)}
+                          variant="compact"
+                          align="right"
+                          netplay={isNetplayActive && netplayRoom ? { room: netplayRoom, role: 'p2' } : undefined}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1641,88 +1993,96 @@ export const EmulatorZone: React.FC = () => {
             </div>
           )}
 
-          <div className="flex items-center justify-between p-4 bg-slate-950 rounded-2xl border border-slate-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-950 rounded-2xl border border-slate-800">
             <div className="flex items-center gap-3">
-              <span className={`w-3 h-3 rounded-full ${isLoadingRom ? 'bg-amber-400 animate-spin' : 'bg-emerald-400 animate-pulse'}`} />
+              <span className={`w-3 h-3 rounded-full ${isPlaying ? 'bg-emerald-400 animate-pulse' : isLoadingRom ? 'bg-amber-400 animate-spin' : 'bg-amber-500/80'}`} />
               <div>
                 <h3 className="text-sm font-bold text-white font-display">
-                  Đang Chơi: <span className="text-amber-300">{currentRomName || 'ROM Game'}</span>
+                  {isPlaying ? (
+                    <>Đang Chơi: <span className="text-amber-300">{currentRomName || 'ROM Game'}</span></>
+                  ) : (
+                    <>Sẵn Sàng: <span className="text-amber-300">{standbyGame?.title || currentRomName || 'Chưa chọn game'}</span></>
+                  )}
                 </h3>
                 <span className="text-[10px] font-mono text-slate-400 uppercase">
-                  Hệ Máy Core: {SYSTEM_CORES.find(c => c.id === selectedCore)?.name || selectedCore.toUpperCase()} • Server Proxy CORS Safe
+                  Hệ Máy Core: {SYSTEM_CORES.find(c => c.id === selectedCore)?.name || selectedCore.toUpperCase()} • {isPlaying ? 'Đang chạy 60 FPS' : 'Chế Độ Chờ Chơi (Idle)'}
                 </span>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              {/* Export / Import State Action Buttons */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (playerContainerRef.current) {
-                    const iframe = playerContainerRef.current.querySelector('iframe');
-                    if (iframe?.contentWindow) {
-                      iframe.contentWindow.postMessage({ type: 'QGX_EXPORT_STATE' }, '*');
-                    }
-                  }
-                }}
-                className="px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 hover:text-emerald-200 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer flex items-center gap-1.5"
-                title="Tải file Save State (.state) về máy tính"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Lưu State (.state)</span>
-              </button>
-
-              <label
-                className="px-3 py-1.5 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 hover:text-cyan-200 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer flex items-center gap-1.5"
-                title="Nạp file Save State (.state) từ máy tính vào game"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                <span>Nạp State (.state)</span>
-                <input
-                  ref={stateFileInputRef}
-                  type="file"
-                  accept=".state,.sav,.save"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                      const arrayBuffer = event.target?.result as ArrayBuffer;
-                      if (arrayBuffer && playerContainerRef.current) {
+              {isPlaying && (
+                <>
+                  {/* Export / Import State Action Buttons */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (playerContainerRef.current) {
                         const iframe = playerContainerRef.current.querySelector('iframe');
                         if (iframe?.contentWindow) {
-                          const stateData = Array.from(new Uint8Array(arrayBuffer));
-                          iframe.contentWindow.postMessage({ type: 'QGX_IMPORT_STATE', stateData }, '*');
+                          iframe.contentWindow.postMessage({ type: 'QGX_EXPORT_STATE' }, '*');
                         }
                       }
-                    };
-                    reader.readAsArrayBuffer(file);
-                    if (stateFileInputRef.current) stateFileInputRef.current.value = '';
-                  }}
-                  className="hidden"
-                />
-              </label>
+                    }}
+                    className="px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 hover:text-emerald-200 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer flex items-center gap-1.5"
+                    title="Tải file Save State (.state) về máy tính"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Lưu State</span>
+                  </button>
 
-              <button
-                id="btn-reset-current-game"
-                onClick={handleResetCurrentGame}
-                className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 hover:text-amber-200 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer flex items-center gap-1.5"
-                title={isNetplayActive ? "Khởi động lại Core và kết nối lại Netplay" : "Khởi động lại Game"}
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>{isNetplayActive ? 'Reset / Kết Nối Lại' : 'Reset Game'}</span>
-              </button>
+                  <label
+                    className="px-3 py-1.5 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 hover:text-cyan-200 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer flex items-center gap-1.5"
+                    title="Nạp file Save State (.state) từ máy tính vào game"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Nạp State</span>
+                    <input
+                      ref={stateFileInputRef}
+                      type="file"
+                      accept=".state,.sav,.save"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          const arrayBuffer = event.target?.result as ArrayBuffer;
+                          if (arrayBuffer && playerContainerRef.current) {
+                            const iframe = playerContainerRef.current.querySelector('iframe');
+                            if (iframe?.contentWindow) {
+                              const stateData = Array.from(new Uint8Array(arrayBuffer));
+                              iframe.contentWindow.postMessage({ type: 'QGX_IMPORT_STATE', stateData }, '*');
+                            }
+                          }
+                        };
+                        reader.readAsArrayBuffer(file);
+                        if (stateFileInputRef.current) stateFileInputRef.current.value = '';
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+
+                  <button
+                    id="btn-reset-current-game"
+                    onClick={handleResetCurrentGame}
+                    className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 hover:text-amber-200 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer flex items-center gap-1.5"
+                    title={isNetplayActive ? "Khởi động lại Core và kết nối lại Netplay" : "Khởi động lại Game"}
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>{isNetplayActive ? 'Reset Kết Nối' : 'Reset'}</span>
+                  </button>
+                </>
+              )}
 
               <ShareGameMenu
                 game={{
-                  id: currentGameId || currentRomName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-                  title: currentRomName || 'Retro Emulator Game',
+                  id: currentGameId || standbyGame?.id || currentRomName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                  title: (isPlaying ? currentRomName : standbyGame?.title) || 'Retro Emulator Game',
                   platforms: ['Other'],
-                  language: 'Gốc / Tiếng Anh',
-                  hasVietHoa: false,
+                  language: standbyGame?.hasVietHoa ? 'Tiếng Việt 🇻🇳' : 'Gốc / Tiếng Anh',
+                  hasVietHoa: Boolean(standbyGame?.hasVietHoa),
                   fileSize: selectedCore.toUpperCase(),
-                  coverArt: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop'
+                  coverArt: standbyGame?.coverArt || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop'
                 }}
                 variant="compact"
                 align="right"
@@ -1746,21 +2106,19 @@ export const EmulatorZone: React.FC = () => {
                 Đổi Game Khác
               </button>
 
-              <button
-                id="btn-exit-emulator"
-                onClick={() => {
-                  if (isPlaying) {
+              {isPlaying && (
+                <button
+                  id="btn-exit-emulator"
+                  onClick={() => {
                     requestSafeAction(() => {
                       terminateActiveEmulator();
                     }, 'dừng phiên chơi game');
-                  } else {
-                    terminateActiveEmulator();
-                  }
-                }}
-                className="px-3.5 py-1.5 bg-red-950/80 hover:bg-red-600 border border-red-500/50 text-red-200 hover:text-white rounded-xl text-xs font-bold font-mono transition-all cursor-pointer"
-              >
-                Thoát Game
-              </button>
+                  }}
+                  className="px-3.5 py-1.5 bg-red-950/80 hover:bg-red-600 border border-red-500/50 text-red-200 hover:text-white rounded-xl text-xs font-bold font-mono transition-all cursor-pointer"
+                >
+                  Thoát Game
+                </button>
+              )}
             </div>
           </div>
 
@@ -2094,16 +2452,143 @@ export const EmulatorZone: React.FC = () => {
                 title="Retro Emulator Engine"
               />
             ) : !isLoadingRom && !romError ? (
-              <div className="text-center p-8 text-slate-500 font-mono text-xs space-y-3">
-                <Gamepad2 className="w-10 h-10 text-slate-700 mx-auto" />
-                <p>Vui lòng chọn một trò chơi SNES từ thư viện hoặc tải ROM từ máy để bắt đầu.</p>
-                <button
-                  onClick={() => setActiveTab('library')}
-                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs font-mono uppercase"
-                >
-                  Xem Thư Viện ROM
-                </button>
-              </div>
+              standbyGame ? (
+                <div className="relative w-full h-full min-h-[460px] sm:min-h-[540px] flex flex-col items-center justify-center p-6 sm:p-10 overflow-hidden select-none bg-slate-950">
+                  {/* Background Artwork Layer with Blur & Vignette Overlay */}
+                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    {standbyGame.backdropArt || standbyGame.coverArt ? (
+                      <img
+                        src={standbyGame.backdropArt || standbyGame.coverArt}
+                        alt={standbyGame.title}
+                        className="w-full h-full object-cover object-center filter blur-md brightness-[0.25] saturate-150 scale-110 transition-all duration-700"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/30" />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-950/50" />
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.12),transparent_75%)]" />
+                  </div>
+
+                  {/* Standby Foreground Card */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.96 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="relative z-10 max-w-2xl w-full flex flex-col items-center text-center space-y-5 px-4"
+                  >
+                    {/* System & Viet Hoa Badges */}
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      <div className="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/50 text-amber-300 text-[11px] font-mono font-black uppercase tracking-wider flex items-center gap-1.5 backdrop-blur-md shadow-lg">
+                        <Zap className="w-3.5 h-3.5 text-amber-400" />
+                        <span>{SYSTEM_CORES.find(c => c.id === standbyGame.core)?.name || standbyGame.core.toUpperCase()}</span>
+                      </div>
+
+                      {standbyGame.hasVietHoa && (
+                        <div className="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 text-[11px] font-mono font-black uppercase tracking-wider flex items-center gap-1 backdrop-blur-md shadow-lg">
+                          <span>🇻🇳 BẢN VIỆT HÓA</span>
+                        </div>
+                      )}
+
+                      <div className="px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700 text-slate-300 text-[11px] font-mono font-bold uppercase tracking-wider backdrop-blur-md">
+                        <span>⚡ 60 FPS READY</span>
+                      </div>
+                    </div>
+
+                    {/* Cover Boxart Thumbnail */}
+                    {standbyGame.coverArt && (
+                      <div className="relative w-28 h-36 sm:w-36 sm:h-48 rounded-2xl overflow-hidden shadow-[0_15px_35px_rgba(0,0,0,0.8)] border-2 border-amber-400/40 group hover:border-amber-400 transition-all duration-300">
+                        <img
+                          src={standbyGame.coverArt}
+                          alt={standbyGame.title}
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 to-transparent" />
+                      </div>
+                    )}
+
+                    {/* Game Title & Subtitle */}
+                    <div className="space-y-1.5">
+                      <h2 className="font-display font-black text-2xl sm:text-4xl uppercase text-white tracking-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
+                        {standbyGame.title}
+                      </h2>
+                      {standbyGame.subtitle && (
+                        <p className="font-cinematic italic font-semibold text-xs sm:text-base text-amber-300/90 tracking-wide drop-shadow-md">
+                          "{standbyGame.subtitle}"
+                        </p>
+                      )}
+                      {standbyGame.description && (
+                        <p className="text-xs sm:text-sm text-slate-300 font-body max-w-lg mx-auto line-clamp-2 leading-relaxed drop-shadow-md">
+                          {standbyGame.description}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* THE BIG PROMINENT "CHƠI NGAY" BUTTON */}
+                    <div className="pt-2 flex flex-col items-center gap-3">
+                      <button
+                        id="btn-standby-play-now"
+                        type="button"
+                        onClick={() => {
+                          launchRom(standbyGame.romUrl, standbyGame.title, standbyGame.core, standbyGame.id);
+                        }}
+                        className="group relative px-8 sm:px-14 py-4 sm:py-5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:via-yellow-300 hover:to-amber-400 text-slate-950 font-display font-black text-base sm:text-xl uppercase tracking-wider shadow-[0_0_35px_rgba(245,158,11,0.6)] hover:shadow-[0_0_55px_rgba(245,158,11,0.85)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-3.5 cursor-pointer border-2 border-amber-200"
+                      >
+                        <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-slate-950 text-amber-400 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                          <Play className="w-5 h-5 sm:w-6 sm:h-6 fill-amber-400 translate-x-0.5" />
+                        </div>
+                        <span>CHƠI NGAY</span>
+                      </button>
+
+                      <p className="text-[11px] font-mono text-slate-400">
+                        ⚡ Nhấp để nạp ROM và khởi chạy trình giả lập 60 FPS
+                      </p>
+                    </div>
+
+                    {/* Secondary Navigation Actions */}
+                    <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          startHostingNetplay({
+                            romUrl: standbyGame.romUrl,
+                            title: standbyGame.title,
+                            core: standbyGame.core,
+                            id: standbyGame.id,
+                            coverArt: standbyGame.coverArt
+                          });
+                        }}
+                        className="px-4 py-2 bg-slate-900/90 hover:bg-slate-800 border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 text-xs font-mono font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-md cursor-pointer"
+                        title="Tạo phòng Netplay 2 người chơi online"
+                      >
+                        <Users className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>Chơi Online (Netplay 2P)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('library')}
+                        className="px-4 py-2 bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white text-xs font-mono font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <FolderOpen className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Đổi Game Khác</span>
+                      </button>
+                    </div>
+                  </motion.div>
+                </div>
+              ) : (
+                <div className="text-center p-8 text-slate-500 font-mono text-xs space-y-3">
+                  <Gamepad2 className="w-10 h-10 text-slate-700 mx-auto" />
+                  <p>Vui lòng chọn một trò chơi SNES từ thư viện hoặc tải ROM từ máy để bắt đầu.</p>
+                  <button
+                    onClick={() => setActiveTab('library')}
+                    className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs font-mono uppercase"
+                  >
+                    Xem Thư Viện ROM
+                  </button>
+                </div>
+              )
             ) : null}
           </div>
 
@@ -2370,6 +2855,28 @@ export const EmulatorZone: React.FC = () => {
         onClose={() => setIsAdminRomModalOpen(false)}
         onPlayRom={(url, name, core) => launchRom(url, name, core || 'snes')}
         onGameUpdated={loadSnesGames}
+      />
+
+      {/* Admin Edit Description Modal */}
+      {canShowAdmin && (
+        <EditGameDescriptionModal
+          game={editingDescGame}
+          isOpen={Boolean(editingDescGame)}
+          onClose={() => setEditingDescGame(null)}
+          onSuccess={(gameId, newDesc) => {
+            setSnesGames(prev => prev.map(g => g.id === gameId ? { ...g, description: newDesc } : g));
+            setStandbyGame(prev => prev && prev.id === gameId ? { ...prev, description: newDesc } : prev);
+          }}
+        />
+      )}
+
+      {/* Hidden File Input for Cover Art Upload to Vercel Blob */}
+      <input
+        type="file"
+        ref={coverFileInputRef}
+        onChange={handleCoverFileChange}
+        accept="image/png,image/jpeg,image/webp,image/jpg"
+        className="hidden"
       />
     </div>
   );

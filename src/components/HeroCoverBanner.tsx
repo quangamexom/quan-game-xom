@@ -25,50 +25,50 @@ interface HeroCoverBannerProps {
   featuredGames?: GameItem[];
 }
 
-const DEFAULT_SLIDES: HeroSlide[] = [
+const DEFAULT_RETRO_SLIDES: HeroSlide[] = [
   {
-    id: '1',
-    label: 'VIỆT HÓA ⭐ HOT 2026',
-    title: 'BLACK MYTH: WUKONG',
-    subtitle: 'Siêu phẩm Nhập Vai Hành Động Thần Thoại Tây Du',
-    description: 'Hóa thân thành Ngộ Không trong hành trình phục thù hoành tráng, đồ họa Unreal Engine 5 đỉnh cao, bản Việt Hóa chuẩn 100% ngữ cảnh từ Quán Game Xóm.',
-    date: '04/10',
+    id: 'snes-1',
+    label: 'VIỆT HÓA ⭐ SNES 16-BIT',
+    title: 'Yu Yu Hakusho (Việt Hóa)',
+    subtitle: 'Hành Trình U Meshi • Nhất Dương Chỉ',
+    description: 'Hóa thân thành Yusuke Urameshi và đồng đội trong Đại Hội Võ Thuật Bóng Tối đỉnh cao. Bản dịch Tiếng Việt chuẩn 100% ngữ cảnh trên hệ máy Super Nintendo (SNES).',
+    date: '22/08',
     badgeColor: 'border-amber-400 text-amber-300 bg-amber-500/20',
-    fallbackCover: 'https://cdn.cloudflare.steamstatic.com/steam/apps/2358720/library_600x900.jpg',
-    fallbackBanner: 'https://cdn.cloudflare.steamstatic.com/steam/apps/2358720/header.jpg'
+    fallbackCover: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop',
+    fallbackBanner: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200&auto=format&fit=crop'
   },
   {
-    id: '2',
-    label: 'BẢN QUYỀN VIỆT HÓA',
-    title: 'GOD OF WAR RAGNARÖK',
-    subtitle: 'Hành Trình Cuối Cùng Của Kratos & Atreus Tại Cửu Giới',
-    description: 'Trải nghiệm cuộc chiến định mệnh chống lại các thần Bắc Âu. Bản Việt Hóa trọn bộ thoại và giao diện, đồ họa rực rỡ tốc độ cao không cần giả lập rườm rà.',
-    date: '12/08',
+    id: 'snes-2',
+    label: 'VIỆT HÓA ⭐ HUYỀN THOẠI SNES',
+    title: 'Mega Man X2 (Việt Hóa)',
+    subtitle: 'Rockman X2 • Phục Sinh Zero',
+    description: 'Đồng hành cùng chiến binh X săn lùng 8 trùm Maverick và đánh bại nhóm X-Hunters để giải cứu các bộ phận của Zero. Bản Việt Hóa hoàn chỉnh Quán Game Xóm.',
+    date: '22/08',
     badgeColor: 'border-cyan-400 text-cyan-300 bg-cyan-500/20',
-    fallbackCover: 'https://cdn.cloudflare.steamstatic.com/steam/apps/2322010/library_600x900.jpg',
-    fallbackBanner: 'https://cdn.cloudflare.steamstatic.com/steam/apps/2322010/header.jpg'
+    fallbackCover: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=600&auto=format&fit=crop',
+    fallbackBanner: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200&auto=format&fit=crop'
   },
   {
-    id: '3',
-    label: 'KINH DỊ HỒI HỘP',
-    title: 'RESIDENT EVIL 3 RE-MAKE',
-    subtitle: 'Chạy Trốn Nemesis Trong Thành Phố Raccoon Sụp Đổ',
-    description: 'Thoát khỏi thảm họa T-Virus cùng Jill Valentine. Đồ họa RE Engine siêu chân thực, hỗ trợ giả lập và bản dịch Việt Hóa trọn vẹn từng trang tài liệu.',
-    date: '15/06',
+    id: 'snes-3',
+    label: 'ĐỐI KHÁNG ĐI CẢNH 16-BIT',
+    title: 'Battletoads & Double Dragon',
+    subtitle: 'The Ultimate Team • SNES 16-Bit',
+    description: 'Cú bắt tay lịch sử giữa binh đoàn ếch chiến binh Battletoads và hai anh em song long Billy & Jimmy của Double Dragon trên Super Nintendo.',
+    date: '15/08',
+    badgeColor: 'border-emerald-400 text-emerald-300 bg-emerald-500/20',
+    fallbackCover: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop',
+    fallbackBanner: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop'
+  },
+  {
+    id: 'snes-4',
+    label: 'SIÊU NHÂN ĐỐI KHÁNG RETRO',
+    title: 'Mighty Morphin Power Rangers',
+    subtitle: 'The Fighting Edition • Super Nintendo',
+    description: 'Đại chiến Robot khổng lồ Megazord, Dragonzord và quái vật kinh điển của 5 Anh Em Siêu Nhân trên hệ máy Super Nintendo (SNES).',
+    date: '15/08',
     badgeColor: 'border-red-400 text-red-300 bg-red-500/20',
-    fallbackCover: 'https://cdn.cloudflare.steamstatic.com/steam/apps/952060/library_600x900.jpg',
-    fallbackBanner: 'https://cdn.cloudflare.steamstatic.com/steam/apps/952060/header.jpg'
-  },
-  {
-    id: '4',
-    label: 'KINH ĐIỂN CỐT TRUYỆN',
-    title: 'GRAND THEFT AUTO: VICE CITY',
-    subtitle: 'Hành Trình Xây Dựng Đế Chế Tại Thành Phố Biển Vice City',
-    description: 'Trở lại thập niên 80 cùng Tommy Vercetti. Bản Việt Hóa hoàn chỉnh Quán Game Xóm, đồ họa cải tiến kèm kho nhạc radio retro bùng nổ.',
-    date: '01/05',
-    badgeColor: 'border-indigo-400 text-indigo-300 bg-indigo-500/20',
-    fallbackCover: 'https://cdn.cloudflare.steamstatic.com/steam/apps/1547000/library_600x900.jpg',
-    fallbackBanner: 'https://cdn.cloudflare.steamstatic.com/steam/apps/1547000/header.jpg'
+    fallbackCover: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop',
+    fallbackBanner: 'https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=600&auto=format&fit=crop'
   }
 ];
 
@@ -102,10 +102,11 @@ const HeroSlideContent: React.FC<HeroSlideContentProps> = ({
       description: slide.description,
       coverArt: slide.fallbackCover || '',
       backdropArt: slide.fallbackBanner || '',
-      platforms: ['PC'],
-      language: 'Tiếng Việt',
-      hasVietHoa: true,
-      downloadUrl: ''
+      platforms: ['Other'],
+      language: slide.title.includes('Việt Hóa') ? 'Tiếng Việt 🇻🇳' : 'Tiếng Anh',
+      hasVietHoa: slide.title.includes('Việt Hóa'),
+      downloadUrl: '',
+      emulatorCore: 'snes'
     };
   }, [slide, featuredGames]);
 
@@ -184,7 +185,7 @@ const HeroSlideContent: React.FC<HeroSlideContentProps> = ({
               {/* Badge overlay on poster */}
               <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md bg-slate-950/85 border border-amber-400/60 text-[10px] font-mono font-bold text-amber-300 shadow-md backdrop-blur-md flex items-center gap-1">
                 <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                <span>HOT</span>
+                <span>SNES</span>
               </div>
             </div>
           </div>
@@ -222,8 +223,8 @@ const HeroSlideContent: React.FC<HeroSlideContentProps> = ({
                 onClick={handleGameClick}
                 className="px-4 py-2.5 sm:px-6 sm:py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-display font-black text-xs sm:text-sm uppercase tracking-wider rounded-xl shadow-[0_0_25px_rgba(245,158,11,0.5)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer border border-amber-300/50"
               >
-                <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-slate-950" />
-                <span>XEM THÔNG TIN & TẢI GAME</span>
+                <Gamepad2 className="w-4 h-4 fill-slate-950" />
+                <span>XEM CHI TIẾT & CHƠI NGAY</span>
               </button>
 
               <button
@@ -250,22 +251,48 @@ export const HeroCoverBanner: React.FC<HeroCoverBannerProps> = ({
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  // Derive slides dynamically from SNES / Retro featuredGames or default SNES slides
+  const slides: HeroSlide[] = useMemo(() => {
+    if (featuredGames && featuredGames.length > 0) {
+      return featuredGames.slice(0, 6).map((g, idx) => ({
+        id: g.id || `snes-slide-${idx}`,
+        label: g.hasVietHoa ? 'VIỆT HÓA ⭐ SNES 16-BIT RETRO' : 'SUPER NINTENDO (SNES) RETRO',
+        title: g.title,
+        subtitle: g.subtitle || 'Kinh Điển Super Nintendo (SNES)',
+        description: g.description || `${g.title} — Siêu phẩm kinh điển tuổi thơ hệ máy Super Nintendo (SNES) 16-bit. Trải nghiệm ngay trên Quán Game Xóm.`,
+        date: g.addedDate ? g.addedDate.slice(5) : '22/08',
+        badgeColor: 'border-amber-400 text-amber-300 bg-amber-500/20',
+        fallbackCover: g.coverArt,
+        fallbackBanner: g.backdropArt
+      }));
+    }
+    return DEFAULT_RETRO_SLIDES;
+  }, [featuredGames]);
+
+  // Keep currentIndex in valid bounds if slides change
+  useEffect(() => {
+    if (currentIndex >= slides.length) {
+      setCurrentIndex(0);
+    }
+  }, [slides.length, currentIndex]);
+
   // Auto advance slide every 6 seconds
   useEffect(() => {
+    if (slides.length <= 1) return;
     const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % DEFAULT_SLIDES.length);
+      setCurrentIndex((prev) => (prev + 1) % slides.length);
     }, 6000);
     return () => clearInterval(timer);
-  }, []);
+  }, [slides.length]);
 
-  const slide = DEFAULT_SLIDES[currentIndex];
+  const slide = slides[currentIndex] || slides[0] || DEFAULT_RETRO_SLIDES[0];
 
   const handleNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % DEFAULT_SLIDES.length);
+    setCurrentIndex((prev) => (prev + 1) % slides.length);
   };
 
   const handlePrev = () => {
-    setCurrentIndex((prev) => (prev - 1 + DEFAULT_SLIDES.length) % DEFAULT_SLIDES.length);
+    setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length);
   };
 
   return (
@@ -295,13 +322,13 @@ export const HeroCoverBanner: React.FC<HeroCoverBannerProps> = ({
               <span>CẬP NHẬT: <strong className="text-amber-300">{slide.date}</strong></span>
             </div>
             <div className="text-amber-400/90 font-mono text-xs sm:text-sm tracking-wider">
-              0{currentIndex + 1} <span className="text-slate-600">/</span> 0{DEFAULT_SLIDES.length}
+              0{currentIndex + 1} <span className="text-slate-600">/</span> 0{slides.length}
             </div>
           </div>
 
           {/* Center Dot Pagination */}
           <div className="flex items-center gap-1.5 sm:gap-2.5">
-            {DEFAULT_SLIDES.map((s, idx) => {
+            {slides.map((s, idx) => {
               const isActive = idx === currentIndex;
               return (
                 <button
