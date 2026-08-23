@@ -38,12 +38,22 @@ export const LEGACY_METADATA_PATH = "roms-metadata/games-library.json";
 let cachedDatabaseUrl: string | null = null;
 
 /**
- * Get fallback initial games array from local files (googleSheetGames.json + DEFAULT_SNES_TEST_GAMES)
+ * Get fallback initial games array from local files (initialGames.json, games-library.json, googleSheetGames.json)
  */
 export function getLocalDefaultGames(): PersistentGameCard[] {
   let listData: PersistentGameCard[] = [];
 
-  // 1. Try public/assets/games-library.json
+  // 1. Try src/data/initialGames.json (Primary curated 150+ games default fallback)
+  try {
+    const initPath = path.join(process.cwd(), "src", "data", "initialGames.json");
+    if (fs.existsSync(initPath)) {
+      const content = fs.readFileSync(initPath, "utf-8");
+      const parsed = JSON.parse(content);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (err) {}
+
+  // 2. Try public/assets/games-library.json
   try {
     const publicPath = path.join(process.cwd(), "public", "assets", "games-library.json");
     if (fs.existsSync(publicPath)) {
@@ -53,7 +63,7 @@ export function getLocalDefaultGames(): PersistentGameCard[] {
     }
   } catch (err) {}
 
-  // 2. Try src/data/googleSheetGames.json
+  // 3. Try src/data/googleSheetGames.json
   try {
     const sheetPath = path.join(process.cwd(), "src", "data", "googleSheetGames.json");
     if (fs.existsSync(sheetPath)) {
@@ -150,7 +160,19 @@ export async function readGamesLibrary(): Promise<PersistentGameCard[]> {
         if (res.ok) {
           const listData = await res.json();
           if (Array.isArray(listData) && listData.length > 0) {
-            return listData;
+            // Merge with local defaults if any default games are missing
+            const merged = [...listData];
+            let hasNewMerged = false;
+            localDefaults.forEach(defGame => {
+              if (!merged.some(m => m.id === defGame.id || (m.title && defGame.title && m.title.toLowerCase().trim() === defGame.title.toLowerCase().trim()))) {
+                merged.push(defGame);
+                hasNewMerged = true;
+              }
+            });
+            if (hasNewMerged && blobToken) {
+              writeGamesLibrary(merged).catch(() => {});
+            }
+            return merged;
           }
         }
       } else {
