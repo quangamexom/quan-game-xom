@@ -414,6 +414,7 @@ app.get("/api/get-server-art-map", (req, res) => {
 
 // Get Current Custom Logo
 app.get("/api/get-logo", (req, res) => {
+  res.setHeader("Content-Type", "application/json");
   try {
     const customLogoPath = path.join(process.cwd(), "src/data/customLogo.ts");
     const defaultLogoUrl = "/assets/logo/logo-qgx-default.png";
@@ -435,8 +436,9 @@ app.get("/api/get-logo", (req, res) => {
 
 // Save Custom Logo & Commit to Local Disk & GitHub
 app.post("/api/save-logo", async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
   try {
-    const { logoUrl, fileData } = req.body;
+    const { logoUrl, fileData } = req.body || {};
     const rawLogo = fileData || logoUrl;
     if (!rawLogo) {
       return res.status(400).json({ success: false, error: "Logo URL or file data is required" });
@@ -445,7 +447,7 @@ app.post("/api/save-logo", async (req, res) => {
     let finalLogoUrl = rawLogo;
 
     // Handle base64 image: Upload to Vercel Blob (Permanent Cloud Storage) & fallback to disk
-    if (rawLogo.startsWith("data:image/")) {
+    if (typeof rawLogo === "string" && rawLogo.startsWith("data:image/")) {
       try {
         const matches = rawLogo.match(/^data:image\/([a-zA-Z0-9\+\=\-]+);base64,(.+)$/);
         if (matches && matches[2]) {
@@ -482,10 +484,13 @@ app.post("/api/save-logo", async (req, res) => {
     }
 
     // Always update local src/data/customLogo.ts
-    const customLogoFilePath = path.join(process.cwd(), "src/data/customLogo.ts");
-    const logoFileContent = `export const OFFICIAL_LOGO_URL = '${finalLogoUrl.replace(/'/g, "\\'")}';\nexport const DEFAULT_LOGO_URL = '/assets/logo/logo-qgx-default.png';\nexport const CUSTOM_LOGO_URL = '${finalLogoUrl.replace(/'/g, "\\'")}';\n`;
-    
-    fs.writeFileSync(customLogoFilePath, logoFileContent, "utf-8");
+    try {
+      const customLogoFilePath = path.join(process.cwd(), "src/data/customLogo.ts");
+      const logoFileContent = `export const OFFICIAL_LOGO_URL = '${finalLogoUrl.replace(/'/g, "\\'")}';\nexport const DEFAULT_LOGO_URL = '/assets/logo/logo-qgx-default.png';\nexport const CUSTOM_LOGO_URL = '${finalLogoUrl.replace(/'/g, "\\'")}';\n`;
+      fs.writeFileSync(customLogoFilePath, logoFileContent, "utf-8");
+    } catch (writeErr) {
+      console.warn("[Write customLogo.ts Warning]:", writeErr);
+    }
 
     let savedToGithub = false;
     const githubToken = process.env.GITHUB_TOKEN;
@@ -519,7 +524,7 @@ app.post("/api/save-logo", async (req, res) => {
           },
           body: JSON.stringify({
             message: "chore(logo): update custom logo",
-            content: Buffer.from(logoFileContent).toString("base64"),
+            content: Buffer.from(`export const OFFICIAL_LOGO_URL = '${finalLogoUrl.replace(/'/g, "\\'")}';\nexport const DEFAULT_LOGO_URL = '/assets/logo/logo-qgx-default.png';\nexport const CUSTOM_LOGO_URL = '${finalLogoUrl.replace(/'/g, "\\'")}';\n`).toString("base64"),
             ...(sha ? { sha } : {})
           })
         });
@@ -543,6 +548,51 @@ app.post("/api/save-logo", async (req, res) => {
   } catch (err: any) {
     console.error("[Save Logo Error]:", err);
     return res.status(500).json({ success: false, error: err.message || "Failed to save logo" });
+  }
+});
+
+// GET & SAVE Donate QR Code
+let cachedDonateQrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=STK%3A1766393939%20NganHang%3ATechcombank%20NoiDung%3AUngHoQuanGameXom";
+
+app.get("/api/get-donate-qr", (req, res) => {
+  return res.json({ success: true, qrUrl: cachedDonateQrUrl });
+});
+
+app.post("/api/save-donate-qr", async (req, res) => {
+  try {
+    const { qrUrl, fileData } = req.body;
+    const rawData = fileData || qrUrl;
+    if (!rawData) {
+      return res.status(400).json({ success: false, error: "QR code data is required" });
+    }
+
+    let finalQrUrl = rawData;
+
+    if (rawData.startsWith("data:image/")) {
+      try {
+        const matches = rawData.match(/^data:image\/([a-zA-Z0-9\+\=\-]+);base64,(.+)$/);
+        if (matches && matches[2]) {
+          const rawExt = matches[1];
+          const ext = rawExt.includes("svg") ? "svg" : rawExt.includes("png") ? "png" : "jpg";
+          const buffer = Buffer.from(matches[2], "base64");
+          const mimeType = `image/${ext}`;
+          const blobPath = `donate/donate-qr-${Date.now()}.${ext}`;
+
+          const blobUrl = await uploadImageToBlob(blobPath, buffer, mimeType);
+          if (blobUrl) {
+            finalQrUrl = blobUrl;
+          }
+        }
+      } catch (uploadErr) {
+        console.warn("[Save Donate QR Warning]:", uploadErr);
+      }
+    }
+
+    cachedDonateQrUrl = finalQrUrl;
+    return res.json({ success: true, qrUrl: finalQrUrl, message: "Đã cập nhật ảnh mã QR Donate thành công!" });
+  } catch (err: any) {
+    console.error("[Save Donate QR Error]:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to save donate QR" });
   }
 });
 

@@ -134,7 +134,7 @@ export const SocialCommunitySection: React.FC = () => {
             </div>
           </div>
           <span className="text-xs font-mono font-black text-emerald-300 bg-emerald-950/80 px-3.5 py-1.5 rounded-xl border border-emerald-500/40 shadow-sm whitespace-nowrap">
-            QUÁN GAME XÓM REBOOT 2026
+            QUÁN GAME XÓM
           </span>
         </div>
 

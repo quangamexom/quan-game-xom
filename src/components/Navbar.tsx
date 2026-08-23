@@ -228,21 +228,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* ZONE 3: RIGHT MENU (BÀI VIẾT | DONATE | LIÊN HỆ) */}
+          {/* ZONE 3: RIGHT MENU (DONATE | LIÊN HỆ) */}
           <div className="flex items-center gap-1 sm:gap-4 flex-1 justify-end">
             
-            {/* BÀI VIẾT */}
-            <button
-              onClick={() => onCategoryChange('ARTICLES')}
-              className={`hidden md:block px-3 sm:px-4 py-2 rounded-xl transition-all cursor-pointer font-display text-xs sm:text-sm font-black tracking-wider uppercase ${
-                activeCategory === 'ARTICLES'
-                  ? 'text-cyan-300 bg-indigo-600/30 border border-indigo-500/50 shadow-[0_0_12px_rgba(99,102,241,0.3)] text-glow-cyan' 
-                  : 'text-slate-300 hover:text-white hover:bg-slate-900/80'
-              }`}
-            >
-              BÀI VIẾT
-            </button>
-
             {/* DONATE */}
             <button
               onClick={onOpenDonate}

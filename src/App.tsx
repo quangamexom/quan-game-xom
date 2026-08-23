@@ -30,7 +30,6 @@ const SECTIONS = [
   { id: 'home-section', category: 'HOME' },
   { id: 'game-catalog', category: 'GAMES' },
   { id: 'emulator-zone', category: 'EMULATOR' },
-  { id: 'articles-section', category: 'ARTICLES' },
   { id: 'community-section', category: 'COMMUNITY' }
 ];
 
@@ -565,10 +564,12 @@ export default function App() {
         <EmulatorZone />
       </div>
 
-      {/* 5. SECTION: ARTICLES SECTION */}
+      {/* 5. SECTION: ARTICLES SECTION (Temporarily hidden as requested) */}
+      {/* 
       <div id="articles-section" className="max-w-7xl mx-auto px-4 sm:px-6 py-8 border-t border-slate-900/60">
         <ArticleSection onReadArticle={(article) => setSelectedArticle(article)} />
       </div>
+      */}
 
       {/* 5. SECTION 4: COMMUNITY & CONTACT SECTION */}
       <div id="community-section" className="max-w-7xl mx-auto px-4 sm:px-6 py-8 border-t border-slate-900/60">
@@ -607,10 +608,12 @@ export default function App() {
         defaultPassword={defaultPassword}
       />
 
+      {/* 
       <ArticleReaderModal
         article={selectedArticle}
         onClose={() => setSelectedArticle(null)}
       />
+      */}
 
       <DonateModal
         isOpen={isDonateOpen}

@@ -14,7 +14,9 @@ export const Logo: React.FC<LogoProps> = ({
   showText = true,
   onClick
 }) => {
-  const [imgSrc, setImgSrc] = useState<string>(OFFICIAL_LOGO_URL || CUSTOM_LOGO_URL || '/assets/logo/logo-qgx-default.png');
+  const [imgSrc, setImgSrc] = useState<string>(() => {
+    return localStorage.getItem('qgx_custom_logo') || OFFICIAL_LOGO_URL || CUSTOM_LOGO_URL || '/assets/logo/logo-qgx-default.png';
+  });
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
@@ -24,6 +26,7 @@ export const Logo: React.FC<LogoProps> = ({
       .then(data => {
         if (data.success && data.logoUrl) {
           setImgSrc(data.logoUrl);
+          localStorage.setItem('qgx_custom_logo', data.logoUrl);
           setHasError(false);
         }
       })
@@ -33,6 +36,7 @@ export const Logo: React.FC<LogoProps> = ({
     const handleLogoUpdate = (e: any) => {
       if (e?.detail?.logoUrl) {
         setImgSrc(e.detail.logoUrl);
+        localStorage.setItem('qgx_custom_logo', e.detail.logoUrl);
         setHasError(false);
       } else {
         fetch('/api/get-logo')
@@ -40,6 +44,7 @@ export const Logo: React.FC<LogoProps> = ({
           .then(data => {
             if (data.success && data.logoUrl) {
               setImgSrc(data.logoUrl);
+              localStorage.setItem('qgx_custom_logo', data.logoUrl);
               setHasError(false);
             }
           })

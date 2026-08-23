@@ -1,14 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Coffee, Copy, Check, Heart, QrCode, Sparkles } from 'lucide-react';
+import { X, Coffee, Copy, Check, Heart, QrCode, Sparkles, Upload, Camera, RefreshCw } from 'lucide-react';
+import { useAdminMode } from '../hooks/useAdminMode';
 
 interface DonateModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+const DEFAULT_QR_URL = "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=STK%3A1766393939%20NganHang%3ATechcombank%20NoiDung%3AUngHoQuanGameXom";
+
 export const DonateModal: React.FC<DonateModalProps> = ({ isOpen, onClose }) => {
+  const { isAdmin } = useAdminMode();
   const [copiedBank, setCopiedBank] = useState(false);
+  const [qrImageUrl, setQrImageUrl] = useState<string>(() => {
+    return localStorage.getItem('qgx_custom_donate_qr') || DEFAULT_QR_URL;
+  });
+  const [isUploadingQr, setIsUploadingQr] = useState<boolean>(false);
+  const qrInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      // Check server for updated donate QR
+      fetch('/api/get-donate-qr')
+        .then(r => r.json())
+        .then(data => {
+          if (data.success && data.qrUrl) {
+            setQrImageUrl(data.qrUrl);
+            localStorage.setItem('qgx_custom_donate_qr', data.qrUrl);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -16,6 +40,52 @@ export const DonateModal: React.FC<DonateModalProps> = ({ isOpen, onClose }) => 
     navigator.clipboard.writeText("1766393939");
     setCopiedBank(true);
     setTimeout(() => setCopiedBank(false), 2200);
+  };
+
+  const handleQrUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingQr(true);
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        const base64 = evt.target?.result as string;
+        if (!base64) return;
+
+        try {
+          const res = await fetch('/api/save-donate-qr', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fileData: base64,
+              adminToken: 'qgx_admin_authenticated'
+            })
+          });
+          const data = await res.json();
+          if (res.ok && data.success && data.qrUrl) {
+            setQrImageUrl(data.qrUrl);
+            localStorage.setItem('qgx_custom_donate_qr', data.qrUrl);
+            alert('Đã cập nhật ảnh mã QR Donate thành công!');
+          } else {
+            // Local fallback
+            setQrImageUrl(base64);
+            localStorage.setItem('qgx_custom_donate_qr', base64);
+          }
+        } catch (err) {
+          setQrImageUrl(base64);
+          localStorage.setItem('qgx_custom_donate_qr', base64);
+        } finally {
+          setIsUploadingQr(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('Lỗi upload QR:', err);
+      setIsUploadingQr(false);
+    } finally {
+      if (qrInputRef.current) qrInputRef.current.value = '';
+    }
   };
 
   return (
@@ -65,7 +135,7 @@ export const DonateModal: React.FC<DonateModalProps> = ({ isOpen, onClose }) => 
               <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-white" />
             </motion.div>
 
-            {/* Anime Character Artwork & QR Glass Frame (Inspired by Image 3) */}
+            {/* Anime Character Artwork & QR Glass Frame */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-2">
               
               {/* Chibi Tifa SVG Representation */}
@@ -124,16 +194,44 @@ export const DonateModal: React.FC<DonateModalProps> = ({ isOpen, onClose }) => 
                 </svg>
               </div>
 
-              {/* Glass Frame QR Code Box (Matching Glassmorphic Holder in Image 3) */}
+              {/* Glass Frame QR Code Box */}
               <div className="relative group p-3 bg-slate-950/80 border-2 border-cyan-400/50 rounded-2xl shadow-[0_0_20px_rgba(34,211,238,0.25)] backdrop-blur-md">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-400 via-emerald-400 to-pink-500 rounded-2xl blur opacity-30 group-hover:opacity-70 transition duration-500" />
-                <div className="relative bg-white p-2 rounded-xl">
-                  <img
-                    src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=STK%3A1766393939%20NganHang%3ATechcombank%20NoiDung%3AUngHoQuanGameXom"
-                    alt="VietQR Quán Game Xóm"
-                    className="w-40 h-40 object-contain"
-                  />
+                <div className="relative bg-white p-2 rounded-xl flex items-center justify-center min-w-[160px] min-h-[160px]">
+                  {isUploadingQr ? (
+                    <div className="flex flex-col items-center justify-center p-6 text-slate-800 gap-2">
+                      <RefreshCw className="w-8 h-8 animate-spin text-cyan-600" />
+                      <span className="text-xs font-mono font-bold">Đang tải QR...</span>
+                    </div>
+                  ) : (
+                    <img
+                      src={qrImageUrl}
+                      alt="QR Donate Quán Game Xóm"
+                      className="w-40 h-40 object-contain rounded-lg"
+                    />
+                  )}
                 </div>
+
+                {/* Admin QR Upload Button */}
+                {isAdmin && (
+                  <div className="mt-2 text-center">
+                    <input
+                      type="file"
+                      ref={qrInputRef}
+                      onChange={handleQrUpload}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => qrInputRef.current?.click()}
+                      className="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 text-[10px] font-mono font-bold rounded-lg transition-all flex items-center gap-1 mx-auto cursor-pointer shadow"
+                    >
+                      <Camera className="w-3 h-3" />
+                      <span>Đổi Ảnh QR (Blob)</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
             </div>
@@ -160,7 +258,7 @@ export const DonateModal: React.FC<DonateModalProps> = ({ isOpen, onClose }) => 
             </div>
 
             <div className="text-[11px] text-slate-400">TÊN TÀI KHOẢN:</div>
-            <div className="text-sm font-black text-white tracking-wider mb-2">QUÁN GAME XÓM (QGX REBOOT)</div>
+            <div className="text-sm font-black text-white tracking-wider mb-2">QUÁN GAME XÓM</div>
 
             <div className="text-[11px] text-slate-400">SỐ TÀI KHOẢN:</div>
             <div className="flex items-center justify-between">
