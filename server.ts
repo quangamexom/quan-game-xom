@@ -677,8 +677,8 @@ function getSystemMeta(systemCode: string = 'snes') {
 
 // 4. Vercel Blob Storage Admin Routes for direct public ROM storage & Metadata Library
 
-// Public API to get Admin Uploaded Games Library
-app.get("/api/games/admin-library", async (req, res) => {
+// Public API to get Admin Uploaded Games Library & Persistent Games Database
+app.get(["/api/games-database", "/api/games/admin-library", "/api/games/library"], async (req, res) => {
   try {
     const includeHidden = req.query.includeHidden === 'true';
     const shouldSync = req.query.sync === 'true';

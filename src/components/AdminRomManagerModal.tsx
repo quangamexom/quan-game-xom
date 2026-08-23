@@ -94,7 +94,13 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
   const loadBlobs = async () => {
     setIsLoadingBlobs(true);
     try {
-      const res = await fetch('/api/admin/blob/list');
+      const res = await fetch(`/api/admin/blob/list?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
       const data = await res.json();
       if (data.success) {
         setBlobs(data.blobs || []);

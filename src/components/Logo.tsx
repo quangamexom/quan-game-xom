@@ -18,16 +18,26 @@ export const Logo: React.FC<LogoProps> = ({
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
-    // Initial fetch to get latest logo from server
-    fetch('/api/get-logo')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.logoUrl) {
-          setImgSrc(data.logoUrl);
-          setHasError(false);
+    // Initial fetch to get latest logo from server with cache-busting
+    const fetchLatestLogo = () => {
+      fetch(`/api/get-logo?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
         }
       })
-      .catch(() => {});
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.logoUrl) {
+            setImgSrc(data.logoUrl);
+            setHasError(false);
+          }
+        })
+        .catch(() => {});
+    };
+
+    fetchLatestLogo();
 
     // Listen to real-time custom logo update events
     const handleLogoUpdate = (e: any) => {
@@ -35,15 +45,7 @@ export const Logo: React.FC<LogoProps> = ({
         setImgSrc(e.detail.logoUrl);
         setHasError(false);
       } else {
-        fetch('/api/get-logo')
-          .then(res => res.json())
-          .then(data => {
-            if (data.success && data.logoUrl) {
-              setImgSrc(data.logoUrl);
-              setHasError(false);
-            }
-          })
-          .catch(() => {});
+        fetchLatestLogo();
       }
     };
 
