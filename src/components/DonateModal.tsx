@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Coffee, Copy, Check, Heart, Camera, Sparkles, Loader2 } from 'lucide-react';
-import { useAdminMode } from '../hooks/useAdminMode';
+import { X, Coffee, Copy, Check, Heart, QrCode, Sparkles } from 'lucide-react';
 
 interface DonateModalProps {
   isOpen: boolean;
@@ -9,72 +8,14 @@ interface DonateModalProps {
 }
 
 export const DonateModal: React.FC<DonateModalProps> = ({ isOpen, onClose }) => {
-  const { isAdmin } = useAdminMode();
   const [copiedBank, setCopiedBank] = useState(false);
-  const [qrUrl, setQrUrl] = useState<string>("https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=STK%3A1766393939%20NganHang%3ATechcombank%20NoiDung%3AUngHoQuanGameXom");
-  const [modelUrl, setModelUrl] = useState<string>("");
-  const [accountName, setAccountName] = useState<string>("QUÁN GAME XÓM");
-  const [bankNumber, setBankNumber] = useState<string>("1766393939");
-  const [bankName, setBankName] = useState<string>("TECHCOMBANK (VIETQR)");
-  const [uploadingType, setUploadingType] = useState<'qr' | 'model' | null>(null);
-
-  const qrInputRef = useRef<HTMLInputElement | null>(null);
-  const modelInputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      fetch('/api/donate-config')
-        .then(res => res.json())
-        .then(data => {
-          if (data.success && data.config) {
-            if (data.config.qrUrl) setQrUrl(data.config.qrUrl);
-            if (data.config.modelUrl) setModelUrl(data.config.modelUrl);
-            if (data.config.accountName) setAccountName(data.config.accountName);
-            if (data.config.bankNumber) setBankNumber(data.config.bankNumber);
-            if (data.config.bankName) setBankName(data.config.bankName);
-          }
-        })
-        .catch(() => {});
-    }
-  }, [isOpen]);
 
   if (!isOpen) return null;
 
   const handleCopyAccount = () => {
-    navigator.clipboard.writeText(bankNumber);
+    navigator.clipboard.writeText("1766393939");
     setCopiedBank(true);
     setTimeout(() => setCopiedBank(false), 2200);
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'qr' | 'model') => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploadingType(type);
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const fileData = reader.result as string;
-      try {
-        const res = await fetch('/api/upload-donate-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fileData, type })
-        });
-        const json = await res.json();
-        if (json.success && json.imageUrl) {
-          if (type === 'qr') {
-            setQrUrl(json.imageUrl);
-          } else {
-            setModelUrl(json.imageUrl);
-          }
-        }
-      } catch (err) {
-        console.error("Upload donate image error:", err);
-      } finally {
-        setUploadingType(null);
-      }
-    };
-    reader.readAsDataURL(file);
   };
 
   return (
@@ -89,26 +30,6 @@ export const DonateModal: React.FC<DonateModalProps> = ({ isOpen, onClose }) => 
           className="absolute inset-0 cursor-pointer"
           onClick={onClose}
         />
-
-        {/* Hidden Inputs for Admin Uploads */}
-        {isAdmin && (
-          <>
-            <input
-              type="file"
-              ref={qrInputRef}
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => handleFileChange(e, 'qr')}
-            />
-            <input
-              type="file"
-              ref={modelInputRef}
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => handleFileChange(e, 'model')}
-            />
-          </>
-        )}
 
         {/* Modal Window with Translucent Glass Border */}
         <motion.div
@@ -129,10 +50,10 @@ export const DonateModal: React.FC<DonateModalProps> = ({ isOpen, onClose }) => 
             <X className="w-5 h-5" />
           </button>
 
-          {/* Character Speech Bubble */}
+          {/* Character Speech Bubble & Visual Reference (Matching Image 3) */}
           <div className="relative mb-6">
             
-            {/* Speech Bubble */}
+            {/* Speech Bubble: "♪ Mời chủ Quán ly trà đá~ ❤️" */}
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -144,115 +65,75 @@ export const DonateModal: React.FC<DonateModalProps> = ({ isOpen, onClose }) => 
               <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-white" />
             </motion.div>
 
-            {/* Anime Character Artwork & QR Glass Frame */}
+            {/* Anime Character Artwork & QR Glass Frame (Inspired by Image 3) */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-2">
               
-              {/* Chibi Tifa / Model Artwork */}
-              <div className="relative w-36 h-48 shrink-0 flex flex-col items-center justify-center group">
-                {modelUrl ? (
-                  <img
-                    src={modelUrl}
-                    alt="Người Mẫu Quán Game Xóm"
-                    className="w-full h-full object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] rounded-xl"
-                  />
-                ) : (
-                  <svg viewBox="0 0 160 200" className="w-full h-full drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
-                    <defs>
-                      <linearGradient id="hairGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#2D1D1E" />
-                        <stop offset="100%" stopColor="#120B0C" />
-                      </linearGradient>
-                      <linearGradient id="gloveGrad" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stopColor="#EF4444" />
-                        <stop offset="100%" stopColor="#991B1B" />
-                      </linearGradient>
-                    </defs>
+              {/* Chibi Tifa SVG Representation */}
+              <div className="relative w-36 h-48 shrink-0 flex flex-col items-center justify-center">
+                <svg viewBox="0 0 160 200" className="w-full h-full drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
+                  <defs>
+                    <linearGradient id="hairGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#2D1D1E" />
+                      <stop offset="100%" stopColor="#120B0C" />
+                    </linearGradient>
+                    <linearGradient id="gloveGrad" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#EF4444" />
+                      <stop offset="100%" stopColor="#991B1B" />
+                    </linearGradient>
+                  </defs>
 
-                    {/* Long Dark Anime Hair Background */}
-                    <path d="M 40 40 Q 20 70, 25 140 Q 30 170, 50 190 Q 70 180, 55 130 Z" fill="url(#hairGrad)" />
-                    <path d="M 120 40 Q 140 70, 135 140 Q 130 170, 110 190 Q 90 180, 105 130 Z" fill="url(#hairGrad)" />
+                  {/* Long Dark Anime Hair Background */}
+                  <path d="M 40 40 Q 20 70, 25 140 Q 30 170, 50 190 Q 70 180, 55 130 Z" fill="url(#hairGrad)" />
+                  <path d="M 120 40 Q 140 70, 135 140 Q 130 170, 110 190 Q 90 180, 105 130 Z" fill="url(#hairGrad)" />
 
-                    {/* Body & Clothes */}
-                    <path d="M 60 110 L 100 110 L 105 160 L 55 160 Z" fill="#F8FAFC" stroke="#0F172A" strokeWidth="2" />
-                    <path d="M 55 150 L 105 150 L 108 175 L 52 175 Z" fill="#1E293B" />
-                    <rect x="58" y="148" width="44" height="4" fill="#94A3B8" />
+                  {/* Body & Clothes (White Tank top & Dark Skirt) */}
+                  <path d="M 60 110 L 100 110 L 105 160 L 55 160 Z" fill="#F8FAFC" stroke="#0F172A" strokeWidth="2" />
+                  <path d="M 55 150 L 105 150 L 108 175 L 52 175 Z" fill="#1E293B" />
+                  <rect x="58" y="148" width="44" height="4" fill="#94A3B8" />
 
-                    {/* Red Boots */}
-                    <path d="M 52 175 L 72 175 L 75 198 L 48 198 Z" fill="url(#gloveGrad)" />
-                    <path d="M 88 175 L 108 175 L 112 198 L 85 198 Z" fill="url(#gloveGrad)" />
+                  {/* Red Boots */}
+                  <path d="M 52 175 L 72 175 L 75 198 L 48 198 Z" fill="url(#gloveGrad)" />
+                  <path d="M 88 175 L 108 175 L 112 198 L 85 198 Z" fill="url(#gloveGrad)" />
 
-                    {/* Face Base */}
-                    <path d="M 48 60 Q 80 110, 112 60 Q 115 40, 80 30 Q 45 40, 48 60 Z" fill="#FFEDD5" />
+                  {/* Face Base */}
+                  <path d="M 48 60 Q 80 110, 112 60 Q 115 40, 80 30 Q 45 40, 48 60 Z" fill="#FFEDD5" />
 
-                    {/* Cute Anime Eyes */}
-                    <ellipse cx="62" cy="66" rx="9" ry="12" fill="#7C2D12" />
-                    <ellipse cx="62" cy="66" rx="6" ry="9" fill="#9A3412" />
-                    <circle cx="60" cy="61" r="3" fill="#FFFFFF" />
+                  {/* Cute Anime Eyes (Warm Brown & Big Sparkle) */}
+                  <ellipse cx="62" cy="66" rx="9" ry="12" fill="#7C2D12" />
+                  <ellipse cx="62" cy="66" rx="6" ry="9" fill="#9A3412" />
+                  <circle cx="60" cy="61" r="3" fill="#FFFFFF" />
 
-                    <ellipse cx="98" cy="66" rx="9" ry="12" fill="#7C2D12" />
-                    <ellipse cx="98" cy="66" rx="6" ry="9" fill="#9A3412" />
-                    <circle cx="96" cy="61" r="3" fill="#FFFFFF" />
+                  <ellipse cx="98" cy="66" rx="9" ry="12" fill="#7C2D12" />
+                  <ellipse cx="98" cy="66" rx="6" ry="9" fill="#9A3412" />
+                  <circle cx="96" cy="61" r="3" fill="#FFFFFF" />
 
-                    {/* Cute Blushing Cheeks & Smile */}
-                    <ellipse cx="56" cy="74" rx="6" ry="3" fill="#FCA5A5" opacity="0.7" />
-                    <ellipse cx="104" cy="74" rx="6" ry="3" fill="#FCA5A5" opacity="0.7" />
-                    <path d="M 74 76 Q 80 82, 86 76" fill="none" stroke="#9A3412" strokeWidth="2" strokeLinecap="round" />
+                  {/* Cute Blushing Cheeks & Smile */}
+                  <ellipse cx="56" cy="74" rx="6" ry="3" fill="#FCA5A5" opacity="0.7" />
+                  <ellipse cx="104" cy="74" rx="6" ry="3" fill="#FCA5A5" opacity="0.7" />
+                  <path d="M 74 76 Q 80 82, 86 76" fill="none" stroke="#9A3412" strokeWidth="2" strokeLinecap="round" />
 
-                    {/* Hair Bangs */}
-                    <path d="M 45 45 Q 60 35, 80 50 Q 100 35, 115 45 Q 120 25, 80 15 Q 40 25, 45 45 Z" fill="url(#hairGrad)" />
+                  {/* Hair Bangs */}
+                  <path d="M 45 45 Q 60 35, 80 50 Q 100 35, 115 45 Q 120 25, 80 15 Q 40 25, 45 45 Z" fill="url(#hairGrad)" />
 
-                    {/* Side Ponytail Tail */}
-                    <path d="M 110 80 Q 135 90, 125 140 Q 115 145, 105 110 Z" fill="url(#hairGrad)" />
+                  {/* Side Ponytail Tail */}
+                  <path d="M 110 80 Q 135 90, 125 140 Q 115 145, 105 110 Z" fill="url(#hairGrad)" />
 
-                    {/* Red Gloves Arms */}
-                    <rect x="36" y="105" width="16" height="35" rx="4" fill="url(#gloveGrad)" transform="rotate(15 36 105)" />
-                    <rect x="108" y="105" width="16" height="35" rx="4" fill="url(#gloveGrad)" transform="rotate(-15 108 105)" />
-                  </svg>
-                )}
-
-                {/* Admin Upload Model Camera Button */}
-                {isAdmin && (
-                  <button
-                    onClick={() => modelInputRef.current?.click()}
-                    disabled={uploadingType === 'model'}
-                    className="absolute top-1 right-1 p-2 bg-pink-600 hover:bg-pink-500 text-white rounded-full shadow-lg transition-all cursor-pointer z-30 border border-white/20 active:scale-95"
-                    title="Đổi ảnh Người mẫu / Chibi (Lưu Vercel Blob)"
-                  >
-                    {uploadingType === 'model' ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Camera className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-                )}
+                  {/* Red Gloves Arms */}
+                  <rect x="36" y="105" width="16" height="35" rx="4" fill="url(#gloveGrad)" transform="rotate(15 36 105)" />
+                  <rect x="108" y="105" width="16" height="35" rx="4" fill="url(#gloveGrad)" transform="rotate(-15 108 105)" />
+                </svg>
               </div>
 
-              {/* Glass Frame QR Code Box */}
+              {/* Glass Frame QR Code Box (Matching Glassmorphic Holder in Image 3) */}
               <div className="relative group p-3 bg-slate-950/80 border-2 border-cyan-400/50 rounded-2xl shadow-[0_0_20px_rgba(34,211,238,0.25)] backdrop-blur-md">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-400 via-emerald-400 to-pink-500 rounded-2xl blur opacity-30 group-hover:opacity-70 transition duration-500" />
                 <div className="relative bg-white p-2 rounded-xl">
                   <img
-                    src={qrUrl}
+                    src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=STK%3A1766393939%20NganHang%3ATechcombank%20NoiDung%3AUngHoQuanGameXom"
                     alt="VietQR Quán Game Xóm"
                     className="w-40 h-40 object-contain"
                   />
                 </div>
-
-                {/* Admin Upload QR Camera Button */}
-                {isAdmin && (
-                  <button
-                    onClick={() => qrInputRef.current?.click()}
-                    disabled={uploadingType === 'qr'}
-                    className="absolute -top-2 -right-2 p-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-full shadow-lg transition-all cursor-pointer z-30 border border-white/20 active:scale-95"
-                    title="Đổi ảnh mã QR Code (Lưu Vercel Blob)"
-                  >
-                    {uploadingType === 'qr' ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Camera className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-                )}
               </div>
 
             </div>
@@ -271,7 +152,7 @@ export const DonateModal: React.FC<DonateModalProps> = ({ isOpen, onClose }) => 
           <div className="glass-panel border border-cyan-500/40 p-4 my-5 text-left relative">
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[10px] font-mono font-bold uppercase text-cyan-400 flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-cyan-400" /> {bankName}
+                <Sparkles className="w-3 h-3 text-cyan-400" /> TECHCOMBANK (VIETQR)
               </span>
               <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
                 ỦNG HỘ TỰ NGUYỆN
@@ -279,11 +160,11 @@ export const DonateModal: React.FC<DonateModalProps> = ({ isOpen, onClose }) => 
             </div>
 
             <div className="text-[11px] text-slate-400">TÊN TÀI KHOẢN:</div>
-            <div className="text-sm font-black text-white tracking-wider mb-2">{accountName}</div>
+            <div className="text-sm font-black text-white tracking-wider mb-2">QUÁN GAME XÓM (QGX REBOOT)</div>
 
             <div className="text-[11px] text-slate-400">SỐ TÀI KHOẢN:</div>
             <div className="flex items-center justify-between">
-              <span className="text-2xl font-mono font-black text-amber-300 tracking-widest">{bankNumber}</span>
+              <span className="text-2xl font-mono font-black text-amber-300 tracking-widest">1766393939</span>
               
               <button
                 onClick={handleCopyAccount}
@@ -314,4 +195,3 @@ export const DonateModal: React.FC<DonateModalProps> = ({ isOpen, onClose }) => 
     </AnimatePresence>
   );
 };
-

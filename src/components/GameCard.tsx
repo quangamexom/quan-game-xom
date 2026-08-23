@@ -19,7 +19,6 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelect }) => {
   const { isAdmin } = useAdminMode();
   const [imageError, setImageError] = useState<boolean>(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState<boolean>(false);
-  const [isShareOpen, setIsShareOpen] = useState<boolean>(false);
 
   const {
     coverUrl,
@@ -71,13 +70,11 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelect }) => {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95 }}
         transition={{ duration: 0.25 }}
-        className={`group relative glass-card rounded-2xl overflow-visible hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col h-full border border-slate-800/80 hover:border-amber-500/50 hover:shadow-2xl hover:shadow-amber-500/10 ${
-          isShareOpen ? 'z-50 relative' : 'relative z-1'
-        }`}
+        className="group relative glass-card rounded-2xl overflow-hidden hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col h-full border border-slate-800/80 hover:border-amber-500/50 hover:shadow-2xl hover:shadow-amber-500/10"
         onClick={() => onSelect(game)}
       >
         {/* 1. Full-Width Cover Image Container (Vertical Portrait 3:4 Aspect Ratio) */}
-        <div className="relative w-full aspect-[3/4] rounded-t-2xl overflow-hidden bg-slate-950 flex items-center justify-center shrink-0">
+        <div className="relative w-full aspect-[3/4] overflow-hidden bg-slate-950 flex items-center justify-center shrink-0">
           
           {/* Loading Skeleton */}
           {isLoading && (
@@ -138,7 +135,6 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelect }) => {
               game={game}
               variant="icon"
               align="right"
-              onOpenChange={setIsShareOpen}
             />
             {isAdmin && (
               <>

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { GameItem } from '../types';
-import { Download, Star, ExternalLink, Gamepad2, Radio, CheckCircle, Eye, Info } from 'lucide-react';
+import { Download, Star, ExternalLink, Gamepad2, Radio, CheckCircle, Eye } from 'lucide-react';
 import { parseGameTitle } from '../utils/titleParser';
 import { useGameCover } from '../hooks/useGameCover';
-import { useAdminMode } from '../hooks/useAdminMode';
 import { ShareGameMenu } from './ShareGameMenu';
 
 interface GameListRowProps {
@@ -14,7 +13,6 @@ interface GameListRowProps {
 }
 
 export const GameListRow: React.FC<GameListRowProps> = ({ game, index, onSelect, onOpenDownload }) => {
-  const { isAdmin } = useAdminMode();
   const isEven = index % 2 === 0;
   const { cleanTitle, subtitle } = parseGameTitle(game.title, game.subtitle);
   const { coverUrl } = useGameCover(game);
@@ -141,23 +139,13 @@ export const GameListRow: React.FC<GameListRowProps> = ({ game, index, onSelect,
       {/* 6. LINK DOWNLOAD & SHARE */}
       <td className="p-2 sm:p-3 align-middle text-center whitespace-nowrap">
         <div className="flex items-center justify-center gap-1.5">
-          {isAdmin ? (
-            <button
-              onClick={() => onOpenDownload(game)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded font-bold text-xs shadow hover:scale-105 transition-all cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5 fill-slate-950" />
-              <span>Tải Ngay</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => onSelect(game)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded font-bold text-xs transition-all cursor-pointer"
-            >
-              <Info className="w-3.5 h-3.5" />
-              <span>Chi Tiết</span>
-            </button>
-          )}
+          <button
+            onClick={() => onOpenDownload(game)}
+            className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded font-bold text-xs shadow hover:scale-105 transition-all cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5 fill-slate-950" />
+            <span>Tải Ngay</span>
+          </button>
           <ShareGameMenu
             game={game}
             variant="icon"
@@ -168,7 +156,7 @@ export const GameListRow: React.FC<GameListRowProps> = ({ game, index, onSelect,
 
       {/* 7. MIRROR 1 */}
       <td className="p-2 sm:p-3 align-middle text-center whitespace-nowrap">
-        {isAdmin && game.mirror1Url ? (
+        {game.mirror1Url ? (
           <button
             onClick={() => onOpenDownload(game)}
             className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 text-[11px] font-medium transition-all cursor-pointer"
@@ -183,7 +171,7 @@ export const GameListRow: React.FC<GameListRowProps> = ({ game, index, onSelect,
 
       {/* 8. MIRROR 2 */}
       <td className="p-2 sm:p-3 align-middle text-center whitespace-nowrap">
-        {isAdmin && game.mirror2Url ? (
+        {game.mirror2Url ? (
           <button
             onClick={() => onOpenDownload(game)}
             className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 text-[11px] font-medium transition-all cursor-pointer"

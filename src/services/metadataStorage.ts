@@ -390,7 +390,7 @@ export async function syncAllBlobsToLibrary(): Promise<SyncBlobsResult> {
           fileSize: formattedSize,
           rating: 5.0,
           genres: sysInfo.genres,
-          description: `${displayTitle} — Game ${sysInfo.systemName} được cập nhật từ bộ nhớ đám mây tốc độ cao, chơi mượt mà trên trình giả lập của Quán Game Xóm.`,
+          description: `${displayTitle} — Game ${sysInfo.systemName} được cập nhật từ Vercel Blob Storage tốc độ cao, chơi mượt mà trên trình giả lập EmulatorJS của Quán Game Xóm.`,
           downloadUrl: blob.url,
           emulatorCore: sysInfo.system,
           isFeatured: true,
@@ -433,87 +433,4 @@ export async function syncAllBlobsToLibrary(): Promise<SyncBlobsResult> {
       message: `Lỗi đồng bộ từ Vercel Blob: ${err.message || err}`
     };
   }
-}
-
-export interface DonateConfig {
-  qrUrl?: string;
-  modelUrl?: string;
-  bankNumber?: string;
-  bankName?: string;
-  accountName?: string;
-}
-
-const DONATE_CONFIG_PATHNAME = "roms-metadata/donate-config.json";
-
-export async function readDonateConfig(): Promise<DonateConfig> {
-  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
-  let localConfig: DonateConfig = {
-    qrUrl: "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=STK%3A1766393939%20NganHang%3ATechcombank%20NoiDung%3AUngHoQuanGameXom",
-    modelUrl: "",
-    bankNumber: "1766393939",
-    bankName: "TECHCOMBANK (VIETQR)",
-    accountName: "QUÁN GAME XÓM"
-  };
-
-  try {
-    const publicPath = path.join(process.cwd(), "public", "assets", "donate-config.json");
-    if (fs.existsSync(publicPath)) {
-      const content = fs.readFileSync(publicPath, "utf-8");
-      localConfig = { ...localConfig, ...JSON.parse(content) };
-    }
-  } catch (e) {}
-
-  if (blobToken) {
-    try {
-      const { blobs } = await list({ token: blobToken, prefix: "roms-metadata/" });
-      const donateBlob = blobs.find(b => b.pathname.includes("donate-config.json"));
-      if (donateBlob) {
-        const res = await fetch(`${donateBlob.url}?t=${Date.now()}`, {
-          headers: { 'Cache-Control': 'no-cache' }
-        });
-        if (res.ok) {
-          const remoteData = await res.json();
-          return { ...localConfig, ...remoteData };
-        }
-      }
-    } catch (err) {
-      console.warn("[readDonateConfig Blob error]:", err);
-    }
-  }
-
-  return localConfig;
-}
-
-export async function writeDonateConfig(config: Partial<DonateConfig>): Promise<DonateConfig> {
-  const current = await readDonateConfig();
-  const updated: DonateConfig = {
-    ...current,
-    ...config
-  };
-
-  const jsonContent = JSON.stringify(updated, null, 2);
-  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
-
-  if (blobToken) {
-    try {
-      await put(DONATE_CONFIG_PATHNAME, Buffer.from(jsonContent), {
-        access: "public",
-        token: blobToken,
-        addRandomSuffix: false,
-        allowOverwrite: true,
-        contentType: "application/json"
-      });
-      console.log("[Storage Helper] Successfully saved donate config to Vercel Blob");
-    } catch (err) {
-      console.warn("[writeDonateConfig Blob Error]:", err);
-    }
-  }
-
-  try {
-    const publicAssetsDir = path.join(process.cwd(), "public", "assets");
-    if (!fs.existsSync(publicAssetsDir)) fs.mkdirSync(publicAssetsDir, { recursive: true });
-    fs.writeFileSync(path.join(publicAssetsDir, "donate-config.json"), jsonContent, "utf-8");
-  } catch (e) {}
-
-  return updated;
 }

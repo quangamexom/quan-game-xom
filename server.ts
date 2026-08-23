@@ -10,9 +10,7 @@ import {
   updateGameInLibrary, 
   removeGameFromLibrary,
   uploadImageToBlob,
-  syncAllBlobsToLibrary,
-  readDonateConfig,
-  writeDonateConfig
+  syncAllBlobsToLibrary
 } from "./src/services/metadataStorage";
 import {
   createNetplayRoom,
@@ -548,86 +546,6 @@ app.post("/api/save-logo", async (req, res) => {
   }
 });
 
-// Get Donate Configuration
-app.get("/api/donate-config", async (req, res) => {
-  try {
-    const config = await readDonateConfig();
-    return res.json({ success: true, config });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: err.message || "Failed to get donate config" });
-  }
-});
-
-// Save Donate Configuration
-app.post("/api/save-donate-config", async (req, res) => {
-  try {
-    const config = req.body;
-    const updated = await writeDonateConfig(config);
-    return res.json({ success: true, config: updated, message: "Đã cập nhật thông tin donate thành công!" });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: err.message || "Failed to save donate config" });
-  }
-});
-
-// Upload Donate Image (QR code or Model/Chibi image)
-app.post("/api/upload-donate-image", async (req, res) => {
-  try {
-    const { fileData, type } = req.body; // type: 'qr' | 'model'
-    if (!fileData) {
-      return res.status(400).json({ success: false, error: "Thiếu dữ liệu ảnh (fileData)" });
-    }
-
-    let buffer: Buffer;
-    let ext = "png";
-    let mimeType = "image/png";
-
-    if (fileData.startsWith("data:image/")) {
-      const matches = fileData.match(/^data:image\/([a-zA-Z0-9\+\=\-]+);base64,(.+)$/);
-      if (matches && matches[2]) {
-        const rawExt = matches[1];
-        ext = rawExt.includes("jpeg") || rawExt.includes("jpg") ? "jpg" : rawExt.includes("webp") ? "webp" : "png";
-        buffer = Buffer.from(matches[2], "base64");
-        mimeType = `image/${ext}`;
-      } else {
-        buffer = Buffer.from(fileData.split(",")[1], "base64");
-      }
-    } else {
-      buffer = Buffer.from(fileData, "base64");
-    }
-
-    const imageType = type === 'qr' ? 'qr' : 'model';
-    const blobPath = `donate/donate-${imageType}-${Date.now()}.${ext}`;
-
-    let imageUrl = await uploadImageToBlob(blobPath, buffer, mimeType);
-
-    // Local disk fallback
-    const donateDir = path.join(process.cwd(), "public/assets/donate");
-    if (!fs.existsSync(donateDir)) fs.mkdirSync(donateDir, { recursive: true });
-    const localFilename = `donate-${imageType}-latest.${ext}`;
-    fs.writeFileSync(path.join(donateDir, localFilename), buffer);
-
-    if (!imageUrl) {
-      imageUrl = `/assets/donate/${localFilename}?t=${Date.now()}`;
-    }
-
-    // Save to donate config in Vercel Blob
-    const configUpdate = imageType === 'qr' ? { qrUrl: imageUrl } : { modelUrl: imageUrl };
-    const newConfig = await writeDonateConfig(configUpdate);
-
-    return res.json({
-      success: true,
-      imageUrl,
-      type: imageType,
-      config: newConfig,
-      message: `Đã cập nhật ảnh ${imageType === 'qr' ? 'mã QR' : 'người mẫu/chibi'} thành công và lưu vào Vercel Blob!`
-    });
-  } catch (err: any) {
-    console.error("[Upload Donate Image Error]:", err);
-    return res.status(500).json({ success: false, error: err.message || "Failed to upload donate image" });
-  }
-});
-
-
 // System metadata helpers for Auto-Generated Game Cards
 function getSystemMeta(systemCode: string = 'snes') {
   const code = systemCode.toLowerCase();
@@ -1019,117 +937,6 @@ app.post("/api/admin/games/update-description", async (req, res) => {
   } catch (err: any) {
     console.error("[Update Description API Error]:", err);
     return res.status(500).json({ success: false, error: err.message || "Lỗi cập nhật mô tả game" });
-  }
-});
-
-// Update Game Cover Art in Library & Upload to Vercel Blob (Admin)
-app.post("/api/admin/games/update-cover", async (req, res) => {
-  try {
-    const { id, title, fileData, imageUrl, fallbackGame, password } = req.body;
-    if (!id) {
-      return res.status(400).json({ success: false, error: "Thiếu ID game cần cập nhật ảnh bìa." });
-    }
-
-    const expectedPassword = process.env.ADMIN_PASSWORD || "20266Namm$$@";
-    if (password && password !== expectedPassword) {
-      return res.status(401).json({ success: false, error: "Mật khẩu Admin không chính xác!" });
-    }
-
-    let finalImageUrl = imageUrl;
-    const rawImage = fileData || imageUrl;
-
-    if (!rawImage) {
-      return res.status(400).json({ success: false, error: "Thiếu dữ liệu ảnh bìa (fileData hoặc imageUrl)" });
-    }
-
-    // A. If image is base64, upload to Vercel Blob
-    if (typeof rawImage === 'string' && rawImage.startsWith("data:image/")) {
-      try {
-        const matches = rawImage.match(/^data:image\/([a-zA-Z0-9\+\=\-]+);base64,(.+)$/);
-        if (matches && matches[2]) {
-          const rawExt = matches[1];
-          const ext = rawExt.includes("svg") ? "svg" : rawExt.includes("jpeg") || rawExt.includes("jpg") ? "jpg" : rawExt.includes("webp") ? "webp" : "png";
-          const buffer = Buffer.from(matches[2], "base64");
-          const mimeType = rawExt.includes("svg") ? "image/svg+xml" : `image/${ext}`;
-          const cleanId = String(id).replace(/[^a-zA-Z0-9_-]/g, '_');
-          const blobPath = `covers/cover-${cleanId}-${Date.now()}.${ext}`;
-
-          // 1. Upload to Vercel Blob
-          const blobUrl = await uploadImageToBlob(blobPath, buffer, mimeType);
-          if (blobUrl) {
-            finalImageUrl = blobUrl;
-          }
-
-          // 2. Local disk fallback
-          const publicDir = path.join(process.cwd(), "public", "assets", "covers");
-          const srcDir = path.join(process.cwd(), "src", "assets", "covers");
-          if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
-          if (!fs.existsSync(srcDir)) fs.mkdirSync(srcDir, { recursive: true });
-
-          const filename = `cover-${cleanId}.${ext}`;
-          fs.writeFileSync(path.join(publicDir, filename), buffer);
-          fs.writeFileSync(path.join(srcDir, filename), buffer);
-
-          if (!blobUrl) {
-            finalImageUrl = `/assets/covers/${filename}?t=${Date.now()}`;
-          }
-        }
-      } catch (uploadErr) {
-        console.warn("[Update Cover Disk/Blob Warning]:", uploadErr);
-      }
-    }
-
-    // B. Update in persistent games-library.json on Vercel Blob
-    const updated = await updateGameInLibrary(id, { coverArt: finalImageUrl });
-
-    if (!updated) {
-      const gameToSave = {
-        ...(fallbackGame || {}),
-        id,
-        title: title || fallbackGame?.title || id,
-        coverArt: finalImageUrl,
-        addedDate: fallbackGame?.addedDate || new Date().toISOString().split('T')[0]
-      };
-      await addGameToLibrary(gameToSave);
-      console.log(`[Admin Update Cover] Created new Blob override record for game ${id}`);
-    } else {
-      console.log(`[Admin Update Cover] Successfully updated cover for game ${id}`);
-    }
-
-    // C. Also update gameArtOverrides.json
-    if (title || fallbackGame?.title) {
-      const gameTitle = title || fallbackGame?.title;
-      const cleanKey = gameTitle.split('\n')[0]
-        .replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[⭐🇻🇳🔥💥✦⚡✨🎮👑💎]/gu, ' ')
-        .replace(/[\(\[\{].*?[\)\]\}]/g, ' ')
-        .replace(/quán game xóm|qgx edition|edition|việt hóa|việt hoá|viethoa|resynced|remastered|re-?make|repack|full iso|iso|crack/gi, ' ')
-        .replace(/[:\-\—\–\/\_\.\,]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .toLowerCase();
-      
-      const overrides = getArtMapOverrides();
-      const rawLower = gameTitle.toLowerCase().trim();
-      const normKey = gameTitle.toLowerCase().replace(/[:\-\—\–\/\_\.\,]/g, ' ').replace(/\s+/g, ' ').trim();
-      const keysToUpdate = Array.from(new Set([cleanKey, rawLower, normKey])).filter(Boolean);
-
-      for (const k of keysToUpdate) {
-        overrides[k] = overrides[k] || { coverImage: finalImageUrl, rating: 95, genres: ['Game Quán Xóm'] };
-        overrides[k].coverImage = finalImageUrl;
-      }
-      saveArtMapOverrides(overrides);
-    }
-
-    return res.json({
-      success: true,
-      id,
-      coverArt: finalImageUrl,
-      url: finalImageUrl,
-      message: "Đã cập nhật ảnh bìa game thành công lên Vercel Blob Storage!"
-    });
-  } catch (err: any) {
-    console.error("[Update Cover API Error]:", err);
-    return res.status(500).json({ success: false, error: err.message || "Lỗi cập nhật ảnh bìa game" });
   }
 });
 

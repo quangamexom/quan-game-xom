@@ -5,7 +5,6 @@ import { INITIAL_GAMES } from './data/initialGames';
 import { Article } from './data/articles';
 import { useScrollSpy } from './hooks/useScrollSpy';
 import { isEmulatorActive, stopActiveEmulator } from './utils/emulatorManager';
-import { useAdminMode } from './hooks/useAdminMode';
 
 import { Navbar } from './components/Navbar';
 import { HeroCoverBanner } from './components/HeroCoverBanner';
@@ -31,13 +30,13 @@ const SECTIONS = [
   { id: 'home-section', category: 'HOME' },
   { id: 'game-catalog', category: 'GAMES' },
   { id: 'emulator-zone', category: 'EMULATOR' },
+  { id: 'articles-section', category: 'ARTICLES' },
   { id: 'community-section', category: 'COMMUNITY' }
 ];
 
 const PAGE_SIZE = 16;
 
 export default function App() {
-  const { isAdmin } = useAdminMode();
   const [games, setGames] = useState<GameItem[]>(INITIAL_GAMES);
   const [defaultPassword, setDefaultPassword] = useState<string>("quangamexom");
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -346,21 +345,9 @@ export default function App() {
       );
     };
 
-    const isRetroGame = (g: GameItem) => {
-      return isSnesGame(g) || 
-        g.emulatorCore === 'nes' || g.emulatorCore === 'gba' || g.emulatorCore === 'gbc' ||
-        g.platforms?.some(p => ['snes', 'nes', 'gba', 'gbc', 'n64', 'sega', 'ps1'].includes(p.toLowerCase()));
-    };
-
     const snesList = games.filter(isSnesGame);
-    if (snesList.length > 0) {
-      return snesList.slice(0, 8);
-    }
-    const retroList = games.filter(isRetroGame);
-    if (retroList.length > 0) {
-      return retroList.slice(0, 8);
-    }
-    return games.slice(0, 8);
+    const otherList = games.filter(g => !isSnesGame(g));
+    return [...snesList, ...otherList].slice(0, 10);
   }, [games]);
 
   useEffect(() => {
@@ -520,11 +507,11 @@ export default function App() {
                   key={game.id}
                   game={game}
                   onSelect={(g) => handleOpenGameDetail(g)}
-                  onOpenDownload={(g) => isAdmin && setDownloadGame(g)}
+                  onOpenDownload={(g) => setDownloadGame(g)}
                 />
               ))}
             </motion.div>
-          ) : isAdmin ? (
+          ) : (
             <motion.div
               key={`table-view-page-${currentPage}`}
               initial={{ opacity: 0 }}
@@ -559,24 +546,6 @@ export default function App() {
                 </tbody>
               </table>
             </motion.div>
-          ) : (
-            <motion.div
-              key={`grid-view-fallback-page-${currentPage}`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 sm:gap-6"
-            >
-              {paginatedGames.map((game) => (
-                <GameCard
-                  key={game.id}
-                  game={game}
-                  onSelect={(g) => handleOpenGameDetail(g)}
-                  onOpenDownload={(g) => isAdmin && setDownloadGame(g)}
-                  onSelectGenre={(g) => handleFilterChange({ selectedGenre: g })}
-                />
-              ))}
-            </motion.div>
           )}
         </AnimatePresence>
 
@@ -594,6 +563,11 @@ export default function App() {
       {/* 4. SECTION: EMULATOR ZONE */}
       <div id="emulator-zone" className="border-t border-slate-900/60">
         <EmulatorZone />
+      </div>
+
+      {/* 5. SECTION: ARTICLES SECTION */}
+      <div id="articles-section" className="max-w-7xl mx-auto px-4 sm:px-6 py-8 border-t border-slate-900/60">
+        <ArticleSection onReadArticle={(article) => setSelectedArticle(article)} />
       </div>
 
       {/* 5. SECTION 4: COMMUNITY & CONTACT SECTION */}
@@ -621,24 +595,27 @@ export default function App() {
       />
 
       {/* Modals & Drawers */}
+      <GameDetailModal
+        game={selectedGame}
+        onClose={handleCloseGameDetail}
+        onOpenDownload={(g) => setDownloadGame(g)}
+      />
+
+      <DownloadDrawer
+        game={downloadGame}
+        onClose={() => setDownloadGame(null)}
+        defaultPassword={defaultPassword}
+      />
+
+      <ArticleReaderModal
+        article={selectedArticle}
+        onClose={() => setSelectedArticle(null)}
+      />
+
       <DonateModal
         isOpen={isDonateOpen}
         onClose={() => setIsDonateOpen(false)}
       />
-
-      <GameDetailModal
-        game={selectedGame}
-        onClose={handleCloseGameDetail}
-        onOpenDownload={(g) => isAdmin && setDownloadGame(g)}
-      />
-
-      {isAdmin && (
-        <DownloadDrawer
-          game={downloadGame}
-          onClose={() => setDownloadGame(null)}
-          defaultPassword={defaultPassword}
-        />
-      )}
 
       <AdminAuthModal
         isOpen={isAdminModalOpen}
