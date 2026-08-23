@@ -1,4 +1,4 @@
-export type PlatformType = 'PC' | 'PS4' | 'PS5' | 'PS1' | 'PS2' | 'PS3' | 'Android' | 'Switch' | 'iOS' | 'Other';
+export type PlatformType = 'PC' | 'PS4' | 'PS5' | 'PS1' | 'PS2' | 'PS3' | 'Android' | 'Switch' | 'iOS' | 'SNES' | 'GBA' | 'NES' | 'Other';
 
 export interface DownloadMirror {
   label: string;
@@ -22,6 +22,11 @@ export interface GameItem {
   rating?: number;
   genres?: string[];
   description?: string;
+  systemName?: string;
+  addedDate?: string;
+  isFeatured?: boolean;
+  isPopular?: boolean;
+  isNewUpdate?: boolean;
   
   // Spreadsheet specific links
   fbPreviewUrl?: string;
@@ -45,10 +50,6 @@ export interface GameItem {
     storage?: string;
   };
   screenshots?: string[];
-  isFeatured?: boolean;
-  isPopular?: boolean;
-  isNewUpdate?: boolean;
-  addedDate?: string;
 }
 
 export interface SheetConfig {
