@@ -1,5 +1,537 @@
 [
   {
+    "id": "blob-rom-yuyuhakusho-vn",
+    "title": "Yu Yu Hakusho (Việt Hóa)",
+    "subtitle": "Nhất Dương Chỉ - Hành Trình U Meshi Đấu Sĩ Võ Đài",
+    "system": "snes",
+    "systemName": "Super Nintendo (SNES)",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/YuyuHakusho_VN.smc",
+    "coverArt": "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1920&auto=format&fit=crop",
+    "platforms": [
+      "SNES",
+      "Other"
+    ],
+    "language": "Tiếng Việt ⭐",
+    "hasVietHoa": true,
+    "releaseYear": 1994,
+    "rating": 4.9,
+    "genres": [
+      "Đối Kháng",
+      "SNES 16-Bit",
+      "Việt Hóa"
+    ],
+    "description": "Tuyệt tác game đối kháng nhập vai đỉnh cao trên hệ máy Super Nintendo (SNES). Hóa thân vào Yusuke Urameshi, Kuwabara, Kurama và Hiei tung chưởng Linh Quang Đạn mãn nhãn với bản dịch Tiếng Việt chuẩn ngữ cảnh.",
+    "emulatorCore": "snes",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": true,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "blob-rom-megaman-x2-vn",
+    "title": "Mega Man X2 (Việt Hóa)",
+    "subtitle": "Rockman X2 - Phục Sinh Zero & Đánh Bại X-Hunters",
+    "system": "snes",
+    "systemName": "Super Nintendo (SNES)",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Mega%20Man%20X2%20VN.smc",
+    "coverArt": "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1920&auto=format&fit=crop",
+    "platforms": [
+      "SNES",
+      "Other"
+    ],
+    "language": "Tiếng Việt ⭐",
+    "hasVietHoa": true,
+    "releaseYear": 1994,
+    "rating": 4.9,
+    "genres": [
+      "Hành Động",
+      "Đi Cảnh",
+      "SNES 16-Bit",
+      "Việt Hóa"
+    ],
+    "description": "Mega Man X2 (Rockman X2) bản Việt Hóa hoàn chỉnh trên SNES 16-bit. Đồng hành cùng X tiêu diệt binh đoàn X-Hunters, thu thập giáp Giga Armor và phục sinh Zero cứu thế giới.",
+    "emulatorCore": "snes",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": true,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "blob-rom-battletoads-double-dragon",
+    "title": "Battletoads & Double Dragon",
+    "subtitle": "Song Long Hiệp Đấu Cùng Binh Đoàn Ếch Chiến Binh",
+    "system": "snes",
+    "systemName": "Super Nintendo (SNES)",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Battletoads___Double_Dragon_-_The_Ultimate_Team__E_.smc",
+    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1920&auto=format&fit=crop",
+    "platforms": [
+      "SNES",
+      "Other"
+    ],
+    "language": "Tiếng Anh ⭐",
+    "hasVietHoa": false,
+    "releaseYear": 1993,
+    "rating": 4.8,
+    "genres": [
+      "Đi Cảnh",
+      "Beat-em-up",
+      "SNES 16-Bit",
+      "2 Người Chơi"
+    ],
+    "description": "Sự kết hợp lịch sử giữa 2 tượng đài game đi cảnh đối kháng beat-em-up hay nhất mọi thời đại trên Super Nintendo. Hỗ trợ 2 người chơi co-op phá đảo cực cuốn.",
+    "emulatorCore": "snes",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": false,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "blob-rom-power-rangers-fighting",
+    "title": "Mighty Morphin Power Rangers: The Fighting Edition",
+    "subtitle": "5 Anh Em Siêu Nhân - Đại Chiến Robot Khổng Lồ Megazord",
+    "system": "snes",
+    "systemName": "Super Nintendo (SNES)",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Mighty%20Morphin%20Power%20Rangers%20-%20The%20Fighting%20Edition%20%28USA%29.sfc",
+    "coverArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1920&auto=format&fit=crop",
+    "platforms": [
+      "SNES",
+      "Other"
+    ],
+    "language": "Tiếng Anh ⭐",
+    "hasVietHoa": false,
+    "releaseYear": 1995,
+    "rating": 4.8,
+    "genres": [
+      "Đối Kháng",
+      "Robot",
+      "SNES 16-Bit"
+    ],
+    "description": "Game đối kháng Robot khổng lồ Megazord, Dragonzord và quái vật kinh điển của 5 Anh Em Siêu Nhân với các đòn đánh combo uy lực trên Super Nintendo SNES.",
+    "emulatorCore": "snes",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": false,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "snes-super-mario-world",
+    "title": "Super Mario World",
+    "subtitle": "Khám Phá Vùng Đất Khủng Long Cùng Mario & Khủng Long Yoshi",
+    "system": "snes",
+    "systemName": "Super Nintendo (SNES)",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Super%20Mario%20World%20%28USA%29.sfc",
+    "coverArt": "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=1920&auto=format&fit=crop",
+    "platforms": [
+      "SNES",
+      "Other"
+    ],
+    "language": "Tiếng Anh ⭐",
+    "hasVietHoa": false,
+    "releaseYear": 1990,
+    "rating": 5,
+    "genres": [
+      "Platformer",
+      "Phiêu Lưu",
+      "SNES 16-Bit"
+    ],
+    "description": "Tựa game platformer định hình toàn bộ kỷ nguyên 16-bit Super Nintendo với hơn 96 màn chơi bí mật, cưỡi chú rồng Yoshi và giải cứu Công chúa Peach khỏi tay Bowser.",
+    "emulatorCore": "snes",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": false,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "snes-chrono-trigger",
+    "title": "Chrono Trigger (Việt Hóa)",
+    "subtitle": "Du Hành Xuyên Không Gian Thời Gian Cứu Rỗi Thế Giới",
+    "system": "snes",
+    "systemName": "Super Nintendo (SNES)",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Chrono%20Trigger%20%28USA%29.sfc",
+    "coverArt": "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1920&auto=format&fit=crop",
+    "platforms": [
+      "SNES",
+      "Other"
+    ],
+    "language": "Tiếng Việt ⭐",
+    "hasVietHoa": true,
+    "releaseYear": 1995,
+    "rating": 5,
+    "genres": [
+      "Nhập Vai (RPG)",
+      "Phiêu Lưu",
+      "SNES 16-Bit",
+      "Việt Hóa"
+    ],
+    "description": "Tuyệt tác game nhập vai kinh điển số 1 trên Super Nintendo SNES bởi sự hợp tác của Hironobu Sakaguchi, Yuji Horii và Akira Toriyama. Cốt truyện đa kết thúc với chiều sâu bất hủ.",
+    "emulatorCore": "snes",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": true,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "snes-donkey-kong-country",
+    "title": "Donkey Kong Country",
+    "subtitle": "Cuộc Phiêu Lưu Của Gia Đình Vượn Donkey Kong & Diddy Kong",
+    "system": "snes",
+    "systemName": "Super Nintendo (SNES)",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Donkey%20Kong%20Country%20%28USA%29.sfc",
+    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1920&auto=format&fit=crop",
+    "platforms": [
+      "SNES",
+      "Other"
+    ],
+    "language": "Tiếng Anh ⭐",
+    "hasVietHoa": false,
+    "releaseYear": 1994,
+    "rating": 4.9,
+    "genres": [
+      "Platformer",
+      "Hành Động",
+      "SNES 16-Bit"
+    ],
+    "description": "Kiệt tác đồ họa 3D Silicon Graphics rendered trên nền tảng 16-bit SNES. Âm nhạc đỉnh cao cùng lối chơi đi cảnh nhịp độ nhanh.",
+    "emulatorCore": "snes",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": false,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "snes-street-fighter-2-turbo",
+    "title": "Street Fighter II Turbo: Hyper Fighting",
+    "subtitle": "Đại Chiến Đấu Sĩ Đường Phố Tốc Độ Cao",
+    "system": "snes",
+    "systemName": "Super Nintendo (SNES)",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Street%20Fighter%20II%20Turbo%20%28USA%29.sfc",
+    "coverArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1920&auto=format&fit=crop",
+    "platforms": [
+      "SNES",
+      "Other"
+    ],
+    "language": "Tiếng Anh ⭐",
+    "hasVietHoa": false,
+    "releaseYear": 1993,
+    "rating": 4.9,
+    "genres": [
+      "Đối Kháng",
+      "Arcade",
+      "SNES 16-Bit",
+      "2 Người Chơi"
+    ],
+    "description": "Phiên bản đối kháng hoàn hảo của Capcom trên SNES, bổ sung chiêu thức mới cho Ryu, Ken, Chun-Li, Guile và tốc độ chiến đấu Turbo bùng nổ.",
+    "emulatorCore": "snes",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": false,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "snes-super-castlevania-iv",
+    "title": "Super Castlevania IV",
+    "subtitle": "Simon Belmont & Huyền Thoại Roi Da Diệt Bá Tước Dracula",
+    "system": "snes",
+    "systemName": "Super Nintendo (SNES)",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Super%20Castlevania%20IV%20%28USA%29.sfc",
+    "coverArt": "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1920&auto=format&fit=crop",
+    "platforms": [
+      "SNES",
+      "Other"
+    ],
+    "language": "Tiếng Anh ⭐",
+    "hasVietHoa": false,
+    "releaseYear": 1991,
+    "rating": 4.8,
+    "genres": [
+      "Hành Động",
+      "Gothic Horror",
+      "SNES 16-Bit"
+    ],
+    "description": "Cuộc phiêu lưu vào lâu đài ác ma Castlevania với cây roi da có thể vung theo 8 hướng và hiệu ứng Mode 7 xoay chuyển ấn tượng.",
+    "emulatorCore": "snes",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": false,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "snes-tmnt-turtles-in-time",
+    "title": "Teenage Mutant Ninja Turtles IV: Turtles in Time",
+    "subtitle": "Ninja Rùa Du Hành Thời Gian Trừ Gian Diệt Bạo",
+    "system": "snes",
+    "systemName": "Super Nintendo (SNES)",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Teenage%20Mutant%20Ninja%20Turtles%20IV%20-%20Turtles%20in%20Time%20%28USA%29.sfc",
+    "coverArt": "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=1920&auto=format&fit=crop",
+    "platforms": [
+      "SNES",
+      "Other"
+    ],
+    "language": "Tiếng Anh ⭐",
+    "hasVietHoa": false,
+    "releaseYear": 1992,
+    "rating": 4.9,
+    "genres": [
+      "Đi Cảnh",
+      "Beat-em-up",
+      "SNES 16-Bit",
+      "2 Người Chơi"
+    ],
+    "description": "Tuyệt phẩm đi cảnh hay nhất của 4 chú Ninja Rùa Leonardo, Raphael, Donatello, Michelangelo xuyên qua các thời kỳ lịch sử đánh bại Shredder và Krang.",
+    "emulatorCore": "snes",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": false,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "snes-aladdin-capcom",
+    "title": "Disney Aladdin (Capcom SNES)",
+    "subtitle": "Hành Trình Aladdin & Cây Đèn Thần Cứu Công Chúa Jasmine",
+    "system": "snes",
+    "systemName": "Super Nintendo (SNES)",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Aladdin%20%28USA%29.sfc",
+    "coverArt": "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1920&auto=format&fit=crop",
+    "platforms": [
+      "SNES",
+      "Other"
+    ],
+    "language": "Tiếng Anh ⭐",
+    "hasVietHoa": false,
+    "releaseYear": 1993,
+    "rating": 4.8,
+    "genres": [
+      "Platformer",
+      "Disney",
+      "SNES 16-Bit"
+    ],
+    "description": "Game đi cảnh kinh điển của hãng Capcom phát triển dựa trên bộ phim hoạt hình Disney Aladdin với lối chơi mượt mà và animation tuyệt đẹp của Shinji Mikami.",
+    "emulatorCore": "snes",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": false,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "snes-lion-king",
+    "title": "The Lion King (SNES)",
+    "subtitle": "Vua Sư Tử Simba - Trưởng Thành & Đòi Lại Ngai Vàng Pride Rock",
+    "system": "snes",
+    "systemName": "Super Nintendo (SNES)",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/The%20Lion%20King%20%28USA%29.sfc",
+    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1920&auto=format&fit=crop",
+    "platforms": [
+      "SNES",
+      "Other"
+    ],
+    "language": "Tiếng Anh ⭐",
+    "hasVietHoa": false,
+    "releaseYear": 1994,
+    "rating": 4.7,
+    "genres": [
+      "Platformer",
+      "Disney",
+      "SNES 16-Bit"
+    ],
+    "description": "Hành trình vượt qua thử thách từ chú sư tử con Simba đến khi trưởng thành dũng mãnh đánh bại Scar, nhạc nền phim hoạt hình đoạt giải Oscar bất hủ.",
+    "emulatorCore": "snes",
+    "isFeatured": false,
+    "isPopular": true,
+    "isNewUpdate": false,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "snes-contra-3-alien-wars",
+    "title": "Contra III: The Alien Wars",
+    "subtitle": "Chiến Tranh Người Ngoài Hành Tinh - Biệt Đội Hủy Diệt Contra",
+    "system": "snes",
+    "systemName": "Super Nintendo (SNES)",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Contra%20III%20-%20The%20Alien%20Wars%20%28USA%29.sfc",
+    "coverArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1920&auto=format&fit=crop",
+    "platforms": [
+      "SNES",
+      "Other"
+    ],
+    "language": "Tiếng Anh ⭐",
+    "hasVietHoa": false,
+    "releaseYear": 1992,
+    "rating": 4.9,
+    "genres": [
+      "Hành Động",
+      "Bắn Súng",
+      "SNES 16-Bit",
+      "2 Người Chơi"
+    ],
+    "description": "Phần 3 huyền thoại của dòng game bắn súng Contra trên SNES với bom hủy diệt, bắn súng đôi 2 tay, leo trèo và các màn góc nhìn từ trên xuống kịch tính.",
+    "emulatorCore": "snes",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": false,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "snes-sunset-riders",
+    "title": "Sunset Riders (SNES)",
+    "subtitle": "Bắn Súng Cao Bồi Miền Viễn Tây Nổi Tiếng",
+    "system": "snes",
+    "systemName": "Super Nintendo (SNES)",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Sunset%20Riders%20%28USA%29.sfc",
+    "coverArt": "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1920&auto=format&fit=crop",
+    "platforms": [
+      "SNES",
+      "Other"
+    ],
+    "language": "Tiếng Anh ⭐",
+    "hasVietHoa": false,
+    "releaseYear": 1993,
+    "rating": 4.8,
+    "genres": [
+      "Hành Động",
+      "Bắn Súng",
+      "SNES 16-Bit",
+      "2 Người Chơi"
+    ],
+    "description": "Game bắn súng viễn tây cực kỳ nổi tiếng của Konami với 4 tay súng cừ khôi Steve, Billy, Bob, Cormano săn lùng những tên cướp tiền thưởng khét tiếng.",
+    "emulatorCore": "snes",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": false,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "snes-top-gear-1",
+    "title": "Top Gear 1",
+    "subtitle": "Đua Xe Tốc Độ Nitrous Bất Hủ Tuổi Thơ",
+    "system": "snes",
+    "systemName": "Super Nintendo (SNES)",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Top%20Gear%20%28USA%29.sfc",
+    "coverArt": "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=1920&auto=format&fit=crop",
+    "platforms": [
+      "SNES",
+      "Other"
+    ],
+    "language": "Tiếng Anh ⭐",
+    "hasVietHoa": false,
+    "releaseYear": 1992,
+    "rating": 4.8,
+    "genres": [
+      "Đua Xe",
+      "Tốc Độ",
+      "SNES 16-Bit",
+      "2 Người Chơi"
+    ],
+    "description": "Game đua xe 16-bit kinh điển với bản nhạc nền huyền thoại của Barry Leitch, cơ chế đạp Nitro tăng tốc và chia đôi màn hình 2 người so tài cực đỉnh.",
+    "emulatorCore": "snes",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": false,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "snes-super-bomberman-5",
+    "title": "Super Bomberman 5",
+    "subtitle": "Đặt Bom Cứu Bạn Bè & So Tài Đặt Bom 4-5 Người Chơi",
+    "system": "snes",
+    "systemName": "Super Nintendo (SNES)",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Super%20Bomberman%205%20%28Japan%29.sfc",
+    "coverArt": "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1920&auto=format&fit=crop",
+    "platforms": [
+      "SNES",
+      "Other"
+    ],
+    "language": "Tiếng Nhật / Tiếng Anh ⭐",
+    "hasVietHoa": false,
+    "releaseYear": 1997,
+    "rating": 4.9,
+    "genres": [
+      "Party",
+      "Hành Động",
+      "SNES 16-Bit",
+      "Nhiều Người"
+    ],
+    "description": "Đỉnh cao của dòng game Đặt Bom trên SNES với chế độ chơi đơn phi tuyến tính, cưỡi thú cưng Louies đa kỹ năng và chế độ Battle mode kinh điển.",
+    "emulatorCore": "snes",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": false,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "snes-mortal-kombat-2",
+    "title": "Mortal Kombat II",
+    "subtitle": "Rồng Đen 2 - Tuyệt Kỹ Fatality & Đấu Sĩ Ngoại Giới Outworld",
+    "system": "snes",
+    "systemName": "Super Nintendo (SNES)",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Mortal%20Kombat%20II%20%28USA%29.sfc",
+    "coverArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1920&auto=format&fit=crop",
+    "platforms": [
+      "SNES",
+      "Other"
+    ],
+    "language": "Tiếng Anh ⭐",
+    "hasVietHoa": false,
+    "releaseYear": 1994,
+    "rating": 4.8,
+    "genres": [
+      "Đối Kháng",
+      "Võ Thuật",
+      "SNES 16-Bit",
+      "2 Người Chơi"
+    ],
+    "description": "Đấu trường sinh tử Rồng Đen phần 2 trên SNES với đồ họa số hóa chi tiết, toàn bộ đòn kết liễu Fatality, Babality, Friendship và Shao Kahn trùm cuối.",
+    "emulatorCore": "snes",
+    "isFeatured": false,
+    "isPopular": true,
+    "isNewUpdate": false,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "snes-mega-man-x",
+    "title": "Mega Man X (Rockman X)",
+    "subtitle": "Khởi Đầu Huyền Thoại Mega Man X & Kiếm Sĩ Zero",
+    "system": "snes",
+    "systemName": "Super Nintendo (SNES)",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Mega%20Man%20X%20%28USA%29.sfc",
+    "coverArt": "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1920&auto=format&fit=crop",
+    "platforms": [
+      "SNES",
+      "Other"
+    ],
+    "language": "Tiếng Anh ⭐",
+    "hasVietHoa": false,
+    "releaseYear": 1993,
+    "rating": 4.9,
+    "genres": [
+      "Hành Động",
+      "Đi Cảnh",
+      "SNES 16-Bit"
+    ],
+    "description": "Tác phẩm mở đầu dòng game Mega Man X với cơ chế lướt Dash, bám tường Wall Kick, tìm kiếm Heart Tank, Sub Tank và giáp First Armor của Dr. Light.",
+    "emulatorCore": "snes",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": false,
+    "addedDate": "2026-08-15"
+  },
+  {
     "id": "sheet-0-starcraft-gundam-century",
     "title": "Starcraft Gundam Century",
     "subtitle": "Bản mod Gundam và bản gốc",
@@ -560,30 +1092,6 @@
     "addedDate": "2026-08-10"
   },
   {
-    "id": "sheet-22-mighty-morphin-power-rangers--the-fighting-edition",
-    "title": "Mighty Morphin Power Rangers: The Fighting Edition",
-    "subtitle": "Bản Megazord đánh nhau • Bản Mod Unlock full boss (Ivan)",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
-    "platforms": [
-      "PC"
-    ],
-    "language": "Tiếng Anh",
-    "hasVietHoa": false,
-    "releaseYear": 2024,
-    "fileSize": "Google Drive / Link Kho",
-    "rating": 4.8,
-    "genres": [
-      "Quán Game Xóm",
-      "Độc Quyền"
-    ],
-    "description": "Mighty Morphin Power Rangers: The Fighting Edition — Bản game chuẩn từ Kho Game Quán Xóm Sharing. Tương thích mượt mà, tải nhanh không gián đoạn.",
-    "isFeatured": false,
-    "isPopular": true,
-    "isNewUpdate": false,
-    "addedDate": "2026-08-10"
-  },
-  {
     "id": "sheet-23-tiny-toon-adventures--wacky-sports-challenge",
     "title": "Tiny Toon Adventures: Wacky Sports Challenge",
     "subtitle": "🎯 Mùa thế vận hội vui nhộn — Mini thể thao ✦ Arcade vibe",
@@ -710,31 +1218,6 @@
     "mirror1Url": "📥 Tải Ngay",
     "isFeatured": false,
     "isPopular": false,
-    "isNewUpdate": false,
-    "addedDate": "2026-08-10"
-  },
-  {
-    "id": "sheet-28-call-of-duty-modern-warfare-remastered",
-    "title": "Call of Duty Modern Warfare Remastered",
-    "subtitle": "Bản Gốc",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
-    "platforms": [
-      "PC"
-    ],
-    "language": "Tiếng Anh",
-    "hasVietHoa": false,
-    "releaseYear": 2024,
-    "fileSize": "Google Drive / Link Kho",
-    "rating": 4.8,
-    "genres": [
-      "Quán Game Xóm",
-      "Độc Quyền"
-    ],
-    "description": "Call of Duty Modern Warfare Remastered — Bản game chuẩn từ Kho Game Quán Xóm Sharing. Tương thích mượt mà, tải nhanh không gián đoạn.",
-    "downloadUrl": "https://drive.google.com/drive/folders/1t9Do9caRniQrfDCSRsVHxVybHMKWCS1V?usp=sharing",
-    "isFeatured": false,
-    "isPopular": true,
     "isNewUpdate": false,
     "addedDate": "2026-08-10"
   },
@@ -1186,33 +1669,6 @@
     "addedDate": "2026-08-10"
   },
   {
-    "id": "sheet-46------final-fantasy-vii",
-    "title": "🔥🔥 FINAL FANTASY VII",
-    "subtitle": "2012 · Android · Mod 60 FPS beta · Việt hoá",
-    "coverArt": "https://cdn.cloudflare.steamstatic.com/steam/apps/39140/library_600x900.jpg",
-    "backdropArt": "https://cdn.cloudflare.steamstatic.com/steam/apps/39140/header.jpg",
-    "platforms": [
-      "Android"
-    ],
-    "language": "Tiếng Việt ⭐️",
-    "hasVietHoa": true,
-    "releaseYear": 2024,
-    "fileSize": "Google Drive / Link Kho",
-    "rating": 4.75,
-    "genres": [
-      "RPG",
-      "Kinh Điển"
-    ],
-    "description": "🔥🔥 FINAL FANTASY VII — Bản game chuẩn từ Kho Game Quán Xóm Sharing. Tương thích mượt mà, tải nhanh không gián đoạn.",
-    "downloadUrl": "📥 Tải Ngay",
-    "mirror1Url": "📥 Tải Ngay",
-    "mirror2Url": "BẢN NÀY PRE-TEST CÒN LỖI LOAD BATTLE LÂU, THÍCH THÌ TRẢI NGHIỆM KHÔNG KHUYẾN KHÍCH NHA ANH EM, QUA TẾT CÓ THỜI GIAN SẼ MÒ MẪM XỬ LÝ",
-    "isFeatured": false,
-    "isPopular": true,
-    "isNewUpdate": false,
-    "addedDate": "2026-08-10"
-  },
-  {
     "id": "sheet-47------final-fantasy-vii---simple-edition",
     "title": "🔥🔥 FINAL FANTASY VII – SIMPLE EDITION",
     "subtitle": "2012 · PC · Bản Simple Unrar & Play · Việt hoá The Red Team port by Lưu Việt Hoàng ⭐",
@@ -1236,33 +1692,6 @@
     "mirror1Url": "📥 Tải Ngay",
     "isFeatured": false,
     "isPopular": false,
-    "isNewUpdate": false,
-    "addedDate": "2026-08-10"
-  },
-  {
-    "id": "sheet-48------final-fantasy-vii---simple-edition",
-    "title": "🔥🔥 FINAL FANTASY VII – SIMPLE EDITION",
-    "subtitle": "2012 · iOS · Việt hoá The Red Team port lên iOS by Lưu Việt Hoàng ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
-    "platforms": [
-      "iOS"
-    ],
-    "language": "Tiếng Việt ⭐️",
-    "hasVietHoa": true,
-    "releaseYear": 2024,
-    "fileSize": "Google Drive / Link Kho",
-    "rating": 4.8,
-    "genres": [
-      "Quán Game Xóm",
-      "Độc Quyền",
-      "Việt Hóa"
-    ],
-    "description": "🔥🔥 FINAL FANTASY VII – SIMPLE EDITION — Bản game chuẩn từ Kho Game Quán Xóm Sharing. Tương thích mượt mà, tải nhanh không gián đoạn.",
-    "downloadUrl": "📥 Tải Ngay",
-    "mirror1Url": "📥 Tải Ngay",
-    "isFeatured": false,
-    "isPopular": true,
     "isNewUpdate": false,
     "addedDate": "2026-08-10"
   },
@@ -3240,32 +3669,6 @@
     "addedDate": "2026-08-10"
   },
   {
-    "id": "sheet-125-call-of-duty-modern-warfare-remastered",
-    "title": "Call of Duty Modern Warfare Remastered",
-    "subtitle": "Bản chuẩn Việt Hóa • Quán Game Xóm",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
-    "platforms": [
-      "PC"
-    ],
-    "language": "Tiếng Anh | Tiếng Việt",
-    "hasVietHoa": true,
-    "releaseYear": 2024,
-    "fileSize": "Google Drive / Link Kho",
-    "rating": 4.8,
-    "genres": [
-      "Quán Game Xóm",
-      "Độc Quyền",
-      "Việt Hóa"
-    ],
-    "description": "Call of Duty Modern Warfare Remastered — Bản game chuẩn từ Kho Game Quán Xóm Sharing. Tương thích mượt mà, tải nhanh không gián đoạn.",
-    "downloadUrl": "https://drive.google.com/open?id=1w0aB1RRWM1Agr4kuVAin-7s5pouss86e&usp=drive_fs",
-    "isFeatured": false,
-    "isPopular": false,
-    "isNewUpdate": false,
-    "addedDate": "2026-08-10"
-  },
-  {
     "id": "sheet-126-bahamut-lagoon",
     "title": "Bahamut Lagoon",
     "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
@@ -3340,31 +3743,6 @@
     "addedDate": "2026-08-10"
   },
   {
-    "id": "sheet-129-chocobo-racing",
-    "title": "Chocobo Racing",
-    "subtitle": "Bản chuẩn Việt Hóa • Quán Game Xóm",
-    "coverArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1200&auto=format&fit=crop",
-    "platforms": [
-      "PC"
-    ],
-    "language": "Tiếng Việt ⭐",
-    "hasVietHoa": true,
-    "releaseYear": 2024,
-    "fileSize": "Google Drive / Link Kho",
-    "rating": 4.75,
-    "genres": [
-      "Đua Xe",
-      "Giả Lập PS1"
-    ],
-    "description": "Chocobo Racing — Bản game chuẩn từ Kho Game Quán Xóm Sharing. Tương thích mượt mà, tải nhanh không gián đoạn.",
-    "downloadUrl": "https://drive.google.com/open?id=1LcdRsJp2UIkwBs1TjDH9tYIM7QBelEz_&usp=drive_fs",
-    "isFeatured": false,
-    "isPopular": false,
-    "isNewUpdate": false,
-    "addedDate": "2026-08-10"
-  },
-  {
     "id": "sheet-130-grand-theft-auto-v-legacy",
     "title": "Grand Theft Auto V Legacy",
     "subtitle": "Bản chuẩn Việt Hóa • Quán Game Xóm",
@@ -3387,30 +3765,6 @@
     "downloadUrl": "https://drive.google.com/drive/folders/1kcpn_soAFkiGTm5M6MyelPlb3ReoAZvW?usp=drive_link",
     "isFeatured": false,
     "isPopular": true,
-    "isNewUpdate": false,
-    "addedDate": "2026-08-10"
-  },
-  {
-    "id": "sheet-131-grand-theft-auto-v-legacy",
-    "title": "Grand Theft Auto V Legacy",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
-    "platforms": [
-      "PC"
-    ],
-    "language": "Tiếng Anh",
-    "hasVietHoa": false,
-    "releaseYear": 2024,
-    "fileSize": "Google Drive / Link Kho",
-    "rating": 4.8,
-    "genres": [
-      "Quán Game Xóm",
-      "Độc Quyền"
-    ],
-    "description": "Grand Theft Auto V Legacy — Bản game chuẩn từ Kho Game Quán Xóm Sharing. Tương thích mượt mà, tải nhanh không gián đoạn.",
-    "downloadUrl": "https://drive.google.com/drive/folders/1bJP9j-RprLyTaUR-4V-4nBfo6CgC8NTu?usp=drive_link",
-    "isFeatured": false,
-    "isPopular": false,
     "isNewUpdate": false,
     "addedDate": "2026-08-10"
   },
@@ -3439,5 +3793,259 @@
     "isPopular": true,
     "isNewUpdate": false,
     "addedDate": "2026-08-10"
+  },
+  {
+    "id": "pc-diablo-2-lod-vn",
+    "title": "Diablo II: Lord of Destruction (Việt Hóa)",
+    "subtitle": "Chúa Tể Hủy Diệt Baal • Bản Việt Hóa Full Dịch Thuật & Lồng Tiếng",
+    "system": "pc",
+    "systemName": "PC Windows",
+    "platforms": [
+      "PC"
+    ],
+    "coverArt": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1920&auto=format&fit=crop",
+    "language": "Tiếng Việt ⭐",
+    "hasVietHoa": true,
+    "releaseYear": 2001,
+    "rating": 5,
+    "genres": [
+      "Nhập Vai (ARPG)",
+      "Chặt Chém",
+      "Việt Hóa",
+      "Kinh Điển"
+    ],
+    "description": "Tuyệt tác ARPG bất hủ của Blizzard Entertainment. Khám phá 5 Act kịch tính, 7 lớp nhân vật Barbarian, Necromancer, Sorceress, Paladin, Amazon, Druid, Assassin và hệ thống Runeword huyền thoại.",
+    "downloadUrl": "https://drive.google.com/drive/folders/1VA8Wv9OQmrR4nDpf0SUFQiqC4IAoVSCswCjY37ChplM",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": true,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "pc-heroes-3-complete-hd",
+    "title": "Heroes of Might and Magic III (Complete HD)",
+    "subtitle": "Chiến Thuật Theo Lượt Bất Hủ • Bản HD Hỗ Trợ Màn Hình Rộng",
+    "system": "pc",
+    "systemName": "PC Windows",
+    "platforms": [
+      "PC"
+    ],
+    "coverArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1920&auto=format&fit=crop",
+    "language": "Tiếng Việt x Tiếng Anh ⭐",
+    "hasVietHoa": true,
+    "releaseYear": 1999,
+    "rating": 5,
+    "genres": [
+      "Chiến Thuật",
+      "Theo Lượt (TBS)",
+      "Kinh Điển"
+    ],
+    "description": "Tượng đài game chiến thuật theo lượt số 1 thế giới với 9 chủng tộc, hàng trăm phép thuật và bản đồ phiêu lưu vô tận ở lục địa Erathia.",
+    "downloadUrl": "https://drive.google.com/drive/folders/1VA8Wv9OQmrR4nDpf0SUFQiqC4IAoVSCswCjY37ChplM",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": false,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "pc-half-life-1-vn",
+    "title": "Half-Life 1 (Bản Lồng Tiếng Việt)",
+    "subtitle": "Sự Cố Viện Nghiên Cứu Black Mesa • Gordon Freeman",
+    "system": "pc",
+    "systemName": "PC Windows",
+    "platforms": [
+      "PC"
+    ],
+    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=1920&auto=format&fit=crop",
+    "language": "Tiếng Việt ⭐",
+    "hasVietHoa": true,
+    "releaseYear": 1998,
+    "rating": 4.9,
+    "genres": [
+      "Bắn Súng FPS",
+      "Khoa Học Viễn Tưởng",
+      "Việt Hóa"
+    ],
+    "description": "Tựa game FPS định hình thể loại game bắn súng cốt truyện của Valve. Hóa thân vào nhà vật lý học Gordon Freeman với cây xà beng quen thuộc chiến đấu thoát khỏi Black Mesa.",
+    "downloadUrl": "https://drive.google.com/drive/folders/1VA8Wv9OQmrR4nDpf0SUFQiqC4IAoVSCswCjY37ChplM",
+    "isFeatured": false,
+    "isPopular": true,
+    "isNewUpdate": true,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "pc-gta-vice-city-vn",
+    "title": "Grand Theft Auto: Vice City (Việt Hóa)",
+    "subtitle": "Thành Phố Biển Thập Niên 80 • Tommy Vercetti • Full Radio & Việt Hóa",
+    "system": "pc",
+    "systemName": "PC Windows",
+    "platforms": [
+      "PC"
+    ],
+    "coverArt": "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1920&auto=format&fit=crop",
+    "language": "Tiếng Việt ⭐",
+    "hasVietHoa": true,
+    "releaseYear": 2002,
+    "rating": 4.9,
+    "genres": [
+      "Thế Giới Mở",
+      "Hành Động",
+      "Việt Hóa"
+    ],
+    "description": "Khám phá thành phố biển Vice City đầy màu sắc neon thập niên 1980 cùng Tommy Vercetti gầy dựng đế chế xã hội đen lừng lẫy.",
+    "downloadUrl": "https://drive.google.com/drive/folders/1VA8Wv9OQmrR4nDpf0SUFQiqC4IAoVSCswCjY37ChplM",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": false,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "pc-nfs-most-wanted-2005-vn",
+    "title": "Need for Speed: Most Wanted (2005)",
+    "subtitle": "Đua Xe Đường Phố • Cuộc Rượt Đuổi Cảnh Sát Kịch Tính • Blacklist 15",
+    "system": "pc",
+    "systemName": "PC Windows",
+    "platforms": [
+      "PC"
+    ],
+    "coverArt": "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1920&auto=format&fit=crop",
+    "language": "Tiếng Việt x Tiếng Anh ⭐",
+    "hasVietHoa": true,
+    "releaseYear": 2005,
+    "rating": 5,
+    "genres": [
+      "Đua Xe",
+      "Thế Giới Mở",
+      "Tốc Độ"
+    ],
+    "description": "Phần game đua xe Need for Speed thành công và được yêu thích nhất lịch sử cùng chiếc xe BMW M3 GTR huyền thoại và những pha chạy trốn cảnh sát nghẹt thở.",
+    "downloadUrl": "https://drive.google.com/drive/folders/1VA8Wv9OQmrR4nDpf0SUFQiqC4IAoVSCswCjY37ChplM",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": false,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "pc-aoe-2-conquerors-vn",
+    "title": "Age of Empires II: The Conquerors (Đế Chế 2)",
+    "subtitle": "Chiến Thuật Thời Gian Thực RTS • 18 Nền Văn Minh • Việt Hóa",
+    "system": "pc",
+    "systemName": "PC Windows",
+    "platforms": [
+      "PC"
+    ],
+    "coverArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1920&auto=format&fit=crop",
+    "language": "Tiếng Việt ⭐",
+    "hasVietHoa": true,
+    "releaseYear": 2000,
+    "rating": 4.9,
+    "genres": [
+      "Chiến Thuật",
+      "RTS",
+      "Việt Hóa",
+      "Kinh Điển"
+    ],
+    "description": "Tượng đài game chiến thuật thời gian thực thời Trung Cổ với các chiến dịch lịch sử Attila the Hun, El Cid, Joan of Arc và những trận công thành hoành tráng.",
+    "downloadUrl": "https://drive.google.com/drive/folders/1VA8Wv9OQmrR4nDpf0SUFQiqC4IAoVSCswCjY37ChplM",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": false,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "gba-pokemon-emerald-vn",
+    "title": "Pokémon Emerald Version (Việt Hóa)",
+    "subtitle": "Vùng Đất Hoenn • Rayquaza, Kyogre & Groudon • Việt Hóa Chuẩn",
+    "system": "gba",
+    "systemName": "Game Boy Advance (GBA)",
+    "platforms": [
+      "Other",
+      "Android",
+      "PC"
+    ],
+    "coverArt": "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1920&auto=format&fit=crop",
+    "language": "Tiếng Việt ⭐",
+    "hasVietHoa": true,
+    "releaseYear": 2004,
+    "rating": 5,
+    "genres": [
+      "Nhập Vai (RPG)",
+      "Phiêu Lưu",
+      "GBA 32-Bit",
+      "Việt Hóa"
+    ],
+    "description": "Phiên bản Pokémon hoàn hảo nhất trên GBA. Khám phá Battle Frontier, ngăn chặn hai tổ chức phản diện Team Aqua và Team Magma và thu phục rồng thần Rayquaza.",
+    "downloadUrl": "https://drive.google.com/drive/folders/1VA8Wv9OQmrR4nDpf0SUFQiqC4IAoVSCswCjY37ChplM",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": true,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "ps1-castlevania-sotn-vn",
+    "title": "Castlevania: Symphony of the Night (Việt Hóa)",
+    "subtitle": "Alucard & Lâu Đài Ác Ma Đảo Ngược • Tượng Đài Metroidvania",
+    "system": "ps1",
+    "systemName": "Sony PlayStation 1 (PS1)",
+    "platforms": [
+      "PS1",
+      "PC",
+      "Android"
+    ],
+    "coverArt": "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1920&auto=format&fit=crop",
+    "language": "Tiếng Việt ⭐",
+    "hasVietHoa": true,
+    "releaseYear": 1997,
+    "rating": 5,
+    "genres": [
+      "Metroidvania",
+      "Hành Động Nhập Vai",
+      "PS1",
+      "Việt Hóa"
+    ],
+    "description": "Tuyệt phẩm đặt nền móng cho thể loại Metroidvania. Hóa thân vào Alucard mang dòng máu ma cà rồng thâm nhập vào lâu đài Dracula cùng kho vũ khí và phép thuật khổng lồ.",
+    "downloadUrl": "https://drive.google.com/drive/folders/1VA8Wv9OQmrR4nDpf0SUFQiqC4IAoVSCswCjY37ChplM",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": false,
+    "addedDate": "2026-08-15"
+  },
+  {
+    "id": "snes-zelda-link-to-past",
+    "title": "The Legend of Zelda: A Link to the Past (Việt Hóa)",
+    "subtitle": "Thế Giới Ánh Sáng & Bóng Tối • Thanh Kiếm Master Sword Huyền Thoại",
+    "system": "snes",
+    "systemName": "Super Nintendo (SNES)",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/The%20Legend%20of%20Zelda%20-%20A%20Link%20to%20the%20Past%20%28USA%29.sfc",
+    "coverArt": "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=600&auto=format&fit=crop",
+    "backdropArt": "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=1920&auto=format&fit=crop",
+    "platforms": [
+      "SNES",
+      "Other"
+    ],
+    "language": "Tiếng Việt ⭐",
+    "hasVietHoa": true,
+    "releaseYear": 1991,
+    "rating": 5,
+    "genres": [
+      "Phiêu Lưu",
+      "Nhập Vai",
+      "SNES 16-Bit",
+      "Việt Hóa"
+    ],
+    "description": "Một trong những game hay nhất mọi thời đại. Giải cứu Công chúa Zelda, rút thanh gươm Master Sword và du hành giữa hai thế giới Light World và Dark World để đánh bại Ganon.",
+    "emulatorCore": "snes",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": true,
+    "addedDate": "2026-08-15"
   }
 ]
