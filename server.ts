@@ -10,7 +10,9 @@ import {
   updateGameInLibrary, 
   removeGameFromLibrary,
   uploadImageToBlob,
-  syncAllBlobsToLibrary
+  syncAllBlobsToLibrary,
+  readDonateConfig,
+  writeDonateConfig
 } from "./src/services/metadataStorage";
 import {
   createNetplayRoom,
@@ -414,7 +416,6 @@ app.get("/api/get-server-art-map", (req, res) => {
 
 // Get Current Custom Logo
 app.get("/api/get-logo", (req, res) => {
-  res.setHeader("Content-Type", "application/json");
   try {
     const customLogoPath = path.join(process.cwd(), "src/data/customLogo.ts");
     const defaultLogoUrl = "/assets/logo/logo-qgx-default.png";
@@ -436,9 +437,8 @@ app.get("/api/get-logo", (req, res) => {
 
 // Save Custom Logo & Commit to Local Disk & GitHub
 app.post("/api/save-logo", async (req, res) => {
-  res.setHeader("Content-Type", "application/json");
   try {
-    const { logoUrl, fileData } = req.body || {};
+    const { logoUrl, fileData } = req.body;
     const rawLogo = fileData || logoUrl;
     if (!rawLogo) {
       return res.status(400).json({ success: false, error: "Logo URL or file data is required" });
@@ -447,7 +447,7 @@ app.post("/api/save-logo", async (req, res) => {
     let finalLogoUrl = rawLogo;
 
     // Handle base64 image: Upload to Vercel Blob (Permanent Cloud Storage) & fallback to disk
-    if (typeof rawLogo === "string" && rawLogo.startsWith("data:image/")) {
+    if (rawLogo.startsWith("data:image/")) {
       try {
         const matches = rawLogo.match(/^data:image\/([a-zA-Z0-9\+\=\-]+);base64,(.+)$/);
         if (matches && matches[2]) {
@@ -484,13 +484,10 @@ app.post("/api/save-logo", async (req, res) => {
     }
 
     // Always update local src/data/customLogo.ts
-    try {
-      const customLogoFilePath = path.join(process.cwd(), "src/data/customLogo.ts");
-      const logoFileContent = `export const OFFICIAL_LOGO_URL = '${finalLogoUrl.replace(/'/g, "\\'")}';\nexport const DEFAULT_LOGO_URL = '/assets/logo/logo-qgx-default.png';\nexport const CUSTOM_LOGO_URL = '${finalLogoUrl.replace(/'/g, "\\'")}';\n`;
-      fs.writeFileSync(customLogoFilePath, logoFileContent, "utf-8");
-    } catch (writeErr) {
-      console.warn("[Write customLogo.ts Warning]:", writeErr);
-    }
+    const customLogoFilePath = path.join(process.cwd(), "src/data/customLogo.ts");
+    const logoFileContent = `export const OFFICIAL_LOGO_URL = '${finalLogoUrl.replace(/'/g, "\\'")}';\nexport const DEFAULT_LOGO_URL = '/assets/logo/logo-qgx-default.png';\nexport const CUSTOM_LOGO_URL = '${finalLogoUrl.replace(/'/g, "\\'")}';\n`;
+    
+    fs.writeFileSync(customLogoFilePath, logoFileContent, "utf-8");
 
     let savedToGithub = false;
     const githubToken = process.env.GITHUB_TOKEN;
@@ -524,7 +521,7 @@ app.post("/api/save-logo", async (req, res) => {
           },
           body: JSON.stringify({
             message: "chore(logo): update custom logo",
-            content: Buffer.from(`export const OFFICIAL_LOGO_URL = '${finalLogoUrl.replace(/'/g, "\\'")}';\nexport const DEFAULT_LOGO_URL = '/assets/logo/logo-qgx-default.png';\nexport const CUSTOM_LOGO_URL = '${finalLogoUrl.replace(/'/g, "\\'")}';\n`).toString("base64"),
+            content: Buffer.from(logoFileContent).toString("base64"),
             ...(sha ? { sha } : {})
           })
         });
@@ -551,50 +548,85 @@ app.post("/api/save-logo", async (req, res) => {
   }
 });
 
-// GET & SAVE Donate QR Code
-let cachedDonateQrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=STK%3A1766393939%20NganHang%3ATechcombank%20NoiDung%3AUngHoQuanGameXom";
-
-app.get("/api/get-donate-qr", (req, res) => {
-  return res.json({ success: true, qrUrl: cachedDonateQrUrl });
-});
-
-app.post("/api/save-donate-qr", async (req, res) => {
+// Get Donate Configuration
+app.get("/api/donate-config", async (req, res) => {
   try {
-    const { qrUrl, fileData } = req.body;
-    const rawData = fileData || qrUrl;
-    if (!rawData) {
-      return res.status(400).json({ success: false, error: "QR code data is required" });
-    }
-
-    let finalQrUrl = rawData;
-
-    if (rawData.startsWith("data:image/")) {
-      try {
-        const matches = rawData.match(/^data:image\/([a-zA-Z0-9\+\=\-]+);base64,(.+)$/);
-        if (matches && matches[2]) {
-          const rawExt = matches[1];
-          const ext = rawExt.includes("svg") ? "svg" : rawExt.includes("png") ? "png" : "jpg";
-          const buffer = Buffer.from(matches[2], "base64");
-          const mimeType = `image/${ext}`;
-          const blobPath = `donate/donate-qr-${Date.now()}.${ext}`;
-
-          const blobUrl = await uploadImageToBlob(blobPath, buffer, mimeType);
-          if (blobUrl) {
-            finalQrUrl = blobUrl;
-          }
-        }
-      } catch (uploadErr) {
-        console.warn("[Save Donate QR Warning]:", uploadErr);
-      }
-    }
-
-    cachedDonateQrUrl = finalQrUrl;
-    return res.json({ success: true, qrUrl: finalQrUrl, message: "Đã cập nhật ảnh mã QR Donate thành công!" });
+    const config = await readDonateConfig();
+    return res.json({ success: true, config });
   } catch (err: any) {
-    console.error("[Save Donate QR Error]:", err);
-    return res.status(500).json({ success: false, error: err.message || "Failed to save donate QR" });
+    return res.status(500).json({ success: false, error: err.message || "Failed to get donate config" });
   }
 });
+
+// Save Donate Configuration
+app.post("/api/save-donate-config", async (req, res) => {
+  try {
+    const config = req.body;
+    const updated = await writeDonateConfig(config);
+    return res.json({ success: true, config: updated, message: "Đã cập nhật thông tin donate thành công!" });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || "Failed to save donate config" });
+  }
+});
+
+// Upload Donate Image (QR code or Model/Chibi image)
+app.post("/api/upload-donate-image", async (req, res) => {
+  try {
+    const { fileData, type } = req.body; // type: 'qr' | 'model'
+    if (!fileData) {
+      return res.status(400).json({ success: false, error: "Thiếu dữ liệu ảnh (fileData)" });
+    }
+
+    let buffer: Buffer;
+    let ext = "png";
+    let mimeType = "image/png";
+
+    if (fileData.startsWith("data:image/")) {
+      const matches = fileData.match(/^data:image\/([a-zA-Z0-9\+\=\-]+);base64,(.+)$/);
+      if (matches && matches[2]) {
+        const rawExt = matches[1];
+        ext = rawExt.includes("jpeg") || rawExt.includes("jpg") ? "jpg" : rawExt.includes("webp") ? "webp" : "png";
+        buffer = Buffer.from(matches[2], "base64");
+        mimeType = `image/${ext}`;
+      } else {
+        buffer = Buffer.from(fileData.split(",")[1], "base64");
+      }
+    } else {
+      buffer = Buffer.from(fileData, "base64");
+    }
+
+    const imageType = type === 'qr' ? 'qr' : 'model';
+    const blobPath = `donate/donate-${imageType}-${Date.now()}.${ext}`;
+
+    let imageUrl = await uploadImageToBlob(blobPath, buffer, mimeType);
+
+    // Local disk fallback
+    const donateDir = path.join(process.cwd(), "public/assets/donate");
+    if (!fs.existsSync(donateDir)) fs.mkdirSync(donateDir, { recursive: true });
+    const localFilename = `donate-${imageType}-latest.${ext}`;
+    fs.writeFileSync(path.join(donateDir, localFilename), buffer);
+
+    if (!imageUrl) {
+      imageUrl = `/assets/donate/${localFilename}?t=${Date.now()}`;
+    }
+
+    // Save to donate config in Vercel Blob
+    const configUpdate = imageType === 'qr' ? { qrUrl: imageUrl } : { modelUrl: imageUrl };
+    const newConfig = await writeDonateConfig(configUpdate);
+
+    return res.json({
+      success: true,
+      imageUrl,
+      type: imageType,
+      config: newConfig,
+      message: `Đã cập nhật ảnh ${imageType === 'qr' ? 'mã QR' : 'người mẫu/chibi'} thành công và lưu vào Vercel Blob!`
+    });
+  } catch (err: any) {
+    console.error("[Upload Donate Image Error]:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to upload donate image" });
+  }
+});
+
 
 // System metadata helpers for Auto-Generated Game Cards
 function getSystemMeta(systemCode: string = 'snes') {

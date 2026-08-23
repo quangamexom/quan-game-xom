@@ -567,7 +567,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                     }));
                   }}
                   className="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                  title="Chơi trực tiếp trên trình giả lập EmulatorJS"
+                  title="Chơi trực tiếp trên trình giả lập web Quán Game Xóm"
                 >
                   <Gamepad2 className="w-4 h-4 fill-slate-950" />
                   <span>CHƠI TRỰC TIẾP</span>
@@ -604,16 +604,18 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                 </a>
               )}
 
-              <button
-                onClick={() => {
-                  onClose();
-                  onOpenDownload(game);
-                }}
-                className="flex-1 sm:flex-none px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Download className="w-4 h-4 fill-slate-950" />
-                <span>MỞ TẢI GAME ({game.fileSize || 'Link Tốc Độ Cao'})</span>
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => {
+                    onClose();
+                    onOpenDownload(game);
+                  }}
+                  className="flex-1 sm:flex-none px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Download className="w-4 h-4 fill-slate-950" />
+                  <span>MỞ TẢI GAME ({game.fileSize || 'Link Tốc Độ Cao'})</span>
+                </button>
+              )}
             </div>
           </div>
 

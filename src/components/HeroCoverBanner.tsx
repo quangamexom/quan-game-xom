@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Download, Sparkles, ChevronLeft, ChevronRight, Calendar, Star, Info, Gamepad2, Play } from 'lucide-react';
+import { Download, Sparkles, ChevronLeft, ChevronRight, Calendar, Star, Info, Gamepad2 } from 'lucide-react';
 import { GameItem } from '../types';
 import { useGameCover, useGameBanner } from '../hooks/useGameCover';
 import { parseGameTitle } from '../utils/titleParser';
@@ -15,77 +15,60 @@ interface HeroSlide {
   badgeColor?: string;
   fallbackCover?: string;
   fallbackBanner?: string;
-  romUrl?: string;
 }
 
 interface HeroCoverBannerProps {
   onGoToGames: () => void;
-  onGoToArticles?: () => void;
+  onGoToArticles: () => void;
   onOpenDonate: () => void;
   onSelectGame?: (game: GameItem) => void;
   featuredGames?: GameItem[];
 }
 
-const SNES_FEATURED_SLIDES: HeroSlide[] = [
+const DEFAULT_SLIDES: HeroSlide[] = [
   {
-    id: 'snes-1',
-    label: 'GIẢ LẬP SNES ⭐ VIỆT HÓA',
-    title: 'CHRONO TRIGGER',
-    subtitle: 'Tuyệt Phẩm Nhập Vai Du Hành Thời Gian Kinh Điển 16-Bit',
-    description: 'Kiệt tác RPG vĩ đại nhất mọi thời đại trên Super Nintendo. Trải nghiệm cốt truyện du hành thời gian với bản Việt Hóa hoàn chỉnh, chơi trực tiếp mượt mà 60 FPS.',
-    date: '2026',
+    id: '1',
+    label: 'VIỆT HÓA ⭐ HOT 2026',
+    title: 'BLACK MYTH: WUKONG',
+    subtitle: 'Siêu phẩm Nhập Vai Hành Động Thần Thoại Tây Du',
+    description: 'Hóa thân thành Ngộ Không trong hành trình phục thù hoành tráng, đồ họa Unreal Engine 5 đỉnh cao, bản Việt Hóa chuẩn 100% ngữ cảnh từ Quán Game Xóm.',
+    date: '04/10',
     badgeColor: 'border-amber-400 text-amber-300 bg-amber-500/20',
-    fallbackCover: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1x7e.jpg',
-    fallbackBanner: 'https://images.igdb.com/igdb/image/upload/t_screenshot_huge/sc8602.jpg',
-    romUrl: 'https://archive.org/download/super-nintendo-snes-rom-collection-by-ghostware/Chrono%20Trigger%20%28USA%29.zip'
+    fallbackCover: 'https://cdn.cloudflare.steamstatic.com/steam/apps/2358720/library_600x900.jpg',
+    fallbackBanner: 'https://cdn.cloudflare.steamstatic.com/steam/apps/2358720/header.jpg'
   },
   {
-    id: 'snes-2',
-    label: 'GIẢ LẬP SNES ⭐ HUYỀN THOẠI TUỔI THƠ',
-    title: 'SUPER MARIO WORLD',
-    subtitle: 'Hành Trình Giải Cứu Công Chúa Peach & Khủng Long Yoshi',
-    description: 'Tựa game biểu tượng của hệ máy Super Famicom / SNES. Khám phá hàng chục thế giới bí ẩn cùng Yoshi với đồ họa 16-bit rực rỡ và âm nhạc tuổi thơ.',
-    date: '2026',
+    id: '2',
+    label: 'BẢN QUYỀN VIỆT HÓA',
+    title: 'GOD OF WAR RAGNARÖK',
+    subtitle: 'Hành Trình Cuối Cùng Của Kratos & Atreus Tại Cửu Giới',
+    description: 'Trải nghiệm cuộc chiến định mệnh chống lại các thần Bắc Âu. Bản Việt Hóa trọn bộ thoại và giao diện, đồ họa rực rỡ tốc độ cao không cần giả lập rườm rà.',
+    date: '12/08',
     badgeColor: 'border-cyan-400 text-cyan-300 bg-cyan-500/20',
-    fallbackCover: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1qsf.jpg',
-    fallbackBanner: 'https://images.igdb.com/igdb/image/upload/t_screenshot_huge/sc84vt.jpg',
-    romUrl: 'https://archive.org/download/super-nintendo-snes-rom-collection-by-ghostware/Super%20Mario%20World%20%28USA%29.zip'
+    fallbackCover: 'https://cdn.cloudflare.steamstatic.com/steam/apps/2322010/library_600x900.jpg',
+    fallbackBanner: 'https://cdn.cloudflare.steamstatic.com/steam/apps/2322010/header.jpg'
   },
   {
-    id: 'snes-3',
-    label: 'GIẢ LẬP SNES ⭐ ĐỐI KHÁNG ĐỈNH CAO',
-    title: 'STREET FIGHTER II TURBO',
-    subtitle: 'Võ Sĩ Đường Phố Huyền Thoại - Tốc Độ Turbo Cực Đại',
-    description: 'Tượng đài game song đấu đối kháng thập niên 90 với dàn võ sĩ Ryu, Ken, Chun-Li, Guile. Tương thích hoàn hảo mọi bàn phím & tay cầm gamepad.',
-    date: '2026',
+    id: '3',
+    label: 'KINH DỊ HỒI HỘP',
+    title: 'RESIDENT EVIL 3 RE-MAKE',
+    subtitle: 'Chạy Trốn Nemesis Trong Thành Phố Raccoon Sụp Đổ',
+    description: 'Thoát khỏi thảm họa T-Virus cùng Jill Valentine. Đồ họa RE Engine siêu chân thực, hỗ trợ giả lập và bản dịch Việt Hóa trọn vẹn từng trang tài liệu.',
+    date: '15/06',
     badgeColor: 'border-red-400 text-red-300 bg-red-500/20',
-    fallbackCover: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1r3q.jpg',
-    fallbackBanner: 'https://images.igdb.com/igdb/image/upload/t_screenshot_huge/sc869k.jpg',
-    romUrl: 'https://archive.org/download/super-nintendo-snes-rom-collection-by-ghostware/Street%20Fighter%20II%20Turbo%20%28USA%29.zip'
+    fallbackCover: 'https://cdn.cloudflare.steamstatic.com/steam/apps/952060/library_600x900.jpg',
+    fallbackBanner: 'https://cdn.cloudflare.steamstatic.com/steam/apps/952060/header.jpg'
   },
   {
-    id: 'snes-4',
-    label: 'GIẢ LẬP SNES ⭐ ĐỒ HỌA 3D ĐỘT PHÁ',
-    title: 'DONKEY KONG COUNTRY',
-    subtitle: 'Cuộc Phiêu Lưu Khỉ Đột Đồ Họa Silicon Graphics Huyền Ảo',
-    description: 'Đột phá công nghệ đồ họa CGI tiền kết xuất trên SNES. Cùng Donkey và Diddy vượt rừng rậm, mỏ than với tiết tấu dồn dập hấp dẫn.',
-    date: '2026',
-    badgeColor: 'border-emerald-400 text-emerald-300 bg-emerald-500/20',
-    fallbackCover: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1v2o.jpg',
-    fallbackBanner: 'https://images.igdb.com/igdb/image/upload/t_screenshot_huge/sc85vd.jpg',
-    romUrl: 'https://archive.org/download/super-nintendo-snes-rom-collection-by-ghostware/Donkey%20Kong%20Country%20%28USA%29.zip'
-  },
-  {
-    id: 'snes-5',
-    label: 'GIẢ LẬP SNES ⭐ HÀNH ĐỘNG MECHA',
-    title: 'MEGA MAN X',
-    subtitle: 'Cuộc Chiến Chống Lại Sigma Của Robot Chiến Binh Siêu Cấp X',
-    description: 'Phần mở đầu huyền thoại cho dòng game X. Gameplay lướt tường, nạp đạn, nâng cấp giáp độc đáo cùng nhạc nền Rock 16-bit sôi động.',
-    date: '2026',
+    id: '4',
+    label: 'KINH ĐIỂN CỐT TRUYỆN',
+    title: 'GRAND THEFT AUTO: VICE CITY',
+    subtitle: 'Hành Trình Xây Dựng Đế Chế Tại Thành Phố Biển Vice City',
+    description: 'Trở lại thập niên 80 cùng Tommy Vercetti. Bản Việt Hóa hoàn chỉnh Quán Game Xóm, đồ họa cải tiến kèm kho nhạc radio retro bùng nổ.',
+    date: '01/05',
     badgeColor: 'border-indigo-400 text-indigo-300 bg-indigo-500/20',
-    fallbackCover: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1t9u.jpg',
-    fallbackBanner: 'https://images.igdb.com/igdb/image/upload/t_screenshot_huge/sc86o8.jpg',
-    romUrl: 'https://archive.org/download/super-nintendo-snes-rom-collection-by-ghostware/Mega%20Man%20X%20%28USA%29.zip'
+    fallbackCover: 'https://cdn.cloudflare.steamstatic.com/steam/apps/1547000/library_600x900.jpg',
+    fallbackBanner: 'https://cdn.cloudflare.steamstatic.com/steam/apps/1547000/header.jpg'
   }
 ];
 
@@ -93,6 +76,7 @@ interface HeroSlideContentProps {
   slide: HeroSlide;
   featuredGames?: GameItem[];
   onGoToGames: () => void;
+  onGoToArticles: () => void;
   onSelectGame?: (game: GameItem) => void;
 }
 
@@ -100,6 +84,7 @@ const HeroSlideContent: React.FC<HeroSlideContentProps> = ({
   slide,
   featuredGames,
   onGoToGames,
+  onGoToArticles,
   onSelectGame
 }) => {
   // Construct game object for hooks
@@ -117,11 +102,10 @@ const HeroSlideContent: React.FC<HeroSlideContentProps> = ({
       description: slide.description,
       coverArt: slide.fallbackCover || '',
       backdropArt: slide.fallbackBanner || '',
-      platforms: ['SNES'],
+      platforms: ['PC'],
       language: 'Tiếng Việt',
       hasVietHoa: true,
-      romUrl: slide.romUrl || '',
-      downloadUrl: slide.romUrl || ''
+      downloadUrl: ''
     };
   }, [slide, featuredGames]);
 
@@ -134,28 +118,7 @@ const HeroSlideContent: React.FC<HeroSlideContentProps> = ({
 
   const { cleanTitle, subtitle } = parseGameTitle(slide.title, slide.subtitle);
 
-  const handlePlayNow = () => {
-    if (slideGame.romUrl) {
-      window.dispatchEvent(new CustomEvent('qgx_load_emulator_rom', {
-        detail: {
-          title: slideGame.title,
-          romUrl: slideGame.romUrl,
-          core: 'snes',
-          coverArt: effectiveCover
-        }
-      }));
-      const emuEl = document.getElementById('emulator-zone');
-      if (emuEl) {
-        emuEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    } else if (onSelectGame) {
-      onSelectGame(slideGame);
-    } else {
-      onGoToGames();
-    }
-  };
-
-  const handleViewDetail = () => {
+  const handleGameClick = () => {
     if (onSelectGame) {
       onSelectGame(slideGame);
     } else {
@@ -199,9 +162,9 @@ const HeroSlideContent: React.FC<HeroSlideContentProps> = ({
         >
           {/* Vertical Boxart Poster (2:3 aspect ratio, glassmorphic border) */}
           <div
-            onClick={handlePlayNow}
+            onClick={handleGameClick}
             className="shrink-0 group cursor-pointer relative"
-            title={`Chơi ngay ${cleanTitle}`}
+            title={`Xem chi tiết ${cleanTitle}`}
           >
             <div className="relative w-28 xs:w-32 sm:w-36 md:w-44 lg:w-48 aspect-[2/3] rounded-2xl p-1 bg-slate-900/80 border border-amber-400/40 shadow-[0_15px_35px_rgba(0,0,0,0.9)] backdrop-blur-md overflow-hidden transition-all duration-300 group-hover:border-amber-400/80 group-hover:scale-105 group-hover:shadow-[0_0_30px_rgba(245,158,11,0.35)]">
               {isCoverLoading && !effectiveCover ? (
@@ -221,7 +184,7 @@ const HeroSlideContent: React.FC<HeroSlideContentProps> = ({
               {/* Badge overlay on poster */}
               <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md bg-slate-950/85 border border-amber-400/60 text-[10px] font-mono font-bold text-amber-300 shadow-md backdrop-blur-md flex items-center gap-1">
                 <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                <span>SNES</span>
+                <span>HOT</span>
               </div>
             </div>
           </div>
@@ -256,19 +219,19 @@ const HeroSlideContent: React.FC<HeroSlideContentProps> = ({
             {/* CTA Buttons */}
             <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 sm:gap-3 pt-1 sm:pt-2">
               <button
-                onClick={handlePlayNow}
-                className="px-5 py-3 sm:px-7 sm:py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-display font-black text-xs sm:text-sm uppercase tracking-wider rounded-xl shadow-[0_0_25px_rgba(245,158,11,0.5)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer border border-amber-300/50"
+                onClick={handleGameClick}
+                className="px-4 py-2.5 sm:px-6 sm:py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-display font-black text-xs sm:text-sm uppercase tracking-wider rounded-xl shadow-[0_0_25px_rgba(245,158,11,0.5)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer border border-amber-300/50"
               >
-                <Play className="w-4 h-4 fill-slate-950" />
-                <span>CHƠI NGAY</span>
+                <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-slate-950" />
+                <span>XEM THÔNG TIN & TẢI GAME</span>
               </button>
 
               <button
-                onClick={handleViewDetail}
+                onClick={onGoToArticles}
                 className="px-4 py-2.5 sm:px-5 sm:py-3.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-slate-200 font-display font-bold text-xs sm:text-sm uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer backdrop-blur-md"
               >
                 <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400" />
-                <span>CHI TIẾT GAME</span>
+                <span>KÝ ỨC RETRO</span>
               </button>
             </div>
           </div>
@@ -280,53 +243,29 @@ const HeroSlideContent: React.FC<HeroSlideContentProps> = ({
 
 export const HeroCoverBanner: React.FC<HeroCoverBannerProps> = ({
   onGoToGames,
+  onGoToArticles,
   onOpenDonate,
   onSelectGame,
   featuredGames = []
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Dynamic slides combining SNES games from library + default SNES slides
-  const slides = useMemo(() => {
-    const snesFromLibrary: HeroSlide[] = featuredGames
-      .filter(g => g.platforms?.includes('SNES') || g.romUrl || g.title.toLowerCase().includes('snes'))
-      .slice(0, 5)
-      .map((g, idx) => ({
-        id: `lib-snes-${g.id || idx}`,
-        label: 'GIẢ LẬP SNES ⭐ NỔI BẬT',
-        title: g.title,
-        subtitle: g.subtitle || 'Siêu phẩm Super Nintendo chất lượng cao',
-        description: g.description || 'Thưởng thức siêu phẩm SNES cổ điển trên nền tảng Quán Game Xóm với tốc độ 60 FPS mượt mà.',
-        date: '2026',
-        badgeColor: 'border-amber-400 text-amber-300 bg-amber-500/20',
-        fallbackCover: g.coverArt,
-        fallbackBanner: g.backdropArt,
-        romUrl: g.romUrl
-      }));
-
-    if (snesFromLibrary.length >= 3) {
-      return snesFromLibrary;
-    }
-
-    return SNES_FEATURED_SLIDES;
-  }, [featuredGames]);
-
   // Auto advance slide every 6 seconds
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % slides.length);
+      setCurrentIndex((prev) => (prev + 1) % DEFAULT_SLIDES.length);
     }, 6000);
     return () => clearInterval(timer);
-  }, [slides.length]);
+  }, []);
 
-  const slide = slides[currentIndex] || slides[0] || SNES_FEATURED_SLIDES[0];
+  const slide = DEFAULT_SLIDES[currentIndex];
 
   const handleNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % slides.length);
+    setCurrentIndex((prev) => (prev + 1) % DEFAULT_SLIDES.length);
   };
 
   const handlePrev = () => {
-    setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length);
+    setCurrentIndex((prev) => (prev - 1 + DEFAULT_SLIDES.length) % DEFAULT_SLIDES.length);
   };
 
   return (
@@ -339,6 +278,7 @@ export const HeroCoverBanner: React.FC<HeroCoverBannerProps> = ({
             slide={slide}
             featuredGames={featuredGames}
             onGoToGames={onGoToGames}
+            onGoToArticles={onGoToArticles}
             onSelectGame={onSelectGame}
           />
         </motion.div>
@@ -355,13 +295,13 @@ export const HeroCoverBanner: React.FC<HeroCoverBannerProps> = ({
               <span>CẬP NHẬT: <strong className="text-amber-300">{slide.date}</strong></span>
             </div>
             <div className="text-amber-400/90 font-mono text-xs sm:text-sm tracking-wider">
-              0{currentIndex + 1} <span className="text-slate-600">/</span> 0{slides.length}
+              0{currentIndex + 1} <span className="text-slate-600">/</span> 0{DEFAULT_SLIDES.length}
             </div>
           </div>
 
           {/* Center Dot Pagination */}
           <div className="flex items-center gap-1.5 sm:gap-2.5">
-            {slides.map((s, idx) => {
+            {DEFAULT_SLIDES.map((s, idx) => {
               const isActive = idx === currentIndex;
               return (
                 <button

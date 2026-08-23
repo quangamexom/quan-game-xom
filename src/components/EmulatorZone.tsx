@@ -301,6 +301,43 @@ export const EmulatorZone: React.FC = () => {
 
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const activeBlobUrlRef = useRef<string | null>(null);
+  const stateFileInputRef = useRef<HTMLInputElement>(null);
+  const [stateActionStatus, setStateActionStatus] = useState<string | null>(null);
+
+  // Listen for state export / import message responses from iframe
+  useEffect(() => {
+    const handleStateMessage = (e: MessageEvent) => {
+      if (!e.data || typeof e.data !== 'object') return;
+      if (e.data.type === 'QGX_EXPORT_STATE_SUCCESS' && e.data.stateData) {
+        try {
+          const uint8 = new Uint8Array(e.data.stateData);
+          const blob = new Blob([uint8], { type: 'application/octet-stream' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          const safeName = (currentRomName || 'game').replace(/[^a-zA-Z0-9_-]+/g, '_');
+          a.href = url;
+          a.download = `${safeName}_save_${Date.now()}.state`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          setStateActionStatus('Đã xuất file .state thành công!');
+          setTimeout(() => setStateActionStatus(null), 3000);
+        } catch (err) {
+          console.error('Lỗi tải file state:', err);
+        }
+      } else if (e.data.type === 'QGX_IMPORT_STATE_SUCCESS') {
+        setStateActionStatus('Đã nạp file .state thành công!');
+        setTimeout(() => setStateActionStatus(null), 3000);
+      } else if (e.data.type === 'QGX_STATE_ERROR') {
+        setStateActionStatus(e.data.error || 'Lỗi khi xử lý save state');
+        setTimeout(() => setStateActionStatus(null), 3000);
+      }
+    };
+
+    window.addEventListener('message', handleStateMessage);
+    return () => window.removeEventListener('message', handleStateMessage);
+  }, [currentRomName]);
 
   const loadSnesGames = async () => {
     try {
@@ -1053,7 +1090,7 @@ export const EmulatorZone: React.FC = () => {
     launchRom(objectUrl, cleanName, detectedCore);
   };
 
-  // Generate isolated clean HTML for EmulatorJS iframe with default controls and deep debugging
+  // Generate isolated clean HTML for iframe with default controls and state export/import
   const iframeSrcDoc = useMemo(() => {
     if (!isPlaying || !currentRomUrl) return '';
 
@@ -1066,7 +1103,7 @@ export const EmulatorZone: React.FC = () => {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${currentRomName || 'Emulator'}</title>
+  <title>${currentRomName || 'Retro Game'}</title>
   <style>
     html, body {
       margin: 0;
@@ -1093,14 +1130,7 @@ export const EmulatorZone: React.FC = () => {
 <body>
   <div id="ejs-game-container"></div>
   <script>
-    console.group("🎮 [EmulatorJS Diagnostic]");
-    console.log("➡️ Target Game:", ${JSON.stringify(currentRomName || 'Quán Game Xóm SNES ROM')});
-    console.log("➡️ Selected Core:", ${JSON.stringify(selectedCore)}, "-> Resolved Core:", ${JSON.stringify(resolvedCore)});
-    console.log("➡️ Effective ROM URL:", ${JSON.stringify(effectiveRomUrl)});
-    ${isNetplayActive && netplayRoom.trim() ? `console.log("🌐 Netplay Active:", ${JSON.stringify(netplayRoom.trim())}, "Role:", ${JSON.stringify(netplayRole)});` : ''}
-    console.groupEnd();
-
-    // 1. EmulatorJS Core Configuration - Injected synchronously before loader.js
+    // 1. Core Configuration - Injected synchronously before loader.js
     window.EJS_player = '#ejs-game-container';
     window.EJS_core = ${JSON.stringify(resolvedCore)};
     window.EJS_gameName = ${JSON.stringify(currentRomName || 'Quán Game Xóm SNES ROM')};
@@ -1118,31 +1148,11 @@ export const EmulatorZone: React.FC = () => {
     window.EJS_playerNumber = ${netplayRole === 'p1' ? 1 : 2};
     ` : ''}
 
-    // 3. Detailed Callbacks & Error Listeners
-    window.EJS_onLoad = function() {
-      console.log("✅ [EmulatorJS] System Core & Netplay configuration loaded successfully.");
-    };
-
-    window.EJS_onGameStart = function() {
-      console.log("🚀 [EmulatorJS] Game execution loop started! Audio/Video initialized.");
-    };
-
-    window.EJS_onLogError = function(err) {
-      console.error("❌ [EmulatorJS Engine Error Callback]:", err);
-    };
-
-    window.addEventListener("error", function(e) {
-      console.error("💥 [Window Error in Emulator Frame]:", e.message, "at", e.filename, ":", e.lineno);
-    });
-
-    window.addEventListener("unhandledrejection", function(e) {
-      console.error("💥 [Unhandled Promise Rejection in Emulator Frame]:", e.reason);
-    });
-
-    // 4. Forceful Teardown & Audio Termination Listener
-    window.addEventListener("message", function(e) {
+    // 3. Message Listeners for State Export / Import and Teardown
+    window.addEventListener("message", async function(e) {
+      if (!e.data) return;
+      
       if (e.data === "QGX_TEARDOWN_EMULATOR") {
-        console.log("🛑 [Emulator Frame] Received shutdown signal. Destroying audio & video contexts...");
         try {
           if (window.EJS_emulator && typeof window.EJS_emulator.destroy === "function") {
             window.EJS_emulator.destroy();
@@ -1155,6 +1165,29 @@ export const EmulatorZone: React.FC = () => {
           if (container) container.innerHTML = "";
           document.body.innerHTML = "";
         } catch(err) {}
+      } else if (e.data.type === "QGX_EXPORT_STATE") {
+        try {
+          if (window.EJS_emulator && typeof window.EJS_emulator.gameManager?.getState === "function") {
+            const state = await window.EJS_emulator.gameManager.getState();
+            window.parent.postMessage({ type: "QGX_EXPORT_STATE_SUCCESS", stateData: Array.from(state) }, "*");
+          } else {
+            window.parent.postMessage({ type: "QGX_STATE_ERROR", error: "Trình giả lập chưa sẵn sàng để xuất State" }, "*");
+          }
+        } catch(err) {
+          window.parent.postMessage({ type: "QGX_STATE_ERROR", error: err.message || "Lỗi khi xuất save state" }, "*");
+        }
+      } else if (e.data.type === "QGX_IMPORT_STATE" && e.data.stateData) {
+        try {
+          if (window.EJS_emulator && typeof window.EJS_emulator.gameManager?.loadState === "function") {
+            const uint8 = new Uint8Array(e.data.stateData);
+            await window.EJS_emulator.gameManager.loadState(uint8);
+            window.parent.postMessage({ type: "QGX_IMPORT_STATE_SUCCESS" }, "*");
+          } else {
+            window.parent.postMessage({ type: "QGX_STATE_ERROR", error: "Trình giả lập chưa sẵn sàng để nạp State" }, "*");
+          }
+        } catch(err) {
+          window.parent.postMessage({ type: "QGX_STATE_ERROR", error: err.message || "Lỗi khi nạp save state" }, "*");
+        }
       }
     });
   </script>
@@ -1216,7 +1249,7 @@ export const EmulatorZone: React.FC = () => {
           <div className="space-y-2 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono text-xs font-bold">
               <Gamepad2 className="w-4 h-4 text-amber-400" />
-              <span>EMULATORJS WEB ENGINE • NETPLAY 2 NGƯỜI • VERCEL BLOB STORAGE</span>
+              <span>TRÌNH GIẢ LẬP RETRO ONLINE • NETPLAY 2 NGƯỜI • VERCEL BLOB</span>
             </div>
             <h1 className="text-3xl sm:text-5xl font-display font-black text-white uppercase tracking-tight">
               KHU VỰC <span className="text-amber-400 text-glow-amber">GIẢ LẬP GAME RETRO</span>
@@ -1406,7 +1439,7 @@ export const EmulatorZone: React.FC = () => {
                         className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs font-mono uppercase tracking-wider transition-all shadow-lg hover:shadow-amber-500/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                       >
                         <Play className="w-4 h-4 fill-slate-950" />
-                        <span>CHƠI NGAY (1P)</span>
+                        <span>CHƠI NGAY</span>
                       </button>
 
                       <button
@@ -1464,7 +1497,7 @@ export const EmulatorZone: React.FC = () => {
                   <span>CÁC GAME MẪU KHÁC (NES, GBA, GBC)</span>
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Chọn core và game mẫu để thử nghiệm trình giả lập EmulatorJS.
+                  Chọn core và game mẫu để thử nghiệm trình giả lập Quán Game Xóm.
                 </p>
               </div>
 
@@ -1621,11 +1654,60 @@ export const EmulatorZone: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Export / Import State Action Buttons */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (playerContainerRef.current) {
+                    const iframe = playerContainerRef.current.querySelector('iframe');
+                    if (iframe?.contentWindow) {
+                      iframe.contentWindow.postMessage({ type: 'QGX_EXPORT_STATE' }, '*');
+                    }
+                  }
+                }}
+                className="px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 hover:text-emerald-200 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer flex items-center gap-1.5"
+                title="Tải file Save State (.state) về máy tính"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Lưu State (.state)</span>
+              </button>
+
+              <label
+                className="px-3 py-1.5 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 hover:text-cyan-200 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer flex items-center gap-1.5"
+                title="Nạp file Save State (.state) từ máy tính vào game"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>Nạp State (.state)</span>
+                <input
+                  ref={stateFileInputRef}
+                  type="file"
+                  accept=".state,.sav,.save"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      const arrayBuffer = event.target?.result as ArrayBuffer;
+                      if (arrayBuffer && playerContainerRef.current) {
+                        const iframe = playerContainerRef.current.querySelector('iframe');
+                        if (iframe?.contentWindow) {
+                          const stateData = Array.from(new Uint8Array(arrayBuffer));
+                          iframe.contentWindow.postMessage({ type: 'QGX_IMPORT_STATE', stateData }, '*');
+                        }
+                      }
+                    };
+                    reader.readAsArrayBuffer(file);
+                    if (stateFileInputRef.current) stateFileInputRef.current.value = '';
+                  }}
+                  className="hidden"
+                />
+              </label>
+
               <button
                 id="btn-reset-current-game"
                 onClick={handleResetCurrentGame}
-                className="px-3.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 hover:text-amber-200 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer flex items-center gap-1.5"
+                className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 hover:text-amber-200 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer flex items-center gap-1.5"
                 title={isNetplayActive ? "Khởi động lại Core và kết nối lại Netplay" : "Khởi động lại Game"}
               >
                 <RotateCcw className="w-3.5 h-3.5" />
@@ -1681,6 +1763,12 @@ export const EmulatorZone: React.FC = () => {
               </button>
             </div>
           </div>
+
+          {stateActionStatus && (
+            <div className="p-3 bg-amber-500/20 border border-amber-500/40 rounded-xl text-xs font-mono font-bold text-amber-300 text-center animate-fade-in">
+              {stateActionStatus}
+            </div>
+          )}
 
           {/* EMULATORJS IFRAME CONTAINER, LOADING SPINNER & ERROR STATE */}
           <div className="relative w-full aspect-[4/3] max-h-[720px] bg-black rounded-3xl border border-amber-500/30 overflow-hidden shadow-2xl flex items-center justify-center">
@@ -2024,7 +2112,7 @@ export const EmulatorZone: React.FC = () => {
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
               <div className="flex items-center gap-2 font-bold text-amber-300">
                 <Info className="w-4 h-4 text-amber-400" />
-                <span>CẤU HÌNH PHÍM MẶC ĐỊNH EMULATORJS & TỐC ĐỘ 60 FPS</span>
+                <span>CẤU HÌNH PHÍM MẶC ĐỊNH & TỐC ĐỘ 60 FPS</span>
               </div>
               <span className="text-[10px] text-amber-400/90 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
                 ⚡ Core: {selectedCore.toUpperCase()} (60 FPS Locked)
@@ -2059,7 +2147,7 @@ export const EmulatorZone: React.FC = () => {
             <div>
               <h2 className="text-lg font-bold text-white font-display">Quản Lý Tiến Trình & Save State</h2>
               <p className="text-xs text-slate-400 font-body">
-                Trình giả lập EmulatorJS tự động sao lưu save state vào bộ nhớ IndexedDB của trình duyệt.
+                Trình giả lập tự động sao lưu save state vào bộ nhớ của trình duyệt.
               </p>
             </div>
           </div>
@@ -2071,7 +2159,7 @@ export const EmulatorZone: React.FC = () => {
                 <span>1. Lưu Nhanh Trực Tiếp Trong Game</span>
               </h3>
               <p className="text-xs text-slate-300 leading-relaxed font-body">
-                Trong khi đang chơi, hãy di chuột vào cạnh dưới của màn hình EmulatorJS hoặc bấm phím Esc để mở Menu chính. Bấm nút <strong>Save State</strong> để lưu lại ngay vị trí đang đứng.
+                Trong khi đang chơi, bạn có thể bấm nút <strong>Lưu State (.state)</strong> ngay trên thanh công cụ hoặc di chuột vào cạnh dưới màn hình giả lập để lưu nhanh vị trí hiện tại.
               </p>
             </div>
 
@@ -2081,7 +2169,7 @@ export const EmulatorZone: React.FC = () => {
                 <span>2. Tải File Save Về Máy Để Dự Phòng</span>
               </h3>
               <p className="text-xs text-slate-300 leading-relaxed font-body">
-                Bạn có thể bấm xuất file Save State (.state) từ menu của trình giả lập và lưu vào máy tính, sau đó nạp lại bất cứ khi nào đổi thiết bị hoặc trình duyệt khác.
+                Bạn có thể bấm xuất file Save State (.state) và lưu vào máy tính, sau đó dùng nút <strong>Nạp State (.state)</strong> để nạp lại bất cứ khi nào đổi thiết bị.
               </p>
             </div>
           </div>

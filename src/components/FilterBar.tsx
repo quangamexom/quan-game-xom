@@ -1,6 +1,6 @@
 import React from 'react';
 import { FilterState, ViewMode, SortOption } from '../types';
-import { LayoutGrid, Table, Monitor, Star, Sparkles, SlidersHorizontal, ArrowUpDown, Shield } from 'lucide-react';
+import { LayoutGrid, Table, Monitor, Star, Sparkles, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
 import { useAdminMode } from '../hooks/useAdminMode';
 
 interface FilterBarProps {
@@ -24,7 +24,6 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   totalResults
 }) => {
   const { isAdmin } = useAdminMode();
-
   return (
     <div className="glass-panel rounded-2xl p-4 mb-6">
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
@@ -93,16 +92,15 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               <Monitor className="w-4 h-4" />
             </button>
 
-            {/* Table View (Admin Only) */}
             {isAdmin && (
               <button
                 onClick={() => onFilterChange({ viewMode: 'table' })}
                 className={`p-1.5 rounded-lg transition-all cursor-pointer ${
                   filterState.viewMode === 'table'
                     ? 'bg-amber-500 text-slate-950 font-bold'
-                    : 'text-amber-400/70 hover:text-amber-300'
+                    : 'text-slate-400 hover:text-slate-200'
                 }`}
-                title="Chế độ Bảng Danh Sách Quản Trị (Admin Table View)"
+                title="Chế độ Bảng Danh Sách (Chỉ Admin)"
               >
                 <Table className="w-4 h-4" />
               </button>

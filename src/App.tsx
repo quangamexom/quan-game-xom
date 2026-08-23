@@ -5,6 +5,7 @@ import { INITIAL_GAMES } from './data/initialGames';
 import { Article } from './data/articles';
 import { useScrollSpy } from './hooks/useScrollSpy';
 import { isEmulatorActive, stopActiveEmulator } from './utils/emulatorManager';
+import { useAdminMode } from './hooks/useAdminMode';
 
 import { Navbar } from './components/Navbar';
 import { HeroCoverBanner } from './components/HeroCoverBanner';
@@ -36,6 +37,7 @@ const SECTIONS = [
 const PAGE_SIZE = 16;
 
 export default function App() {
+  const { isAdmin } = useAdminMode();
   const [games, setGames] = useState<GameItem[]>(INITIAL_GAMES);
   const [defaultPassword, setDefaultPassword] = useState<string>("quangamexom");
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -506,11 +508,11 @@ export default function App() {
                   key={game.id}
                   game={game}
                   onSelect={(g) => handleOpenGameDetail(g)}
-                  onOpenDownload={(g) => setDownloadGame(g)}
+                  onOpenDownload={(g) => isAdmin && setDownloadGame(g)}
                 />
               ))}
             </motion.div>
-          ) : (
+          ) : isAdmin ? (
             <motion.div
               key={`table-view-page-${currentPage}`}
               initial={{ opacity: 0 }}
@@ -545,6 +547,24 @@ export default function App() {
                 </tbody>
               </table>
             </motion.div>
+          ) : (
+            <motion.div
+              key={`grid-view-fallback-page-${currentPage}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 sm:gap-6"
+            >
+              {paginatedGames.map((game) => (
+                <GameCard
+                  key={game.id}
+                  game={game}
+                  onSelect={(g) => handleOpenGameDetail(g)}
+                  onOpenDownload={(g) => isAdmin && setDownloadGame(g)}
+                  onSelectGenre={(g) => handleFilterChange({ selectedGenre: g })}
+                />
+              ))}
+            </motion.div>
           )}
         </AnimatePresence>
 
@@ -563,13 +583,6 @@ export default function App() {
       <div id="emulator-zone" className="border-t border-slate-900/60">
         <EmulatorZone />
       </div>
-
-      {/* 5. SECTION: ARTICLES SECTION (Temporarily hidden as requested) */}
-      {/* 
-      <div id="articles-section" className="max-w-7xl mx-auto px-4 sm:px-6 py-8 border-t border-slate-900/60">
-        <ArticleSection onReadArticle={(article) => setSelectedArticle(article)} />
-      </div>
-      */}
 
       {/* 5. SECTION 4: COMMUNITY & CONTACT SECTION */}
       <div id="community-section" className="max-w-7xl mx-auto px-4 sm:px-6 py-8 border-t border-slate-900/60">
@@ -599,26 +612,16 @@ export default function App() {
       <GameDetailModal
         game={selectedGame}
         onClose={handleCloseGameDetail}
-        onOpenDownload={(g) => setDownloadGame(g)}
+        onOpenDownload={(g) => isAdmin && setDownloadGame(g)}
       />
 
-      <DownloadDrawer
-        game={downloadGame}
-        onClose={() => setDownloadGame(null)}
-        defaultPassword={defaultPassword}
-      />
-
-      {/* 
-      <ArticleReaderModal
-        article={selectedArticle}
-        onClose={() => setSelectedArticle(null)}
-      />
-      */}
-
-      <DonateModal
-        isOpen={isDonateOpen}
-        onClose={() => setIsDonateOpen(false)}
-      />
+      {isAdmin && (
+        <DownloadDrawer
+          game={downloadGame}
+          onClose={() => setDownloadGame(null)}
+          defaultPassword={defaultPassword}
+        />
+      )}
 
       <AdminAuthModal
         isOpen={isAdminModalOpen}

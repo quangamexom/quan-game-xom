@@ -165,13 +165,15 @@ export const LaunchBoxCard: React.FC<LaunchBoxCardProps> = ({ game, onSelect, on
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2 mt-3 pt-2 border-t border-slate-800/80">
-          <button
-            onClick={() => onOpenDownload(game)}
-            className="px-4 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs rounded-lg shadow transition-all flex items-center gap-1.5 cursor-pointer"
-          >
-            <Download className="w-3.5 h-3.5 fill-slate-950" />
-            <span>TẢI GAME</span>
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => onOpenDownload(game)}
+              className="px-4 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs rounded-lg shadow transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5 fill-slate-950" />
+              <span>TẢI GAME</span>
+            </button>
+          )}
 
           <button
             onClick={() => onSelect(game)}
