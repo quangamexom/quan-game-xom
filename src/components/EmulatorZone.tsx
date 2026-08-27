@@ -28,7 +28,7 @@ import {
   Crown,
   Link2
 } from 'lucide-react';
-import { DEFAULT_SNES_TEST_GAMES } from '../services/sheetService';
+import { INITIAL_GAMES } from '../data/initialGames';
 import { GameItem } from '../types';
 import { ShareGameMenu } from './ShareGameMenu';
 import { useAdminMode } from '../hooks/useAdminMode';
@@ -266,8 +266,14 @@ export const EmulatorZone: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [uploadFileName, setUploadFileName] = useState<string | null>(null);
 
-  // SNES / Vercel Blob Games State
-  const [snesGames, setSnesGames] = useState<GameItem[]>(DEFAULT_SNES_TEST_GAMES);
+  // SNES / Vercel Blob Games State - initialized with full initial retro games library
+  const initialPlayableGames = useMemo(() => {
+    return INITIAL_GAMES.filter((g) => 
+      !g.isHidden && (g.romUrl || g.emulatorCore || g.system === 'snes' || g.genres?.some((genre: string) => genre.toLowerCase().includes('snes') || genre.toLowerCase().includes('retro')))
+    );
+  }, []);
+
+  const [snesGames, setSnesGames] = useState<GameItem[]>(initialPlayableGames);
 
   // Loading State for ROM Launch
   const [isLoadingRom, setIsLoadingRom] = useState<boolean>(false);
@@ -325,9 +331,9 @@ export const EmulatorZone: React.FC = () => {
           );
           
           const combined = [...dynamicPlayable];
-          DEFAULT_SNES_TEST_GAMES.forEach(defaultGame => {
-            if (!combined.some(g => g.id === defaultGame.id || (defaultGame.romUrl && g.romUrl === defaultGame.romUrl))) {
-              combined.push(defaultGame);
+          initialPlayableGames.forEach(initGame => {
+            if (!combined.some(g => g.id === initGame.id || (initGame.romUrl && g.romUrl === initGame.romUrl))) {
+              combined.push(initGame);
             }
           });
           setSnesGames(combined);
@@ -335,9 +341,9 @@ export const EmulatorZone: React.FC = () => {
         }
       }
     } catch (err) {
-      console.warn("Load dynamic games database for Emulator error, using defaults:", err);
+      console.warn("Load dynamic games database for Emulator error, using initialGames fallback:", err);
     }
-    setSnesGames(DEFAULT_SNES_TEST_GAMES);
+    setSnesGames(initialPlayableGames);
   };
 
   // Fetch SNES Games on mount & listen to updates
@@ -952,7 +958,7 @@ export const EmulatorZone: React.FC = () => {
         const allCandidates = [
           ...snesGames,
           ...CLASSIC_PRESET_ROMS.map(presetRomToGameItem),
-          ...DEFAULT_SNES_TEST_GAMES
+          ...initialPlayableGames
         ];
 
         const lowerTarget = urlGameId.toLowerCase().trim();
