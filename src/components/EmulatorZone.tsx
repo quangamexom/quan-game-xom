@@ -1462,7 +1462,7 @@ export const EmulatorZone: React.FC = () => {
                         className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs font-mono uppercase tracking-wider transition-all shadow-lg hover:shadow-amber-500/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                       >
                         <Play className="w-4 h-4 fill-slate-950" />
-                        <span>CHƠI NGAY (1P)</span>
+                        <span>CHƠI NGAY</span>
                       </button>
 
                       <button

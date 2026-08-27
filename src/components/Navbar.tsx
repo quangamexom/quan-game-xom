@@ -74,7 +74,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Top Left: Social Icons */}
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest hidden md:inline-block mr-1">
-              COMMUNITY:
+              CỘNG ĐỒNG:
             </span>
             <a
               href="https://www.facebook.com/quangamexomreboot/"
@@ -231,7 +231,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* ZONE 3: RIGHT MENU (BÀI VIẾT | DONATE | LIÊN HỆ) */}
           <div className="flex items-center gap-1 sm:gap-4 flex-1 justify-end">
             
-            {/* BÀI VIẾT */}
+            {/* BÀI VIẾT (Tạm thời ẩn cùng section Bài Viết - mở lại khi bật lại section) */}
+            {/*
             <button
               onClick={() => onCategoryChange('ARTICLES')}
               className={`hidden md:block px-3 sm:px-4 py-2 rounded-xl transition-all cursor-pointer font-display text-xs sm:text-sm font-black tracking-wider uppercase ${
@@ -242,6 +243,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               BÀI VIẾT
             </button>
+            */}
 
             {/* DONATE */}
             <button
