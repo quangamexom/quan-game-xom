@@ -206,7 +206,10 @@ export async function fetchRomAsBlobUrl(
 
     let response: Response;
     try {
-      response = await fetch(cleanUrl);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+      response = await fetch(cleanUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
     } catch (networkErr: any) {
       console.warn(`[ROM Fetcher] Direct fetch failed (${networkErr.message}). Attempting proxy fallback...`);
       response = await fetch(`/api/proxy-rom?url=${encodeURIComponent(cleanUrl)}`);
@@ -312,6 +315,22 @@ export const EmulatorZone: React.FC = () => {
 
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const activeBlobUrlRef = useRef<string | null>(null);
+
+  // Helper to reliably and immediately scroll down to the emulator screen
+  const scrollToEmulatorContainer = () => {
+    const el = playerContainerRef.current || document.getElementById('emulator-zone');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    setTimeout(() => {
+      if (playerContainerRef.current) {
+        playerContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        const zone = document.getElementById('emulator-zone');
+        if (zone) zone.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 80);
+  };
 
   const loadSnesGames = async () => {
     try {
@@ -514,13 +533,10 @@ export const EmulatorZone: React.FC = () => {
       const targetUrl = `/?game_id=${encodeURIComponent(game.id)}&netplay_room=${encodeURIComponent(room)}&role=p1&netplay=true`;
       window.history.pushState({ gameId: game.id, isEmulator: true, isNetplay: true, room, role: 'p1' }, '', targetUrl);
     }
+    autoLoadedKeyRef.current = `${game.id || ''}_${room}_p1_true`;
 
-    // Scroll to player area
-    setTimeout(() => {
-      if (playerContainerRef.current) {
-        playerContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }, 150);
+    // Immediately scroll to emulator container
+    scrollToEmulatorContainer();
 
     // 1. Preload ROM binary in background immediately
     preloadRomBackground(game.romUrl);
@@ -588,13 +604,10 @@ export const EmulatorZone: React.FC = () => {
     setCurrentRomUrl(null);
     setRomError(null);
     setIsLoadingRom(false);
+    autoLoadedKeyRef.current = `${game.id || ''}_${cleanRoom}_p2_true`;
 
-    // Scroll to player area
-    setTimeout(() => {
-      if (playerContainerRef.current) {
-        playerContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }, 150);
+    // Immediately scroll to emulator container
+    scrollToEmulatorContainer();
 
     // 1. Preload ROM binary in background immediately
     preloadRomBackground(game.romUrl);
@@ -843,12 +856,18 @@ export const EmulatorZone: React.FC = () => {
     setIsPlaying(false);
     setCurrentRomUrl(null);
     setRomError(null);
-    setLoadingStepText(isNetplay ? `Đang chuẩn bị kết nối Netplay phòng [${room}] cho ${gameName}...` : `Đang kết nối tải ROM cho ${gameName}...`);
+    setLoadingStepText(isNetplay ? `Đang chuẩn bị kết nối Netplay phòng [${room}] cho ${gameName}...` : `Đang kết nối nạp dữ liệu ROM cho ${gameName}...`);
     setActiveTab('play');
 
     if (gameId) {
       setCurrentGameId(gameId);
     }
+
+    const loadKey = `${gameId || ''}_${room}_${role}_${isNetplay}`;
+    autoLoadedKeyRef.current = loadKey;
+
+    // Immediately trigger auto-scroll to game screen
+    scrollToEmulatorContainer();
 
     // 2. Synchronously lock and update Netplay state before starting async fetch
     if (isNetplay && room) {
@@ -872,10 +891,6 @@ export const EmulatorZone: React.FC = () => {
       if (window.location.search !== targetUrl.replace(/^\//, '')) {
         window.history.pushState({ gameId, isEmulator: true, isNetplay, room, role }, '', targetUrl);
       }
-    }
-
-    if (playerContainerRef.current) {
-      playerContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     try {
@@ -910,6 +925,7 @@ export const EmulatorZone: React.FC = () => {
       setIsPlaying(true);
       setIsLoadingRom(false);
       isNetplayInitializingRef.current = false;
+      scrollToEmulatorContainer();
     } catch (err: any) {
       console.error("[Launch ROM Error]:", err);
       setRomError({
@@ -954,15 +970,20 @@ export const EmulatorZone: React.FC = () => {
       }
 
       if (urlGameId) {
-        // Collect all available retro games to search
-        const allCandidates = [
-          ...snesGames,
-          ...CLASSIC_PRESET_ROMS.map(presetRomToGameItem),
-          ...initialPlayableGames
-        ];
-
         const lowerTarget = urlGameId.toLowerCase().trim();
-        const matchedGame = allCandidates.find((g) => {
+        
+        // Fast direct lookup in initialPlayableGames first without waiting for external API
+        const matchedGame = initialPlayableGames.find((g) => {
+          if (g.id.toLowerCase() === lowerTarget) return true;
+          if (encodeURIComponent(g.id).toLowerCase() === lowerTarget) return true;
+          const slug = g.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+          return slug === lowerTarget;
+        }) || snesGames.find((g) => {
+          if (g.id.toLowerCase() === lowerTarget) return true;
+          if (encodeURIComponent(g.id).toLowerCase() === lowerTarget) return true;
+          const slug = g.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+          return slug === lowerTarget;
+        }) || CLASSIC_PRESET_ROMS.map(presetRomToGameItem).find((g) => {
           if (g.id.toLowerCase() === lowerTarget) return true;
           if (encodeURIComponent(g.id).toLowerCase() === lowerTarget) return true;
           const slug = g.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -1006,12 +1027,7 @@ export const EmulatorZone: React.FC = () => {
             );
           }
 
-          // Smooth scroll to emulator container after short delay
-          setTimeout(() => {
-            if (playerContainerRef.current) {
-              playerContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-          }, 350);
+          scrollToEmulatorContainer();
         }
       }
     };
@@ -1022,13 +1038,15 @@ export const EmulatorZone: React.FC = () => {
     return () => {
       window.removeEventListener('popstate', checkAndAutoLoadFromUrl);
     };
-  }, [snesGames]);
+  }, []);
 
   // Global Event Listener for launch commands from other components
   useEffect(() => {
     const handleLaunchEvent = (e: any) => {
       const { romUrl, title, core, gameId, isNetplay, room, role, coverArt } = e.detail || {};
       if (romUrl) {
+        scrollToEmulatorContainer();
+
         // If current session is active Netplay, route to 2-step waiting room
         const shouldNetplay = isNetplay || ((isNetplayActive || isNetplayInitializingRef.current) && Boolean(netplayRoom));
         const effectiveRoom = (room || netplayRoom || '').trim();
