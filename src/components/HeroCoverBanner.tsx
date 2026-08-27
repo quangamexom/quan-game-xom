@@ -290,13 +290,7 @@ export const HeroCoverBanner: React.FC<HeroCoverBannerProps> = ({
   // Compute active SNES slides dynamically from library or fallback to rich SNES classic presets
   const slides: HeroSlide[] = useMemo(() => {
     const isSnesGame = (g: GameItem) => {
-      return (
-        g.emulatorCore === 'snes' ||
-        g.system === 'snes' ||
-        g.platforms?.some(p => p.toLowerCase().includes('snes') || p.toLowerCase().includes('super nintendo')) ||
-        g.genres?.some(gen => gen.toLowerCase().includes('snes') || gen.toLowerCase().includes('super nintendo')) ||
-        Boolean(g.romUrl && (g.romUrl.toLowerCase().endsWith('.snes') || g.romUrl.toLowerCase().endsWith('.smc') || g.romUrl.toLowerCase().endsWith('.sfc')))
-      );
+      return Boolean(g.romUrl && typeof g.romUrl === 'string' && g.romUrl.startsWith('https://'));
     };
 
     const snesGames = featuredGames.filter(isSnesGame);

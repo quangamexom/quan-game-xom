@@ -551,8 +551,8 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              {/* Direct Retro Emulator Play Button if romUrl exists */}
-              {game.romUrl && (
+              {/* Direct Retro Emulator Play Button only if valid https romUrl exists */}
+              {Boolean(game.romUrl && typeof game.romUrl === 'string' && game.romUrl.startsWith('https://')) && (
                 <button
                   type="button"
                   onClick={() => {

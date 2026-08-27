@@ -269,10 +269,10 @@ export const EmulatorZone: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [uploadFileName, setUploadFileName] = useState<string | null>(null);
 
-  // SNES / Vercel Blob Games State - initialized with full initial retro games library
+  // SNES / Vercel Blob Games State - ONLY include games with confirmed real ROM files on Vercel Blob
   const initialPlayableGames = useMemo(() => {
     return INITIAL_GAMES.filter((g) => 
-      !g.isHidden && (g.romUrl || g.emulatorCore || g.system === 'snes' || g.genres?.some((genre: string) => genre.toLowerCase().includes('snes') || genre.toLowerCase().includes('retro')))
+      !g.isHidden && Boolean(g.romUrl && typeof g.romUrl === 'string' && g.romUrl.startsWith('https://'))
     );
   }, []);
 
@@ -344,9 +344,9 @@ export const EmulatorZone: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.games) && data.games.length > 0) {
-          // Filter playable retro games from database
+          // Filter playable retro games from database (only those with verified real romUrl on Cloud Storage)
           const dynamicPlayable = data.games.filter((g: any) => 
-            !g.isHidden && (g.romUrl || g.emulatorCore || g.system === 'snes' || g.genres?.some((genre: string) => genre.toLowerCase().includes('snes') || genre.toLowerCase().includes('retro')))
+            !g.isHidden && Boolean(g.romUrl && typeof g.romUrl === 'string' && g.romUrl.startsWith('https://'))
           );
           
           const combined = [...dynamicPlayable];
