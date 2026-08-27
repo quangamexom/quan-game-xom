@@ -537,7 +537,6 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Super Nintendo (SNES) • Vercel Blob Cloud ROM",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://archive.org/download/snes-romset-ultra/Aladdin%20%28USA%29.sfc",
     "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
     "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
     "platforms": [
@@ -600,7 +599,6 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Đua xe bắn súng chuột không gian • Konami SNES",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "/roms/biker-mice-from-mars.sfc",
     "coverArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop",
     "backdropArt": "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=600&auto=format&fit=crop",
     "platforms": [
@@ -632,7 +630,6 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Disney's Aladdin • Super Nintendo (SNES) 16-Bit",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "/roms/aladdin.sfc",
     "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
     "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
     "platforms": [
@@ -759,7 +756,6 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Khám Phá Vùng Đất Khủng Long Cùng Mario & Khủng Long Yoshi",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Super%20Mario%20World%20%28USA%29.sfc",
     "coverArt": "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=600&auto=format&fit=crop",
     "backdropArt": "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=1920&auto=format&fit=crop",
     "platforms": [
@@ -788,7 +784,6 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Du Hành Xuyên Không Gian Thời Gian Cứu Rỗi Thế Giới",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Chrono%20Trigger%20%28USA%29.sfc",
     "coverArt": "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=600&auto=format&fit=crop",
     "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1920&auto=format&fit=crop",
     "platforms": [
@@ -818,7 +813,6 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Cuộc Phiêu Lưu Của Gia Đình Vượn Donkey Kong & Diddy Kong",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Donkey%20Kong%20Country%20%28USA%29.sfc",
     "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
     "backdropArt": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1920&auto=format&fit=crop",
     "platforms": [
@@ -847,7 +841,6 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Đại Chiến Đấu Sĩ Đường Phố Tốc Độ Cao",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Street%20Fighter%20II%20Turbo%20%28USA%29.sfc",
     "coverArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop",
     "backdropArt": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1920&auto=format&fit=crop",
     "platforms": [
@@ -877,7 +870,6 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Simon Belmont & Huyền Thoại Roi Da Diệt Bá Tước Dracula",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Super%20Castlevania%20IV%20%28USA%29.sfc",
     "coverArt": "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop",
     "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1920&auto=format&fit=crop",
     "platforms": [
@@ -906,7 +898,6 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Ninja Rùa Du Hành Thời Gian Trừ Gian Diệt Bạo",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Teenage%20Mutant%20Ninja%20Turtles%20IV%20-%20Turtles%20in%20Time%20%28USA%29.sfc",
     "coverArt": "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=600&auto=format&fit=crop",
     "backdropArt": "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=1920&auto=format&fit=crop",
     "platforms": [
@@ -936,7 +927,6 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Hành Trình Aladdin & Cây Đèn Thần Cứu Công Chúa Jasmine",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Aladdin%20%28USA%29.sfc",
     "coverArt": "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=600&auto=format&fit=crop",
     "backdropArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1920&auto=format&fit=crop",
     "platforms": [
@@ -965,7 +955,6 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Vua Sư Tử Simba - Trưởng Thành & Đòi Lại Ngai Vàng Pride Rock",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/The%20Lion%20King%20%28USA%29.sfc",
     "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
     "backdropArt": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1920&auto=format&fit=crop",
     "platforms": [
@@ -994,7 +983,6 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Chiến Tranh Người Ngoài Hành Tinh - Biệt Đội Hủy Diệt Contra",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Contra%20III%20-%20The%20Alien%20Wars%20%28USA%29.sfc",
     "coverArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop",
     "backdropArt": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1920&auto=format&fit=crop",
     "platforms": [
@@ -1024,7 +1012,6 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Bắn Súng Cao Bồi Miền Viễn Tây Nổi Tiếng",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Sunset%20Riders%20%28USA%29.sfc",
     "coverArt": "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop",
     "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1920&auto=format&fit=crop",
     "platforms": [
@@ -1054,7 +1041,6 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Đua Xe Tốc Độ Nitrous Bất Hủ Tuổi Thơ",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Top%20Gear%20%28USA%29.sfc",
     "coverArt": "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=600&auto=format&fit=crop",
     "backdropArt": "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=1920&auto=format&fit=crop",
     "platforms": [
@@ -1084,7 +1070,6 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Đặt Bom Cứu Bạn Bè & So Tài Đặt Bom 4-5 Người Chơi",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Super%20Bomberman%205%20%28Japan%29.sfc",
     "coverArt": "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=600&auto=format&fit=crop",
     "backdropArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1920&auto=format&fit=crop",
     "platforms": [
@@ -1114,7 +1099,6 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Rồng Đen 2 - Tuyệt Kỹ Fatality & Đấu Sĩ Ngoại Giới Outworld",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Mortal%20Kombat%20II%20%28USA%29.sfc",
     "coverArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop",
     "backdropArt": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1920&auto=format&fit=crop",
     "platforms": [
@@ -1144,7 +1128,6 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Khởi Đầu Huyền Thoại Mega Man X & Kiếm Sĩ Zero",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Mega%20Man%20X%20%28USA%29.sfc",
     "coverArt": "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=600&auto=format&fit=crop",
     "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1920&auto=format&fit=crop",
     "platforms": [
@@ -4660,7 +4643,6 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Thế Giới Ánh Sáng & Bóng Tối • Thanh Kiếm Master Sword Huyền Thoại",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/The%20Legend%20of%20Zelda%20-%20A%20Link%20to%20the%20Past%20%28USA%29.sfc",
     "coverArt": "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=600&auto=format&fit=crop",
     "backdropArt": "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=1920&auto=format&fit=crop",
     "platforms": [
