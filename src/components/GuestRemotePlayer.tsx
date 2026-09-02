@@ -59,30 +59,107 @@ export const GuestRemotePlayer: React.FC<GuestRemotePlayerProps> = ({
     });
   }, []);
 
-  // Initialize WebRTC Session
-  const initWebRTCSession = useCallback(() => {
+  // Initialize WebRTC Session — single effect keyed on roomId
+  // NOTE: Using closure flag 'isCancelled' to survive React StrictMode double-invocation.
+  // In StrictMode, React runs: mount → cleanup → mount again. The flag prevents the
+  // cleanup from the FIRST mount from destroying a session that the SECOND mount created.
+  useEffect(() => {
+    let isCancelled = false;
+
+    // Small delay to let StrictMode's immediate unmount/remount cycle complete
+    // before we actually start the session. This prevents wasted sessions.
+    const initTimer = setTimeout(() => {
+      if (isCancelled) {
+        console.log('[GuestRemotePlayer] Init cancelled before session could start (StrictMode cleanup).');
+        return;
+      }
+
+      // Destroy any stale session before creating a fresh one
+      if (sessionRef.current) {
+        sessionRef.current.destroy('guest_stale_before_new_init');
+        sessionRef.current = null;
+      }
+
+      setConnectionState('connecting');
+      console.log(`[GuestRemotePlayer] 🎮 Initializing new GuestWebRTCSession for room [${roomId}]...`);
+      const session = new GuestWebRTCSession(roomId);
+
+      session.onRemoteStream = (stream) => {
+        if (isCancelled) return;
+        console.log('[GuestRemotePlayer] 📺 Received MediaStream from Host. Stream tracks:', stream.getTracks().map(t => `${t.kind}:${t.id}:${t.readyState}`));
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play().then(() => {
+            console.log('[GuestRemotePlayer] ✅ Video playback started successfully!');
+          }).catch((e) => {
+            console.warn('[GuestRemotePlayer] Video autoplay requires mute initially:', e);
+          });
+        }
+      };
+
+      session.onConnectionStateChange = (state, iceState) => {
+        if (isCancelled) return;
+        console.log(`[GuestRemotePlayer] Connection state: "${state}", ICE state: "${iceState}"`);
+        if (state === 'connected' || iceState === 'connected' || iceState === 'completed') {
+          setConnectionState('connected');
+        } else if (state === 'connecting' || iceState === 'checking') {
+          setConnectionState('connecting');
+        } else if (iceState === 'disconnected') {
+          setConnectionState('reconnecting');
+        } else if (state === 'failed' || iceState === 'failed') {
+          setConnectionState('failed');
+        } else if (state === 'closed') {
+          setConnectionState('disconnected');
+        }
+      };
+
+      session.onLatencyUpdate = (latency) => {
+        if (isCancelled) return;
+        setPingMs(latency);
+      };
+
+      session.onError = (err) => {
+        if (isCancelled) return;
+        console.error('[GuestRemotePlayer Error]:', err);
+        setConnectionState('failed');
+      };
+
+      session.start();
+      sessionRef.current = session;
+    }, 50); // 50ms delay: enough for StrictMode unmount+remount cycle to complete
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(initTimer);
+      console.log('[GuestRemotePlayer] Cleanup effect running (unmount or roomId changed).');
+      if (sessionRef.current) {
+        sessionRef.current.destroy('guest_effect_cleanup');
+        sessionRef.current = null;
+      }
+      if (gamepadPollingRef.current) {
+        cancelAnimationFrame(gamepadPollingRef.current);
+        gamepadPollingRef.current = null;
+      }
+    };
+  }, [roomId]);
+
+  // Manual reconnect — called by "Thử Kết Nối Lại" button
+  const handleReconnect = useCallback(() => {
     if (sessionRef.current) {
-      sessionRef.current.destroy();
+      sessionRef.current.destroy('guest_manual_reconnect');
       sessionRef.current = null;
     }
-
     setConnectionState('connecting');
+    console.log(`[GuestRemotePlayer] 🔄 Manual reconnect for room [${roomId}]...`);
     const session = new GuestWebRTCSession(roomId);
 
     session.onRemoteStream = (stream) => {
-      console.log('[GuestRemotePlayer] 📺 Received MediaStream from Host. Stream tracks:', stream.getTracks().map(t => `${t.kind}:${t.id}:${t.readyState}`));
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play().then(() => {
-          console.log('[GuestRemotePlayer] ✅ Video playback started successfully!');
-        }).catch((e) => {
-          console.warn('[GuestRemotePlayer] Video autoplay requires mute initially:', e);
-        });
+        videoRef.current.play().catch(() => {});
       }
     };
-
     session.onConnectionStateChange = (state, iceState) => {
-      console.log(`[GuestRemotePlayer] Connection state: ${state}, ICE state: ${iceState}`);
       if (state === 'connected' || iceState === 'connected' || iceState === 'completed') {
         setConnectionState('connected');
       } else if (state === 'connecting' || iceState === 'checking') {
@@ -95,34 +172,14 @@ export const GuestRemotePlayer: React.FC<GuestRemotePlayerProps> = ({
         setConnectionState('disconnected');
       }
     };
-
-    session.onLatencyUpdate = (latency) => {
-      setPingMs(latency);
-    };
-
+    session.onLatencyUpdate = (latency) => setPingMs(latency);
     session.onError = (err) => {
       console.error('[GuestRemotePlayer Error]:', err);
       setConnectionState('failed');
     };
-
     session.start();
     sessionRef.current = session;
   }, [roomId]);
-
-  useEffect(() => {
-    initWebRTCSession();
-    return () => {
-      if (sessionRef.current) {
-        sessionRef.current.destroy();
-        sessionRef.current = null;
-      }
-      if (gamepadPollingRef.current) {
-        cancelAnimationFrame(gamepadPollingRef.current);
-      }
-    };
-  }, [initWebRTCSession]);
-
-  // Keyboard Event Listeners for Player 2
   useEffect(() => {
     const KEY_TO_BUTTON: Record<string, NetplayButton> = {
       // Directional (Arrows or WASD)
@@ -428,7 +485,7 @@ export const GuestRemotePlayer: React.FC<GuestRemotePlayerProps> = ({
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={initWebRTCSession}
+                  onClick={handleReconnect}
                   className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-mono font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-lg"
                 >
                   <RefreshCw className="w-4 h-4" />

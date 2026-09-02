@@ -821,9 +821,23 @@ export const EmulatorZone: React.FC = () => {
 
   // Host WebRTC Remote Play Streaming & P2 Input Dispatcher Effect
   useEffect(() => {
+    console.log('[HostWebRTC Effect] 🔍 Triggered with states:', {
+      isPlaying,
+      isNetplayActive,
+      netplayRole,
+      netplayRoom,
+      currentRomUrl: currentRomUrl ? `${currentRomUrl.substring(0, 30)}...` : null
+    });
+
     if (!isPlaying || !isNetplayActive || netplayRole !== 'p1' || !netplayRoom) {
+      console.log('[HostWebRTC Effect] ⏭️ Skipping Host streaming because conditions not met:', {
+        isPlaying,
+        isNetplayActive,
+        isHost: netplayRole === 'p1',
+        hasRoom: Boolean(netplayRoom)
+      });
       if (hostWebRTCSessionRef.current) {
-        hostWebRTCSessionRef.current.destroy();
+        hostWebRTCSessionRef.current.destroy('host_streaming_inactive');
         hostWebRTCSessionRef.current = null;
       }
       setHostP2Status({ connected: false, pingMs: null, state: 'idle' });
@@ -832,51 +846,66 @@ export const EmulatorZone: React.FC = () => {
 
     let isMounted = true;
     let captureRetryTimeout: any = null;
+    let streamStarted = false;
+    let retryCount = 0;
 
-    const startHostStreaming = () => {
-      if (!isMounted) return;
+    const startHostStreaming = async () => {
+      if (!isMounted || streamStarted) return;
+      retryCount++;
       const iframe = emulatorIframeRef.current;
+      console.log(`[HostWebRTC Setup] 🔄 Attempt #${retryCount} to find canvas in iframe (iframe ref exists: ${Boolean(iframe)})...`);
+
       if (!iframe) {
-        captureRetryTimeout = setTimeout(startHostStreaming, 500);
+        console.log('[HostWebRTC Setup] ⏳ emulatorIframeRef.current is null, retrying in 400ms...');
+        captureRetryTimeout = setTimeout(startHostStreaming, 400);
         return;
       }
 
       try {
         const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        const bodyPreview = iframeDoc?.body?.innerHTML ? iframeDoc.body.innerHTML.substring(0, 150).replace(/\n/g, ' ') : '(empty)';
+        console.log(`[HostWebRTC Setup] iframeDoc exists: ${Boolean(iframeDoc)} | Body HTML preview: "${bodyPreview}"`);
+
         const canvas = iframeDoc?.querySelector('canvas');
         if (!canvas) {
-          // Canvas not ready yet, retry in 300ms
-          captureRetryTimeout = setTimeout(startHostStreaming, 300);
+          console.log(`[HostWebRTC Setup] ⏳ Canvas not found yet inside iframe (attempt #${retryCount}), retrying in 400ms...`);
+          captureRetryTimeout = setTimeout(startHostStreaming, 400);
           return;
         }
 
-        console.log('[HostWebRTC Setup] 🎬 Canvas found in iframe. Capturing 60fps video stream...');
+        console.log(`[HostWebRTC Setup] 🎬 Canvas FOUND! (size: ${canvas.width}x${canvas.height}). Capturing 60fps video stream...`);
         const videoStream = (canvas as any).captureStream
           ? (canvas as any).captureStream(60)
           : (canvas as any).mozCaptureStream?.(60);
 
         if (!videoStream) {
-          console.warn('[HostWebRTC Setup] captureStream not supported on canvas.');
+          console.warn('[HostWebRTC Setup] ❌ canvas.captureStream not supported or returned null.');
           return;
         }
 
+        streamStarted = true;
         const combinedStream = new MediaStream();
-        videoStream.getVideoTracks().forEach((vt: MediaStreamTrack) => combinedStream.addTrack(vt));
+        videoStream.getVideoTracks().forEach((vt: MediaStreamTrack) => {
+          console.log(`[HostWebRTC Setup] 🎥 Added video track: ${vt.id} (${vt.readyState})`);
+          combinedStream.addTrack(vt);
+        });
 
-        // Attach audio track if available from WebAudio interceptor
+        // Attach audio track if available from WebAudio
         const audioDest = (iframe.contentWindow as any)?.__qgxAudioDest;
         if (audioDest && audioDest.stream) {
           const audioTracks = audioDest.stream.getAudioTracks();
           if (audioTracks && audioTracks.length > 0) {
-            console.log('[HostWebRTC Setup] 🔊 Audio track found and attached to stream.');
+            console.log(`[HostWebRTC Setup] 🔊 Added audio track: ${audioTracks[0].id}`);
             combinedStream.addTrack(audioTracks[0]);
           }
         }
 
         if (hostWebRTCSessionRef.current) {
-          hostWebRTCSessionRef.current.destroy();
+          console.log('[HostWebRTC Setup] Destroying old session before starting new HostWebRTCSession.');
+          hostWebRTCSessionRef.current.destroy('host_session_restarting');
         }
 
+        console.log(`[HostWebRTC Setup] 👑 Instantiating new HostWebRTCSession for room [${netplayRoom}]...`);
         const session = new HostWebRTCSession(netplayRoom, combinedStream);
 
         // When Player 2 sends an input event over DataChannel:
@@ -909,21 +938,36 @@ export const EmulatorZone: React.FC = () => {
           }));
         };
 
-        session.start();
+        session.onError = (err) => {
+          console.error('[HostWebRTC Error Callback]:', err);
+        };
+
+        await session.start();
+        console.log('[HostWebRTC Setup] ✅ HostWebRTCSession.start() completed successfully!');
         hostWebRTCSessionRef.current = session;
-      } catch (err) {
-        console.warn('[HostWebRTC Setup Error]:', err);
+      } catch (err: any) {
+        console.error('[HostWebRTC Setup Error]:', err?.message || err, err?.stack);
       }
     };
 
-    // Give iframe 800ms to boot up and create canvas before capturing
-    captureRetryTimeout = setTimeout(startHostStreaming, 800);
+    // Listen for Game Start event from inside iframe
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data && e.data.type === 'EJS_GAME_STARTED') {
+        console.log('[HostWebRTC Setup] 🎮 EJS_GAME_STARTED received from iframe. Initializing stream capture immediately...');
+        startHostStreaming();
+      }
+    };
+    window.addEventListener('message', handleMessage);
+
+    // Also trigger with initial timeout fallback
+    captureRetryTimeout = setTimeout(startHostStreaming, 600);
 
     return () => {
       isMounted = false;
+      window.removeEventListener('message', handleMessage);
       if (captureRetryTimeout) clearTimeout(captureRetryTimeout);
       if (hostWebRTCSessionRef.current) {
-        hostWebRTCSessionRef.current.destroy();
+        hostWebRTCSessionRef.current.destroy('host_effect_cleanup');
         hostWebRTCSessionRef.current = null;
       }
     };
@@ -1253,36 +1297,11 @@ export const EmulatorZone: React.FC = () => {
 <body>
   <div id="ejs-game-container"></div>
   <script>
-    // 0. AudioContext Interceptor for WebRTC MediaStream Audio Capture
-    (function() {
-      var OrigAudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (OrigAudioCtx) {
-        window.__qgxAudioDest = null;
-        window.AudioContext = function() {
-          var ctx = new OrigAudioCtx();
-          try {
-            var dest = ctx.createMediaStreamDestination();
-            window.__qgxAudioDest = dest;
-            var origConnect = AudioNode.prototype.connect;
-            AudioNode.prototype.connect = function(target) {
-              if (target === ctx.destination && window.__qgxAudioDest) {
-                try { origConnect.call(this, window.__qgxAudioDest); } catch(e) {}
-              }
-              return origConnect.apply(this, arguments);
-            };
-          } catch(err) {
-            console.warn('[Audio Interceptor Error]:', err);
-          }
-          return ctx;
-        };
-      }
-    })();
-
     console.group("🎮 [EmulatorJS Diagnostic]");
     console.log("➡️ Target Game:", ${JSON.stringify(currentRomName || 'Quán Game Xóm SNES ROM')});
     console.log("➡️ Selected Core:", ${JSON.stringify(selectedCore)}, "-> Resolved Core:", ${JSON.stringify(resolvedCore)});
     console.log("➡️ Effective ROM URL:", ${JSON.stringify(effectiveRomUrl)});
-    ${isNetplayActive && netplayRoom.trim() ? `console.log("🌐 Netplay Remote Play Active (Room ${JSON.stringify(netplayRoom.trim())}, Host P1)");` : ''}
+    ${isNetplayActive && netplayRoom.trim() ? `console.log("🌐 Netplay Remote Play Active - Room:", ${JSON.stringify(netplayRoom.trim())}, "(Host P1)");` : ''}
     console.groupEnd();
 
     // 1. EmulatorJS Core Configuration - Injected synchronously before loader.js
@@ -1293,46 +1312,41 @@ export const EmulatorZone: React.FC = () => {
     window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
     window.EJS_startOnLoaded = true;
     window.EJS_color = '#f59e0b';
+    window.EJS_language = 'en-US';
+    window.EJS_disableAutoLang = true;
+    window.EJS_netplay = false;
+    window.EJS_netplayServer = null;
+    window.EJS_netplayUrl = null;
 
-    // 2. Default Controls for Player 1 and Player 2
-    window.EJS_defaultControls = {
-      0: { // Player 1 (Host Keyboard & Gamepad 1)
-        0: { value: 'z', value2: 'BUTTON_1' }, // B
-        1: { value: 'a', value2: 'BUTTON_3' }, // Y
-        2: { value: 'Shift', value2: 'BUTTON_8' }, // SELECT
-        3: { value: 'Enter', value2: 'BUTTON_9' }, // START
-        4: { value: 'ArrowUp', value2: 'DPAD_UP' }, // UP
-        5: { value: 'ArrowDown', value2: 'DPAD_DOWN' }, // DOWN
-        6: { value: 'ArrowLeft', value2: 'DPAD_LEFT' }, // LEFT
-        7: { value: 'ArrowRight', value2: 'DPAD_RIGHT' }, // RIGHT
-        8: { value: 'x', value2: 'BUTTON_0' }, // A
-        9: { value: 's', value2: 'BUTTON_2' }, // X
-        10: { value: 'q', value2: 'BUTTON_4' }, // L
-        11: { value: 'w', value2: 'BUTTON_5' }  // R
-      },
-      1: { // Player 2 (Remote Guest via WebRTC DataChannel)
-        0: { value: 'k', value2: 'BUTTON_1' }, // B -> KeyK
-        1: { value: 'j', value2: 'BUTTON_3' }, // Y -> KeyJ
-        2: { value: 'b', value2: 'BUTTON_8' }, // SELECT -> KeyB
-        3: { value: 'v', value2: 'BUTTON_9' }, // START -> KeyV
-        4: { value: 'w', value2: 'DPAD_UP' }, // UP -> KeyW
-        5: { value: 's', value2: 'DPAD_DOWN' }, // DOWN -> KeyS
-        6: { value: 'a', value2: 'DPAD_LEFT' }, // LEFT -> KeyA
-        7: { value: 'd', value2: 'DPAD_RIGHT' }, // RIGHT -> KeyD
-        8: { value: 'l', value2: 'BUTTON_0' }, // A -> KeyL
-        9: { value: 'i', value2: 'BUTTON_2' }, // X -> KeyI
-        10: { value: 'u', value2: 'BUTTON_4' }, // L -> KeyU
-        11: { value: 'o', value2: 'BUTTON_5' }  // R -> KeyO
-      }
-    };
-
-    // 3. Detailed Callbacks & Error Listeners
+    // 2. Callbacks & Error Listeners
     window.EJS_onLoad = function() {
       console.log("✅ [EmulatorJS] System Core & Controls loaded successfully.");
     };
 
     window.EJS_onGameStart = function() {
       console.log("🚀 [EmulatorJS] Game execution loop started! Audio/Video initialized.");
+      try {
+        if (window.EJS_emulator && window.EJS_emulator.Module && window.EJS_emulator.Module.AL && window.EJS_emulator.Module.AL.currentCtx) {
+          var actx = window.EJS_emulator.Module.AL.currentCtx.audioCtx;
+          if (actx) {
+            var dest = actx.createMediaStreamDestination();
+            window.__qgxAudioDest = dest;
+            var sources = window.EJS_emulator.Module.AL.currentCtx.sources;
+            if (sources) {
+              for (var s in sources) {
+                if (sources[s] && sources[s].gain) {
+                  try { sources[s].gain.connect(dest); } catch(e) {}
+                }
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("[Audio Hook Warning]:", e);
+      }
+      try {
+        window.parent.postMessage({ type: "EJS_GAME_STARTED" }, "*");
+      } catch(e) {}
     };
 
     window.EJS_onLogError = function(err) {
@@ -1383,8 +1397,17 @@ export const EmulatorZone: React.FC = () => {
         }
       }
     });
+
+    // 6. Load EmulatorJS loader.js AFTER all EJS_* vars are set (guaranteed order)
+    (function() {
+      var loaderScript = document.createElement('script');
+      loaderScript.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+      loaderScript.onerror = function() {
+        console.error('💥 [EmulatorJS] CRITICAL: Failed to load loader.js from CDN. Check network connection.');
+      };
+      document.body.appendChild(loaderScript);
+    })();
   </script>
-  <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
 </body>
 </html>`;
   }, [isPlaying, currentRomUrl, selectedCore, currentRomName, isNetplayActive, netplayRoom, netplayRole, currentGameId]);
@@ -2282,7 +2305,7 @@ export const EmulatorZone: React.FC = () => {
               <div className="relative w-full h-full">
                 {/* Host P2 Connection Floating HUD */}
                 {isNetplayActive && netplayRole === 'p1' && (
-                  <div className="absolute top-3 right-3 z-30 px-3 py-1.5 rounded-xl bg-slate-950/95 border border-slate-700 backdrop-blur-md flex items-center gap-2 text-xs font-mono shadow-2xl">
+                  <div className="absolute top-3 right-3 z-30 px-3 py-1.5 rounded-xl bg-slate-950/95 border border-slate-700 backdrop-blur-md flex items-center gap-2 text-xs font-mono shadow-2xl pointer-events-none">
                     <div className={`w-2.5 h-2.5 rounded-full ${hostP2Status.connected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400 animate-ping'}`} />
                     <span className="font-bold text-slate-200">
                       {hostP2Status.connected ? 'Khách (P2) Đã Kết Nối' : 'Đang Đợi Khách (P2) Vào...'}

@@ -280,14 +280,20 @@ export class HostWebRTCSession {
         }
 
         // Once connected, reduce polling frequency
-        if (this.peerConnection.connectionState === 'connected' || this.peerConnection.iceConnectionState === 'connected' || this.peerConnection.iceConnectionState === 'completed') {
-          if (this.pollInterval) {
-            clearInterval(this.pollInterval);
-            this.pollInterval = setInterval(poll, 4000);
+        if (!this.isDestroyed && this.peerConnection) {
+          const connState = this.peerConnection.connectionState;
+          const iceState = this.peerConnection.iceConnectionState;
+          if (connState === 'connected' || iceState === 'connected' || iceState === 'completed') {
+            if (this.pollInterval) {
+              clearInterval(this.pollInterval);
+              this.pollInterval = setInterval(poll, 4000);
+            }
           }
         }
       } catch (err) {
-        console.warn(`[HostWebRTC Poll Warning]:`, err);
+        if (!this.isDestroyed) {
+          console.warn(`[HostWebRTC Poll Warning]:`, err);
+        }
       }
     };
 
@@ -295,8 +301,11 @@ export class HostWebRTCSession {
     this.pollInterval = setInterval(poll, 600);
   }
 
-  public destroy() {
+  public destroy(reason: string = 'component_unmount') {
+    if (this.isDestroyed) return;
     this.isDestroyed = true;
+    console.log(`%c[HostWebRTC] 🛑 Session destroyed. Reason: "${reason}"`, 'color: #ef4444; font-weight: bold;');
+
     if (this.pollInterval) clearInterval(this.pollInterval);
     if (this.pingInterval) clearInterval(this.pingInterval);
     this.pollInterval = null;
@@ -311,8 +320,6 @@ export class HostWebRTCSession {
       try { this.peerConnection.close(); } catch (e) {}
       this.peerConnection = null;
     }
-
-    console.log(`[HostWebRTC] Session destroyed.`);
   }
 }
 
@@ -485,14 +492,16 @@ export class GuestWebRTCSession {
         const res = await fetch(`/api/netplay/room-status?room=${encodeURIComponent(this.roomId)}&_t=${Date.now()}`, {
           cache: 'no-store'
         });
-        if (!res.ok) return;
+        if (!res.ok || this.isDestroyed || !this.peerConnection) return;
 
         const data = await res.json();
+        if (this.isDestroyed || !this.peerConnection) return;
         const status = data.status;
         if (!status) return;
 
         // 1. Process Host SDP Offer
         if (status.hostOffer && !this.hasProcessedOffer) {
+          if (this.isDestroyed || !this.peerConnection) return;
           console.log(`%c[GuestWebRTC] 📥 [Step 2/4] Received Host SDP Offer from server! Applying remote description...`, 'color: #06b6d4; font-weight: bold;');
           this.hasProcessedOffer = true;
 
@@ -502,10 +511,14 @@ export class GuestWebRTCSession {
 
           await this.peerConnection.setRemoteDescription(new RTCSessionDescription(offerDesc));
 
+          if (this.isDestroyed || !this.peerConnection) return;
           console.log(`%c[GuestWebRTC] 📝 [Step 3/4] Creating SDP Answer...`, 'color: #06b6d4;');
           const answer = await this.peerConnection.createAnswer();
+
+          if (this.isDestroyed || !this.peerConnection) return;
           await this.peerConnection.setLocalDescription(answer);
 
+          if (this.isDestroyed || !this.peerConnection) return;
           console.log(`%c[GuestWebRTC] 📤 [Step 4/4] Uploading SDP Answer (${answer.sdp?.length || 0} chars) to /api/netplay/signal...`, 'color: #06b6d4; font-weight: bold;');
           await this.sendSignal('answer', answer, 'p2');
         }
@@ -513,6 +526,7 @@ export class GuestWebRTCSession {
         // 2. Process Host ICE Candidates
         if (this.hasProcessedOffer && Array.isArray(status.hostIceCandidates) && status.hostIceCandidates.length > 0) {
           for (const candStr of status.hostIceCandidates) {
+            if (this.isDestroyed || !this.peerConnection) return;
             if (!this.processedHostCandidates.has(candStr)) {
               this.processedHostCandidates.add(candStr);
               try {
@@ -529,14 +543,20 @@ export class GuestWebRTCSession {
         }
 
         // Once connected, reduce polling frequency
-        if (this.peerConnection.connectionState === 'connected' || this.peerConnection.iceConnectionState === 'connected' || this.peerConnection.iceConnectionState === 'completed') {
-          if (this.pollInterval) {
-            clearInterval(this.pollInterval);
-            this.pollInterval = setInterval(poll, 4000);
+        if (!this.isDestroyed && this.peerConnection) {
+          const connState = this.peerConnection.connectionState;
+          const iceState = this.peerConnection.iceConnectionState;
+          if (connState === 'connected' || iceState === 'connected' || iceState === 'completed') {
+            if (this.pollInterval) {
+              clearInterval(this.pollInterval);
+              this.pollInterval = setInterval(poll, 4000);
+            }
           }
         }
       } catch (err) {
-        console.warn(`[GuestWebRTC Poll Warning]:`, err);
+        if (!this.isDestroyed) {
+          console.warn(`[GuestWebRTC Poll Warning]:`, err);
+        }
       }
     };
 
@@ -544,8 +564,11 @@ export class GuestWebRTCSession {
     this.pollInterval = setInterval(poll, 600);
   }
 
-  public destroy() {
+  public destroy(reason: string = 'component_unmount') {
+    if (this.isDestroyed) return;
     this.isDestroyed = true;
+    console.log(`%c[GuestWebRTC] 🛑 Session destroyed. Reason: "${reason}"`, 'color: #ef4444; font-weight: bold;');
+
     if (this.pollInterval) clearInterval(this.pollInterval);
     if (this.pingInterval) clearInterval(this.pingInterval);
     this.pollInterval = null;
@@ -560,7 +583,5 @@ export class GuestWebRTCSession {
       try { this.peerConnection.close(); } catch (e) {}
       this.peerConnection = null;
     }
-
-    console.log(`[GuestWebRTC] Session destroyed.`);
   }
 }
