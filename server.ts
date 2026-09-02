@@ -20,7 +20,8 @@ import {
   setPlayerReady,
   startNetplayRoom,
   getRoomStatus,
-  deleteNetplayRoom
+  deleteNetplayRoom,
+  saveSignalPayload
 } from "./src/services/netplayRoomStorage";
 
 const app = express();
@@ -1059,6 +1060,27 @@ app.post(["/api/netplay/start-room", "/netplay/start-room"], async (req, res) =>
   } catch (err: any) {
     console.error("[Start Netplay Room Error]:", err);
     return res.status(500).json({ success: false, error: err.message || "Lỗi khởi động phòng Netplay" });
+  }
+});
+
+app.post(["/api/netplay/signal", "/netplay/signal"], async (req, res) => {
+  try {
+    const rawRoom = (req.body?.room || '') as string;
+    const room = rawRoom.trim().toLowerCase();
+    const type = req.body?.type as 'offer' | 'answer' | 'candidate';
+    const payload = req.body?.payload;
+    const role = (req.body?.role || 'p1') as 'p1' | 'p2';
+
+    if (!room || !type || !payload) {
+      return res.status(400).json({ success: false, error: "Thiếu thông số phòng, loại tín hiệu hoặc dữ liệu signal" });
+    }
+
+    console.log(`[Netplay Signal API] 📡 Received [${type}] from [${role}] for room [${room}]`);
+    const status = await saveSignalPayload(room, type, payload, role);
+    return res.json({ success: true, room, type, status });
+  } catch (err: any) {
+    console.error("[Netplay Signal API Error]:", err);
+    return res.status(500).json({ success: false, error: err.message || "Lỗi xử lý tín hiệu WebRTC Netplay" });
   }
 });
 

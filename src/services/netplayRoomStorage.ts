@@ -9,6 +9,11 @@ export interface NetplayRoomStatus {
   gameId?: string;
   createdAt: number;
   updatedAt: number;
+  // WebRTC Remote Play Together Signaling fields
+  hostOffer?: string;
+  guestAnswer?: string;
+  hostIceCandidates?: string[];
+  guestIceCandidates?: string[];
 }
 
 // In-memory cache + fallback when BLOB_READ_WRITE_TOKEN is not available
@@ -44,7 +49,6 @@ async function cleanOldRooms() {
 }
 
 export async function createNetplayRoom(roomId: string, meta?: { gameId?: string }): Promise<NetplayRoomStatus> {
-  // Run cleanup in background
   cleanOldRooms().catch(() => {});
 
   const cleanId = roomId.trim().toLowerCase();
@@ -57,26 +61,29 @@ export async function createNetplayRoom(roomId: string, meta?: { gameId?: string
     started: false,
     gameId: meta?.gameId,
     createdAt: now,
-    updatedAt: now
+    updatedAt: now,
+    hostOffer: undefined,
+    guestAnswer: undefined,
+    hostIceCandidates: [],
+    guestIceCandidates: []
   };
 
   inMemoryRooms.set(cleanId, roomData);
 
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
   if (blobToken) {
-    try {
-      const blobPath = `netplay-rooms/${cleanId}.json`;
-      const blobResult = await put(blobPath, JSON.stringify(roomData), {
-        access: "public",
-        token: blobToken,
-        addRandomSuffix: false,
-        allowOverwrite: true,
-        contentType: "application/json"
-      });
+    const blobPath = `netplay-rooms/${cleanId}.json`;
+    put(blobPath, JSON.stringify(roomData), {
+      access: "public",
+      token: blobToken,
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: "application/json"
+    }).then(blobResult => {
       console.log(`[Netplay Storage] Created room on Vercel Blob: ${cleanId} -> URL: ${blobResult.url}`);
-    } catch (err) {
+    }).catch(err => {
       console.warn(`[Netplay Storage] Failed to save room to Vercel Blob (${cleanId}):`, err);
-    }
+    });
   }
 
   return roomData;
@@ -99,7 +106,9 @@ export async function joinNetplayRoom(roomId: string): Promise<NetplayRoomStatus
       p2Ready: false,
       started: false,
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
+      hostIceCandidates: [],
+      guestIceCandidates: []
     };
   } else {
     room.p2Joined = true;
@@ -110,19 +119,18 @@ export async function joinNetplayRoom(roomId: string): Promise<NetplayRoomStatus
 
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
   if (blobToken) {
-    try {
-      const blobPath = `netplay-rooms/${cleanId}.json`;
-      const blobResult = await put(blobPath, JSON.stringify(room), {
-        access: "public",
-        token: blobToken,
-        addRandomSuffix: false,
-        allowOverwrite: true,
-        contentType: "application/json"
-      });
+    const blobPath = `netplay-rooms/${cleanId}.json`;
+    put(blobPath, JSON.stringify(room), {
+      access: "public",
+      token: blobToken,
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: "application/json"
+    }).then(blobResult => {
       console.log(`[Netplay Storage] Player 2 joined room on Vercel Blob: ${cleanId} -> URL: ${blobResult.url}`);
-    } catch (err) {
+    }).catch(err => {
       console.warn(`[Netplay Storage] Failed to update room on Vercel Blob (${cleanId}):`, err);
-    }
+    });
   }
 
   return room;
@@ -145,7 +153,9 @@ export async function setPlayerReady(roomId: string, role: 'p1' | 'p2' = 'p2'): 
       p2Ready: role === 'p2',
       started: false,
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
+      hostIceCandidates: [],
+      guestIceCandidates: []
     };
   } else {
     if (role === 'p1') room.p1Ready = true;
@@ -160,19 +170,18 @@ export async function setPlayerReady(roomId: string, role: 'p1' | 'p2' = 'p2'): 
 
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
   if (blobToken) {
-    try {
-      const blobPath = `netplay-rooms/${cleanId}.json`;
-      const blobResult = await put(blobPath, JSON.stringify(room), {
-        access: "public",
-        token: blobToken,
-        addRandomSuffix: false,
-        allowOverwrite: true,
-        contentType: "application/json"
-      });
-      console.log(`[Netplay Storage] Player ${role} is READY in room on Vercel Blob: ${cleanId} (p2Ready: ${room.p2Ready}) -> URL: ${blobResult.url}`);
-    } catch (err) {
+    const blobPath = `netplay-rooms/${cleanId}.json`;
+    put(blobPath, JSON.stringify(room), {
+      access: "public",
+      token: blobToken,
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: "application/json"
+    }).then(blobResult => {
+      console.log(`[Netplay Storage] Player ${role} is READY in room on Vercel Blob: ${cleanId} (p2Ready: ${room?.p2Ready}) -> URL: ${blobResult.url}`);
+    }).catch(err => {
       console.warn(`[Netplay Storage] Failed to update ready state on Vercel Blob (${cleanId}):`, err);
-    }
+    });
   }
 
   return room;
@@ -195,7 +204,9 @@ export async function startNetplayRoom(roomId: string): Promise<NetplayRoomStatu
       p2Ready: true,
       started: true,
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
+      hostIceCandidates: [],
+      guestIceCandidates: []
     };
   } else {
     room.started = true;
@@ -206,19 +217,18 @@ export async function startNetplayRoom(roomId: string): Promise<NetplayRoomStatu
 
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
   if (blobToken) {
-    try {
-      const blobPath = `netplay-rooms/${cleanId}.json`;
-      const blobResult = await put(blobPath, JSON.stringify(room), {
-        access: "public",
-        token: blobToken,
-        addRandomSuffix: false,
-        allowOverwrite: true,
-        contentType: "application/json"
-      });
+    const blobPath = `netplay-rooms/${cleanId}.json`;
+    put(blobPath, JSON.stringify(room), {
+      access: "public",
+      token: blobToken,
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: "application/json"
+    }).then(blobResult => {
       console.log(`[Netplay Storage] Room ${cleanId} marked as STARTED on Vercel Blob -> URL: ${blobResult.url}`);
-    } catch (err) {
+    }).catch(err => {
       console.warn(`[Netplay Storage] Failed to mark room started on Vercel Blob (${cleanId}):`, err);
-    }
+    });
   }
 
   return room;
@@ -229,7 +239,18 @@ export async function getRoomStatus(roomId: string): Promise<NetplayRoomStatus |
   const cleanId = String(roomId).split('?')[0].split('&')[0].trim().toLowerCase();
   if (!cleanId) return null;
 
-  // 1. If Vercel Blob token exists, always fetch fresh data from Blob
+  // 1. Check inMemoryRooms first (0ms latency, zero cache lag, perfect for WebRTC real-time signaling)
+  const memoryRoom = inMemoryRooms.get(cleanId);
+  if (memoryRoom) {
+    // Check if expired (> 15 mins)
+    if (Date.now() - memoryRoom.createdAt > 15 * 60 * 1000) {
+      inMemoryRooms.delete(cleanId);
+      return null;
+    }
+    return memoryRoom;
+  }
+
+  // 2. If not found in memory and Vercel Blob token exists (e.g. cold start / multi-instance), fallback to Blob
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
   if (blobToken) {
     try {
@@ -280,21 +301,6 @@ export async function getRoomStatus(roomId: string): Promise<NetplayRoomStatus |
     }
   }
 
-  // 2. Fallback to inMemoryRooms (for local development or cache)
-  try {
-    const memoryRoom = inMemoryRooms.get(cleanId);
-    if (memoryRoom) {
-      // Check if expired (> 15 mins)
-      if (Date.now() - memoryRoom.createdAt > 15 * 60 * 1000) {
-        inMemoryRooms.delete(cleanId);
-        return null;
-      }
-      return memoryRoom;
-    }
-  } catch (memErr) {
-    console.warn(`[Netplay Storage] Memory read error for ${cleanId}:`, memErr);
-  }
-
   return null;
 }
 
@@ -318,4 +324,81 @@ export async function deleteNetplayRoom(roomId: string): Promise<boolean> {
 
   return true;
 }
+
+export async function saveSignalPayload(
+  roomId: string,
+  type: 'offer' | 'answer' | 'candidate',
+  payload: any,
+  role: 'p1' | 'p2' = 'p1'
+): Promise<NetplayRoomStatus | null> {
+  const cleanId = roomId.trim().toLowerCase();
+  let room = inMemoryRooms.get(cleanId);
+  if (!room) {
+    room = (await getRoomStatus(cleanId)) || undefined;
+  }
+  const now = Date.now();
+  if (!room) {
+    room = {
+      roomId: cleanId,
+      p1Ready: true,
+      p2Joined: true,
+      p2Ready: true,
+      started: true,
+      createdAt: now,
+      updatedAt: now,
+      hostIceCandidates: [],
+      guestIceCandidates: []
+    };
+  }
+
+  const payloadStr = typeof payload === 'string' ? payload : JSON.stringify(payload);
+
+  if (type === 'offer') {
+    // When Host creates a new Offer, start a fresh WebRTC signaling handshake
+    room.hostOffer = payloadStr;
+    room.guestAnswer = undefined;
+    room.hostIceCandidates = [];
+    room.guestIceCandidates = [];
+    console.log(`[Netplay Signaling] 🌟 Registered new SDP Offer for room ${cleanId} (Host P1)`);
+  } else if (type === 'answer') {
+    room.guestAnswer = payloadStr;
+    console.log(`[Netplay Signaling] 🌟 Registered SDP Answer for room ${cleanId} (Guest P2)`);
+  } else if (type === 'candidate') {
+    if (role === 'p1') {
+      if (!room.hostIceCandidates) room.hostIceCandidates = [];
+      if (!room.hostIceCandidates.includes(payloadStr)) {
+        room.hostIceCandidates.push(payloadStr);
+      }
+      console.log(`[Netplay Signaling] 🧊 Saved Host ICE candidate #${room.hostIceCandidates.length} for room ${cleanId}`);
+    } else {
+      if (!room.guestIceCandidates) room.guestIceCandidates = [];
+      if (!room.guestIceCandidates.includes(payloadStr)) {
+        room.guestIceCandidates.push(payloadStr);
+      }
+      console.log(`[Netplay Signaling] 🧊 Saved Guest ICE candidate #${room.guestIceCandidates.length} for room ${cleanId}`);
+    }
+  }
+
+  room.updatedAt = now;
+  inMemoryRooms.set(cleanId, room);
+
+  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+  if (blobToken) {
+    const blobPath = `netplay-rooms/${cleanId}.json`;
+    put(blobPath, JSON.stringify(room), {
+      access: "public",
+      token: blobToken,
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: "application/json"
+    }).then(() => {
+      console.log(`[Netplay Signaling] Synced ${type} (${role}) for room ${cleanId} to Vercel Blob`);
+    }).catch(err => {
+      console.warn(`[Netplay Signaling] Failed to sync signal to Vercel Blob (${cleanId}):`, err);
+    });
+  }
+
+  return room;
+}
+
 

@@ -26,7 +26,10 @@ import {
   ExternalLink,
   Cloud,
   Crown,
-  Link2
+  Link2,
+  Radio,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 import { INITIAL_GAMES } from '../data/initialGames';
 import { GameItem } from '../types';
@@ -38,6 +41,8 @@ import { EditDescriptionModal } from './EditDescriptionModal';
 import { requestSafeAction } from '../utils/emulatorManager';
 import { copyTextToClipboard, getGameShareUrl } from '../utils/shareUtils';
 import { LoadingWordsSpinner } from './LoadingWordsSpinner';
+import { HostWebRTCSession, P2_KEY_MAPPINGS } from '../services/webrtcRemotePlay';
+import { GuestRemotePlayer } from './GuestRemotePlayer';
 
 export interface PresetRom {
   id: string;
@@ -315,6 +320,13 @@ export const EmulatorZone: React.FC = () => {
 
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const activeBlobUrlRef = useRef<string | null>(null);
+  const emulatorIframeRef = useRef<HTMLIFrameElement>(null);
+  const hostWebRTCSessionRef = useRef<HostWebRTCSession | null>(null);
+  const [hostP2Status, setHostP2Status] = useState<{
+    connected: boolean;
+    pingMs: number | null;
+    state: string;
+  }>({ connected: false, pingMs: null, state: 'idle' });
 
   // Helper to reliably and immediately scroll down to the emulator screen
   const scrollToEmulatorContainer = () => {
@@ -448,6 +460,11 @@ export const EmulatorZone: React.FC = () => {
       clearInterval(waitingPollTimerRef.current);
       waitingPollTimerRef.current = null;
     }
+    if (hostWebRTCSessionRef.current) {
+      hostWebRTCSessionRef.current.destroy();
+      hostWebRTCSessionRef.current = null;
+    }
+    setHostP2Status({ connected: false, pingMs: null, state: 'idle' });
     isNetplayInitializingRef.current = false;
     netplaySessionRef.current = null;
     autoLoadedKeyRef.current = '';
@@ -733,20 +750,19 @@ export const EmulatorZone: React.FC = () => {
 
             // Joiner watches for Host starting the game
             if (netplayWaitingState === 'joiner_waiting' && data.status.started) {
-              console.log(`🚀 [Netplay Joiner] Room [${cleanRoom}] has started! Launching core immediately with preloaded ROM...`);
+              console.log(`🚀 [Netplay Joiner] Room [${cleanRoom}] has started! Launching Guest Remote Player screen...`);
               if (waitingPollTimerRef.current) {
                 clearInterval(waitingPollTimerRef.current);
                 waitingPollTimerRef.current = null;
               }
               setNetplayWaitingState('idle');
-              const targetRom = preloadedBlobUrlRef.current || waitingGame.romUrl;
-              launchRom(
-                targetRom,
-                waitingGame.title,
-                waitingGame.core,
-                waitingGame.id,
-                { isNetplay: true, room: cleanRoom, role: 'p2' }
-              );
+              setCurrentRomName(waitingGame?.title || 'SNES Game');
+              setSelectedCore(waitingGame?.core || 'snes');
+              setCurrentGameId(waitingGame?.id || null);
+              setIsPlaying(true);
+              setActiveTab('play');
+              setIsLoadingRom(false);
+              scrollToEmulatorContainer();
             }
           }
         } else {
@@ -802,6 +818,116 @@ export const EmulatorZone: React.FC = () => {
       }
     };
   }, []);
+
+  // Host WebRTC Remote Play Streaming & P2 Input Dispatcher Effect
+  useEffect(() => {
+    if (!isPlaying || !isNetplayActive || netplayRole !== 'p1' || !netplayRoom) {
+      if (hostWebRTCSessionRef.current) {
+        hostWebRTCSessionRef.current.destroy();
+        hostWebRTCSessionRef.current = null;
+      }
+      setHostP2Status({ connected: false, pingMs: null, state: 'idle' });
+      return;
+    }
+
+    let isMounted = true;
+    let captureRetryTimeout: any = null;
+
+    const startHostStreaming = () => {
+      if (!isMounted) return;
+      const iframe = emulatorIframeRef.current;
+      if (!iframe) {
+        captureRetryTimeout = setTimeout(startHostStreaming, 500);
+        return;
+      }
+
+      try {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        const canvas = iframeDoc?.querySelector('canvas');
+        if (!canvas) {
+          // Canvas not ready yet, retry in 300ms
+          captureRetryTimeout = setTimeout(startHostStreaming, 300);
+          return;
+        }
+
+        console.log('[HostWebRTC Setup] 🎬 Canvas found in iframe. Capturing 60fps video stream...');
+        const videoStream = (canvas as any).captureStream
+          ? (canvas as any).captureStream(60)
+          : (canvas as any).mozCaptureStream?.(60);
+
+        if (!videoStream) {
+          console.warn('[HostWebRTC Setup] captureStream not supported on canvas.');
+          return;
+        }
+
+        const combinedStream = new MediaStream();
+        videoStream.getVideoTracks().forEach((vt: MediaStreamTrack) => combinedStream.addTrack(vt));
+
+        // Attach audio track if available from WebAudio interceptor
+        const audioDest = (iframe.contentWindow as any)?.__qgxAudioDest;
+        if (audioDest && audioDest.stream) {
+          const audioTracks = audioDest.stream.getAudioTracks();
+          if (audioTracks && audioTracks.length > 0) {
+            console.log('[HostWebRTC Setup] 🔊 Audio track found and attached to stream.');
+            combinedStream.addTrack(audioTracks[0]);
+          }
+        }
+
+        if (hostWebRTCSessionRef.current) {
+          hostWebRTCSessionRef.current.destroy();
+        }
+
+        const session = new HostWebRTCSession(netplayRoom, combinedStream);
+
+        // When Player 2 sends an input event over DataChannel:
+        session.onPlayer2Input = (action, button) => {
+          const keyInfo = P2_KEY_MAPPINGS[button];
+          if (keyInfo && emulatorIframeRef.current?.contentWindow) {
+            emulatorIframeRef.current.contentWindow.postMessage({
+              type: 'P2_INPUT',
+              action,
+              button,
+              keyInfo
+            }, '*');
+          }
+        };
+
+        session.onConnectionStateChange = (state, iceState) => {
+          console.log(`[HostWebRTC HUD] onConnectionStateChange -> state: "${state}", iceState: "${iceState}"`);
+          const isConn = state === 'connected' || iceState === 'connected' || iceState === 'completed';
+          setHostP2Status(prev => ({
+            ...prev,
+            connected: isConn,
+            state: isConn ? 'connected' : (iceState === 'disconnected' ? 'reconnecting' : state)
+          }));
+        };
+
+        session.onLatencyUpdate = (latency) => {
+          setHostP2Status(prev => ({
+            ...prev,
+            pingMs: latency
+          }));
+        };
+
+        session.start();
+        hostWebRTCSessionRef.current = session;
+      } catch (err) {
+        console.warn('[HostWebRTC Setup Error]:', err);
+      }
+    };
+
+    // Give iframe 800ms to boot up and create canvas before capturing
+    captureRetryTimeout = setTimeout(startHostStreaming, 800);
+
+    return () => {
+      isMounted = false;
+      if (captureRetryTimeout) clearTimeout(captureRetryTimeout);
+      if (hostWebRTCSessionRef.current) {
+        hostWebRTCSessionRef.current.destroy();
+        hostWebRTCSessionRef.current = null;
+      }
+    };
+  }, [isPlaying, isNetplayActive, netplayRole, netplayRoom]);
 
   // Reset or Reconnect active game without losing Netplay room or role
   const handleResetCurrentGame = () => {
@@ -1094,7 +1220,6 @@ export const EmulatorZone: React.FC = () => {
 
     const effectiveRomUrl = normalizeRomUrl(currentRomUrl);
     const resolvedCore = resolveEmulatorCore(selectedCore || 'snes');
-    const safeGameId = currentGameId || (currentRomName ? currentRomName.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'qgx-snes-game');
 
     return `<!DOCTYPE html>
 <html>
@@ -1128,11 +1253,36 @@ export const EmulatorZone: React.FC = () => {
 <body>
   <div id="ejs-game-container"></div>
   <script>
+    // 0. AudioContext Interceptor for WebRTC MediaStream Audio Capture
+    (function() {
+      var OrigAudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (OrigAudioCtx) {
+        window.__qgxAudioDest = null;
+        window.AudioContext = function() {
+          var ctx = new OrigAudioCtx();
+          try {
+            var dest = ctx.createMediaStreamDestination();
+            window.__qgxAudioDest = dest;
+            var origConnect = AudioNode.prototype.connect;
+            AudioNode.prototype.connect = function(target) {
+              if (target === ctx.destination && window.__qgxAudioDest) {
+                try { origConnect.call(this, window.__qgxAudioDest); } catch(e) {}
+              }
+              return origConnect.apply(this, arguments);
+            };
+          } catch(err) {
+            console.warn('[Audio Interceptor Error]:', err);
+          }
+          return ctx;
+        };
+      }
+    })();
+
     console.group("🎮 [EmulatorJS Diagnostic]");
     console.log("➡️ Target Game:", ${JSON.stringify(currentRomName || 'Quán Game Xóm SNES ROM')});
     console.log("➡️ Selected Core:", ${JSON.stringify(selectedCore)}, "-> Resolved Core:", ${JSON.stringify(resolvedCore)});
     console.log("➡️ Effective ROM URL:", ${JSON.stringify(effectiveRomUrl)});
-    ${isNetplayActive && netplayRoom.trim() ? `console.log("🌐 Netplay Active:", ${JSON.stringify(netplayRoom.trim())}, "Role:", ${JSON.stringify(netplayRole)});` : ''}
+    ${isNetplayActive && netplayRoom.trim() ? `console.log("🌐 Netplay Remote Play Active (Room ${JSON.stringify(netplayRoom.trim())}, Host P1)");` : ''}
     console.groupEnd();
 
     // 1. EmulatorJS Core Configuration - Injected synchronously before loader.js
@@ -1143,19 +1293,42 @@ export const EmulatorZone: React.FC = () => {
     window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
     window.EJS_startOnLoaded = true;
     window.EJS_color = '#f59e0b';
-    ${isNetplayActive && netplayRoom.trim() ? `
-    // 2. Netplay Simultaneous Boot Config (Host P1 & Joiner P2 Synchronization)
-    window.EJS_netplay = true;
-    window.EJS_netplayUrl = 'wss://netplay.emulatorjs.org';
-    window.EJS_room = ${JSON.stringify(netplayRoom.trim())};
-    window.EJS_gameId = ${JSON.stringify(safeGameId)};
-    window.EJS_playerName = ${JSON.stringify(netplayRole === 'p1' ? 'Chủ Phòng (P1)' : 'Khách Tham Gia (P2)')};
-    window.EJS_playerNumber = ${netplayRole === 'p1' ? 1 : 2};
-    ` : ''}
+
+    // 2. Default Controls for Player 1 and Player 2
+    window.EJS_defaultControls = {
+      0: { // Player 1 (Host Keyboard & Gamepad 1)
+        0: { value: 'z', value2: 'BUTTON_1' }, // B
+        1: { value: 'a', value2: 'BUTTON_3' }, // Y
+        2: { value: 'Shift', value2: 'BUTTON_8' }, // SELECT
+        3: { value: 'Enter', value2: 'BUTTON_9' }, // START
+        4: { value: 'ArrowUp', value2: 'DPAD_UP' }, // UP
+        5: { value: 'ArrowDown', value2: 'DPAD_DOWN' }, // DOWN
+        6: { value: 'ArrowLeft', value2: 'DPAD_LEFT' }, // LEFT
+        7: { value: 'ArrowRight', value2: 'DPAD_RIGHT' }, // RIGHT
+        8: { value: 'x', value2: 'BUTTON_0' }, // A
+        9: { value: 's', value2: 'BUTTON_2' }, // X
+        10: { value: 'q', value2: 'BUTTON_4' }, // L
+        11: { value: 'w', value2: 'BUTTON_5' }  // R
+      },
+      1: { // Player 2 (Remote Guest via WebRTC DataChannel)
+        0: { value: 'k', value2: 'BUTTON_1' }, // B -> KeyK
+        1: { value: 'j', value2: 'BUTTON_3' }, // Y -> KeyJ
+        2: { value: 'b', value2: 'BUTTON_8' }, // SELECT -> KeyB
+        3: { value: 'v', value2: 'BUTTON_9' }, // START -> KeyV
+        4: { value: 'w', value2: 'DPAD_UP' }, // UP -> KeyW
+        5: { value: 's', value2: 'DPAD_DOWN' }, // DOWN -> KeyS
+        6: { value: 'a', value2: 'DPAD_LEFT' }, // LEFT -> KeyA
+        7: { value: 'd', value2: 'DPAD_RIGHT' }, // RIGHT -> KeyD
+        8: { value: 'l', value2: 'BUTTON_0' }, // A -> KeyL
+        9: { value: 'i', value2: 'BUTTON_2' }, // X -> KeyI
+        10: { value: 'u', value2: 'BUTTON_4' }, // L -> KeyU
+        11: { value: 'o', value2: 'BUTTON_5' }  // R -> KeyO
+      }
+    };
 
     // 3. Detailed Callbacks & Error Listeners
     window.EJS_onLoad = function() {
-      console.log("✅ [EmulatorJS] System Core & Netplay configuration loaded successfully.");
+      console.log("✅ [EmulatorJS] System Core & Controls loaded successfully.");
     };
 
     window.EJS_onGameStart = function() {
@@ -1190,6 +1363,24 @@ export const EmulatorZone: React.FC = () => {
           if (container) container.innerHTML = "";
           document.body.innerHTML = "";
         } catch(err) {}
+      } else if (e.data && e.data.type === "P2_INPUT") {
+        // 5. Dispatch Player 2 Remote Input to Emulator
+        var action = e.data.action;
+        var keyInfo = e.data.keyInfo;
+        if (keyInfo) {
+          var keyEvt = new KeyboardEvent(action, {
+            key: keyInfo.key,
+            code: keyInfo.code,
+            keyCode: keyInfo.keyCode,
+            which: keyInfo.keyCode,
+            bubbles: true,
+            cancelable: true
+          });
+          document.dispatchEvent(keyEvt);
+          window.dispatchEvent(keyEvt);
+          var el = document.getElementById("ejs-game-container");
+          if (el) el.dispatchEvent(keyEvt);
+        }
       }
     });
   </script>
@@ -2081,14 +2272,37 @@ export const EmulatorZone: React.FC = () => {
               </div>
             )}
 
-            {isPlaying && currentRomUrl && !romError ? (
-              <iframe
-                key={`${currentRomUrl}-${selectedCore}-${isNetplayActive ? netplayRoom : 'solo'}-${netplayRole}`}
-                srcDoc={iframeSrcDoc}
-                className="w-full h-full border-0"
-                allow="autoplay; gamepad; fullscreen; microphone"
-                title="Retro Emulator Engine"
+            {isPlaying && isNetplayActive && netplayRole === 'p2' ? (
+              <GuestRemotePlayer
+                roomId={netplayRoom}
+                gameTitle={currentRomName || waitingGame?.title || 'SNES Game'}
+                onExit={terminateActiveEmulator}
               />
+            ) : isPlaying && currentRomUrl && !romError ? (
+              <div className="relative w-full h-full">
+                {/* Host P2 Connection Floating HUD */}
+                {isNetplayActive && netplayRole === 'p1' && (
+                  <div className="absolute top-3 right-3 z-30 px-3 py-1.5 rounded-xl bg-slate-950/95 border border-slate-700 backdrop-blur-md flex items-center gap-2 text-xs font-mono shadow-2xl">
+                    <div className={`w-2.5 h-2.5 rounded-full ${hostP2Status.connected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400 animate-ping'}`} />
+                    <span className="font-bold text-slate-200">
+                      {hostP2Status.connected ? 'Khách (P2) Đã Kết Nối' : 'Đang Đợi Khách (P2) Vào...'}
+                    </span>
+                    {hostP2Status.pingMs !== null && (
+                      <span className="text-emerald-400 font-bold">
+                        • {hostP2Status.pingMs} ms
+                      </span>
+                    )}
+                  </div>
+                )}
+                <iframe
+                  ref={emulatorIframeRef}
+                  key={`${currentRomUrl}-${selectedCore}-${isNetplayActive ? netplayRoom : 'solo'}-${netplayRole}`}
+                  srcDoc={iframeSrcDoc}
+                  className="w-full h-full border-0"
+                  allow="autoplay; gamepad; fullscreen; microphone"
+                  title="Retro Emulator Engine"
+                />
+              </div>
             ) : !isLoadingRom && !romError ? (
               <div className="text-center p-8 text-slate-500 font-mono text-xs space-y-3">
                 <Gamepad2 className="w-10 h-10 text-slate-700 mx-auto" />
