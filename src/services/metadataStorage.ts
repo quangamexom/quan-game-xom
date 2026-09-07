@@ -33,9 +33,11 @@ export interface PersistentGameCard {
 // Canonical database filename on Vercel Blob Storage
 export const GAMES_DATABASE_BLOB_PATH = "games-database.json";
 export const LEGACY_METADATA_PATH = "roms-metadata/games-library.json";
+export const LOGO_SETTINGS_BLOB_PATH = "logo-settings.json";
 
 // Cache in-memory for fast server responses
 let cachedDatabaseUrl: string | null = null;
+let cachedLogoUrl: string | null = null;
 
 /**
  * Get fallback initial games array from local files (initialGames.json, games-library.json, googleSheetGames.json)
@@ -560,4 +562,97 @@ export async function syncAllBlobsToLibrary(): Promise<SyncBlobsResult> {
     };
   }
 }
+
+/**
+ * Get current custom logo URL with persistent Vercel Blob check & local fallback
+ */
+export async function getCustomLogoUrl(): Promise<string> {
+  const defaultLogoUrl = "/assets/logo/logo-qgx-default.png";
+  if (cachedLogoUrl) return cachedLogoUrl;
+
+  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+  if (blobToken) {
+    try {
+      const { blobs } = await list({ token: blobToken });
+      const logoSettingBlob = blobs.find(b => b.pathname === LOGO_SETTINGS_BLOB_PATH || b.pathname.endsWith("logo-settings.json"));
+      if (logoSettingBlob) {
+        const res = await fetch(`${logoSettingBlob.url}?t=${Date.now()}`, {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.logoUrl) {
+            cachedLogoUrl = data.logoUrl;
+            return data.logoUrl;
+          }
+        }
+      }
+    } catch (blobErr) {
+      console.warn("[getCustomLogoUrl Vercel Blob error]:", blobErr);
+    }
+  }
+
+  // Fallback: Read local src/data/customLogo.ts
+  try {
+    const customLogoPath = path.join(process.cwd(), "src", "data", "customLogo.ts");
+    if (fs.existsSync(customLogoPath)) {
+      const content = fs.readFileSync(customLogoPath, "utf-8");
+      const match = content.match(/(?:OFFICIAL_LOGO_URL|CUSTOM_LOGO_URL)\s*=\s*['"]([^'"]+)['"]/);
+      if (match && match[1]) {
+        cachedLogoUrl = match[1];
+        return match[1];
+      }
+    }
+  } catch (fsErr) {}
+
+  return defaultLogoUrl;
+}
+
+/**
+ * Save custom logo URL persistently to Vercel Blob (logo-settings.json) and local files
+ */
+export async function saveCustomLogoUrl(logoUrl: string): Promise<boolean> {
+  cachedLogoUrl = logoUrl;
+  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+  let savedToBlob = false;
+
+  // 1. Save to Vercel Blob as logo-settings.json
+  if (blobToken) {
+    try {
+      const payload = JSON.stringify({
+        logoUrl,
+        updatedAt: new Date().toISOString()
+      }, null, 2);
+
+      await put(LOGO_SETTINGS_BLOB_PATH, Buffer.from(payload), {
+        access: "public",
+        token: blobToken,
+        addRandomSuffix: false,
+        allowOverwrite: true,
+        contentType: "application/json"
+      });
+      console.log(`[Storage Helper] Successfully saved logo settings to Vercel Blob (${LOGO_SETTINGS_BLOB_PATH}): ${logoUrl}`);
+      savedToBlob = true;
+    } catch (blobErr) {
+      console.warn("[Storage Helper] Failed to save logo-settings.json to Vercel Blob:", blobErr);
+    }
+  }
+
+  // 2. Safe local file update (never throws on read-only serverless filesystem)
+  try {
+    const customLogoFilePath = path.join(process.cwd(), "src", "data", "customLogo.ts");
+    const logoFileContent = `export const OFFICIAL_LOGO_URL = '${logoUrl.replace(/'/g, "\\'")}';\nexport const DEFAULT_LOGO_URL = '/assets/logo/logo-qgx-default.png';\nexport const CUSTOM_LOGO_URL = '${logoUrl.replace(/'/g, "\\'")}';\n`;
+    const dataDir = path.dirname(customLogoFilePath);
+    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+    fs.writeFileSync(customLogoFilePath, logoFileContent, "utf-8");
+  } catch (fsErr) {
+    // Expected on read-only serverless environments
+  }
+
+  return savedToBlob;
+}
+
 

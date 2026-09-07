@@ -7,6 +7,9 @@ interface AdminLogoModalProps {
   onClose: () => void;
 }
 
+import { upload } from '@vercel/blob/client';
+import { getAdminAuthHeaders } from '../hooks/useAdminMode';
+
 export const AdminLogoModal: React.FC<AdminLogoModalProps> = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState<'file' | 'url'>('file');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -51,33 +54,68 @@ export const AdminLogoModal: React.FC<AdminLogoModalProps> = ({ isOpen, onClose 
   };
 
   const handleSave = async () => {
-    const finalImageSrc = activeTab === 'file' ? filePreview : urlInput.trim();
+    let finalImageSrc = activeTab === 'file' ? filePreview : urlInput.trim();
 
-    if (!finalImageSrc) {
+    if (!finalImageSrc && !selectedFile) {
       setErrorMsg(activeTab === 'file' ? 'Vui lòng chọn một file ảnh từ máy tính.' : 'Vui lòng dán đường dẫn URL hợp lệ.');
       return;
     }
 
     setIsSaving(true);
-    setStatusMessage('Đang lưu và đồng bộ Logo...');
+    setStatusMessage('Đang tải và lưu Logo lên Vercel Cloud...');
     setErrorMsg(null);
 
     try {
+      let directBlobUrl: string | undefined = undefined;
+
+      // 1. If file uploaded, attempt direct client upload to Vercel Blob first
+      if (activeTab === 'file' && selectedFile) {
+        try {
+          const ext = selectedFile.name.split('.').pop() || 'png';
+          const blobPath = `logos/logo-qgx-${Date.now()}.${ext}`;
+          setStatusMessage('Đang tải ảnh logo lên Vercel Blob...');
+          
+          const newBlob = await upload(blobPath, selectedFile, {
+            access: 'public',
+            handleUploadUrl: '/api/admin/blob/client-upload'
+          });
+          if (newBlob && newBlob.url) {
+            directBlobUrl = newBlob.url;
+            finalImageSrc = newBlob.url;
+          }
+        } catch (clientBlobErr) {
+          console.warn('[Direct Logo Blob Upload Fallback]:', clientBlobErr);
+          // Fall back to sending base64 to /api/save-logo
+        }
+      }
+
+      setStatusMessage('Đang đồng bộ cấu hình Logo trên hệ thống...');
+
       const res = await fetch('/api/save-logo', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...getAdminAuthHeaders()
+        },
         body: JSON.stringify({
-          logoUrl: activeTab === 'url' ? urlInput.trim() : undefined,
-          fileData: activeTab === 'file' ? filePreview : undefined
+          logoUrl: directBlobUrl || (activeTab === 'url' ? urlInput.trim() : undefined),
+          fileData: !directBlobUrl && activeTab === 'file' ? filePreview : undefined
         })
       });
 
       const data = await res.json();
 
       if (res.ok && data.success) {
+        const savedUrl = data.logoUrl || finalImageSrc;
         setStatusMessage(data.message || 'Đã cập nhật Logo thành công!');
+        
+        // Save to local cache for instant load
+        if (typeof window !== 'undefined' && savedUrl) {
+          localStorage.setItem('qgx_custom_logo', savedUrl);
+        }
+
         window.dispatchEvent(new CustomEvent('qgx_logo_updated', {
-          detail: { logoUrl: data.logoUrl || finalImageSrc }
+          detail: { logoUrl: savedUrl }
         }));
 
         setTimeout(() => {

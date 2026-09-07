@@ -3,7 +3,8 @@ import {
   X, Upload, Cloud, Copy, Check, Trash2, Play, 
   Eye, EyeOff, FileCode, AlertCircle, RefreshCw, HardDrive, Sparkles, Gamepad2, CheckCircle2 
 } from 'lucide-react';
-import { useAdminMode } from '../hooks/useAdminMode';
+import { upload } from '@vercel/blob/client';
+import { useAdminMode, getAdminAuthHeaders } from '../hooks/useAdminMode';
 
 export interface AdminBlobGameItem {
   id: string;
@@ -98,7 +99,8 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
+          'Pragma': 'no-cache',
+          ...getAdminAuthHeaders()
         }
       });
       const data = await res.json();
@@ -122,7 +124,10 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
     try {
       const res = await fetch('/api/admin/blob/sync-all', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          ...getAdminAuthHeaders()
+        }
       });
       const data = await res.json();
       if (data.success) {
@@ -182,21 +187,87 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
     }
 
     setIsUploading(true);
-    setUploadProgress('Đang đọc dữ liệu file ROM...');
+    setUploadProgress('Chuẩn bị kết nối Vercel Blob Cloud...');
     setErrorMessage(null);
     setSuccessMessage(null);
 
     try {
+      let uploadedBlobUrl = '';
+      const cleanFilename = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const blobPath = `roms/${cleanFilename}`;
+
+      // 1. Direct Client Upload to Vercel Blob (bypasses 4.5MB Serverless function limit)
+      try {
+        setUploadProgress('Đang tải trực tiếp lên Vercel Blob Cloud...');
+        const newBlob = await upload(blobPath, selectedFile, {
+          access: 'public',
+          handleUploadUrl: '/api/admin/blob/client-upload',
+          headers: getAdminAuthHeaders(),
+          onUploadProgress: (progress) => {
+            const pct = Math.round(progress.percentage);
+            const loadedMb = (progress.loaded / (1024 * 1024)).toFixed(1);
+            const totalMb = (progress.total / (1024 * 1024)).toFixed(1);
+            setUploadProgress(`Đang tải lên Vercel Blob: ${pct}% (${loadedMb}MB / ${totalMb}MB)...`);
+          }
+        });
+
+        if (newBlob && newBlob.url) {
+          uploadedBlobUrl = newBlob.url;
+        }
+      } catch (clientUploadErr: any) {
+        console.warn('[Direct Blob Upload Fallback to Server API]:', clientUploadErr);
+      }
+
+      // 2. If direct upload succeeded: Register game metadata in games-database.json
+      if (uploadedBlobUrl) {
+        setUploadProgress('Đang tạo thẻ Game và cập nhật games-database.json...');
+        const regRes = await fetch('/api/admin/blob/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAdminAuthHeaders()
+          },
+          body: JSON.stringify({
+            filename: selectedFile.name,
+            romUrl: uploadedBlobUrl,
+            size: selectedFile.size,
+            title: displayTitle.trim(),
+            system: selectedSystem
+          })
+        });
+
+        const regData = await regRes.json();
+        if (regRes.ok && regData.success) {
+          setUploadedGame(regData.game || {
+            title: displayTitle.trim(),
+            system: selectedSystem,
+            romUrl: uploadedBlobUrl
+          });
+          setSuccessMessage(`Tải lên thành công! Game "${displayTitle}" đã tự động xuất hiện trong Thư Viện Game và Khu Vực Giả Lập.`);
+          setSelectedFile(null);
+          setDisplayTitle('');
+          loadBlobs();
+          if (onGameUpdated) onGameUpdated();
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('qgx_games_updated'));
+          }
+          return;
+        } else {
+          throw new Error(regData.error || 'Lỗi khi đăng ký thẻ game vào cơ sở dữ liệu.');
+        }
+      }
+
+      // 3. Fallback: Upload via Server API (for small files or offline dev)
+      setUploadProgress('Đang tải lên qua Server API...');
       const reader = new FileReader();
       reader.onload = async () => {
         const base64Data = reader.result as string;
-        setUploadProgress('Đang tải lên Vercel Blob & Tự động tạo thẻ Game...');
-
         try {
           const res = await fetch('/api/admin/blob/upload', {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              ...getAdminAuthHeaders()
             },
             body: JSON.stringify({
               filename: selectedFile.name,
@@ -225,7 +296,6 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
             setSelectedFile(null);
             setDisplayTitle('');
             loadBlobs();
-            // Notify parent components to reload game catalogs
             if (onGameUpdated) onGameUpdated();
             if (typeof window !== 'undefined') {
               window.dispatchEvent(new CustomEvent('qgx_games_updated'));
@@ -245,12 +315,14 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
       reader.onerror = () => {
         setErrorMessage('Không thể đọc file từ thiết bị.');
         setIsUploading(false);
+        setUploadProgress('');
       };
 
       reader.readAsDataURL(selectedFile);
     } catch (err: any) {
       setErrorMessage(err.message || 'Lỗi xử lý file.');
       setIsUploading(false);
+      setUploadProgress('');
     }
   };
 
@@ -265,7 +337,10 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
     try {
       const res = await fetch('/api/admin/games/toggle-visibility', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...getAdminAuthHeaders()
+        },
         body: JSON.stringify({ id, isHidden: !currentHidden })
       });
       const data = await res.json();
@@ -291,7 +366,10 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
     try {
       const res = await fetch('/api/admin/blob/delete', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...getAdminAuthHeaders()
+        },
         body: JSON.stringify({ url, id })
       });
       const data = await res.json();

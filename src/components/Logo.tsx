@@ -14,7 +14,13 @@ export const Logo: React.FC<LogoProps> = ({
   showText = true,
   onClick
 }) => {
-  const [imgSrc, setImgSrc] = useState<string>(OFFICIAL_LOGO_URL || CUSTOM_LOGO_URL || '/assets/logo/logo-qgx-default.png');
+  const [imgSrc, setImgSrc] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem('qgx_custom_logo');
+      if (cached) return cached;
+    }
+    return OFFICIAL_LOGO_URL || CUSTOM_LOGO_URL || '/assets/logo/logo-qgx-default.png';
+  });
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
@@ -32,6 +38,9 @@ export const Logo: React.FC<LogoProps> = ({
           if (data.success && data.logoUrl) {
             setImgSrc(data.logoUrl);
             setHasError(false);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('qgx_custom_logo', data.logoUrl);
+            }
           }
         })
         .catch(() => {});

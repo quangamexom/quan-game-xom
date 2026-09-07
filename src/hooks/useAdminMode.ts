@@ -1,19 +1,37 @@
 import { useState, useEffect } from 'react';
 
+const ADMIN_STORAGE_KEY = 'qgx_is_admin_mode';
+const ADMIN_PASSWORD_KEY = 'qgx_admin_pwd';
+
+export function getAdminAuthHeaders(): Record<string, string> {
+  const pwd = typeof window !== 'undefined' ? localStorage.getItem(ADMIN_PASSWORD_KEY) || sessionStorage.getItem('adminPassword') || '' : '';
+  return {
+    'x-admin-password': pwd,
+    ...(pwd ? { 'Authorization': `Bearer ${pwd}` } : {})
+  };
+}
+
 export function useAdminMode() {
   const [isAdmin, setIsAdmin] = useState<boolean>(() => {
-    const stored = sessionStorage.getItem('isAdminMode');
-    return stored === 'true';
+    if (typeof window === 'undefined') return false;
+    const local = localStorage.getItem(ADMIN_STORAGE_KEY);
+    const session = sessionStorage.getItem('isAdminMode');
+    return local === 'true' || session === 'true';
   });
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const handleModeChange = () => {
-      setIsAdmin(sessionStorage.getItem('isAdminMode') === 'true');
+      const local = localStorage.getItem(ADMIN_STORAGE_KEY);
+      const session = sessionStorage.getItem('isAdminMode');
+      setIsAdmin(local === 'true' || session === 'true');
     };
+
     window.addEventListener('admin-mode-changed', handleModeChange);
+    window.addEventListener('storage', handleModeChange);
     return () => {
       window.removeEventListener('admin-mode-changed', handleModeChange);
+      window.removeEventListener('storage', handleModeChange);
     };
   }, []);
 
@@ -30,7 +48,10 @@ export function useAdminMode() {
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
+          localStorage.setItem(ADMIN_STORAGE_KEY, 'true');
+          localStorage.setItem(ADMIN_PASSWORD_KEY, password);
           sessionStorage.setItem('isAdminMode', 'true');
+          sessionStorage.setItem('adminPassword', password);
           setIsAdmin(true);
           window.dispatchEvent(new Event('admin-mode-changed'));
           showToast('🔓 Đã bật quyền CHỦ QUÁN / Admin thành công!');
@@ -45,7 +66,10 @@ export function useAdminMode() {
 
     // Client-side verification fallback for static hostings (such as Vercel)
     if (password === defaultPassword || password === '20266Namm$$@') {
+      localStorage.setItem(ADMIN_STORAGE_KEY, 'true');
+      localStorage.setItem(ADMIN_PASSWORD_KEY, password);
       sessionStorage.setItem('isAdminMode', 'true');
+      sessionStorage.setItem('adminPassword', password);
       setIsAdmin(true);
       window.dispatchEvent(new Event('admin-mode-changed'));
       showToast('🔓 Đã bật quyền CHỦ QUÁN / Admin thành công!');
@@ -56,7 +80,10 @@ export function useAdminMode() {
   };
 
   const disableAdmin = () => {
-    sessionStorage.setItem('isAdminMode', 'false');
+    localStorage.removeItem(ADMIN_STORAGE_KEY);
+    localStorage.removeItem(ADMIN_PASSWORD_KEY);
+    sessionStorage.removeItem('isAdminMode');
+    sessionStorage.removeItem('adminPassword');
     setIsAdmin(false);
     window.dispatchEvent(new Event('admin-mode-changed'));
     showToast('🔒 Đã thoát chế độ CHỦ QUÁN / Admin.');

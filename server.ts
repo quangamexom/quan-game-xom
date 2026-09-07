@@ -3,6 +3,7 @@ import path from "path";
 import fs from "fs";
 import { GoogleGenAI } from "@google/genai";
 import { put, list, del } from "@vercel/blob";
+import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { 
   readGamesLibrary, 
   writeGamesLibrary, 
@@ -12,8 +13,11 @@ import {
   uploadImageToBlob,
   syncAllBlobsToLibrary,
   getGamesDatabaseBlobUrl,
-  GAMES_DATABASE_BLOB_PATH
-} from "./src/services/metadataStorage";
+  getCustomLogoUrl,
+  saveCustomLogoUrl,
+  GAMES_DATABASE_BLOB_PATH,
+  LOGO_SETTINGS_BLOB_PATH
+} from "./src/services/metadataStorage.ts";
 import {
   createNetplayRoom,
   joinNetplayRoom,
@@ -22,7 +26,7 @@ import {
   getRoomStatus,
   deleteNetplayRoom,
   saveSignalPayload
-} from "./src/services/netplayRoomStorage";
+} from "./src/services/netplayRoomStorage.ts";
 
 const app = express();
 const PORT = 3000;
@@ -375,7 +379,11 @@ app.post("/api/save-game-art", async (req, res) => {
       );
     }
 
-    fs.writeFileSync(artMapPath, fileContent, "utf-8");
+    try {
+      fs.writeFileSync(artMapPath, fileContent, "utf-8");
+    } catch (diskErr) {
+      console.warn("[Save Game Art local disk write warning]:", diskErr);
+    }
 
     // C2. Also synchronize cover/banner directly into games-database.json on Vercel Blob
     try {
@@ -466,20 +474,15 @@ app.get("/api/get-server-art-map", (req, res) => {
   }
 });
 
-// Get Current Custom Logo
-app.get("/api/get-logo", (req, res) => {
+// Get Current Custom Logo (Persistent Cloud & Local Fallback)
+app.get("/api/get-logo", async (req, res) => {
   try {
-    const customLogoPath = path.join(process.cwd(), "src/data/customLogo.ts");
+    const logoUrl = await getCustomLogoUrl();
     const defaultLogoUrl = "/assets/logo/logo-qgx-default.png";
-    let logoUrl = defaultLogoUrl;
 
-    if (fs.existsSync(customLogoPath)) {
-      const content = fs.readFileSync(customLogoPath, "utf-8");
-      const match = content.match(/(?:OFFICIAL_LOGO_URL|CUSTOM_LOGO_URL)\s*=\s*['"]([^'"]+)['"]/);
-      if (match && match[1]) {
-        logoUrl = match[1];
-      }
-    }
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
 
     return res.json({ success: true, logoUrl, defaultLogoUrl });
   } catch (err: any) {
@@ -487,7 +490,7 @@ app.get("/api/get-logo", (req, res) => {
   }
 });
 
-// Save Custom Logo & Commit to Local Disk & GitHub
+// Save Custom Logo & Commit to Vercel Blob, Local Disk & GitHub
 app.post("/api/save-logo", async (req, res) => {
   try {
     const { logoUrl, fileData } = req.body;
@@ -515,19 +518,23 @@ app.post("/api/save-logo", async (req, res) => {
             finalLogoUrl = blobUrl;
           }
 
-          // 2. Local disk fallback
-          const publicLogoDir = path.join(process.cwd(), "public/assets/logo");
-          const srcLogoDir = path.join(process.cwd(), "src/assets/logo");
-          
-          if (!fs.existsSync(publicLogoDir)) fs.mkdirSync(publicLogoDir, { recursive: true });
-          if (!fs.existsSync(srcLogoDir)) fs.mkdirSync(srcLogoDir, { recursive: true });
+          // 2. Local disk fallback (safe)
+          try {
+            const publicLogoDir = path.join(process.cwd(), "public/assets/logo");
+            const srcLogoDir = path.join(process.cwd(), "src/assets/logo");
+            
+            if (!fs.existsSync(publicLogoDir)) fs.mkdirSync(publicLogoDir, { recursive: true });
+            if (!fs.existsSync(srcLogoDir)) fs.mkdirSync(srcLogoDir, { recursive: true });
 
-          const filename = `logo-uploaded.${ext}`;
-          fs.writeFileSync(path.join(publicLogoDir, filename), buffer);
-          fs.writeFileSync(path.join(srcLogoDir, filename), buffer);
+            const filename = `logo-uploaded.${ext}`;
+            fs.writeFileSync(path.join(publicLogoDir, filename), buffer);
+            fs.writeFileSync(path.join(srcLogoDir, filename), buffer);
 
-          if (!blobUrl) {
-            finalLogoUrl = `/assets/logo/${filename}?t=${Date.now()}`;
+            if (!blobUrl) {
+              finalLogoUrl = `/assets/logo/${filename}?t=${Date.now()}`;
+            }
+          } catch (localWriteErr) {
+            console.warn("[Save Logo local file write fallback warning]:", localWriteErr);
           }
         }
       } catch (fileWriteErr) {
@@ -535,11 +542,8 @@ app.post("/api/save-logo", async (req, res) => {
       }
     }
 
-    // Always update local src/data/customLogo.ts
-    const customLogoFilePath = path.join(process.cwd(), "src/data/customLogo.ts");
-    const logoFileContent = `export const OFFICIAL_LOGO_URL = '${finalLogoUrl.replace(/'/g, "\\'")}';\nexport const DEFAULT_LOGO_URL = '/assets/logo/logo-qgx-default.png';\nexport const CUSTOM_LOGO_URL = '${finalLogoUrl.replace(/'/g, "\\'")}';\n`;
-    
-    fs.writeFileSync(customLogoFilePath, logoFileContent, "utf-8");
+    // Persistently save logo to Vercel Blob (logo-settings.json) & safe disk update
+    await saveCustomLogoUrl(finalLogoUrl);
 
     let savedToGithub = false;
     const githubToken = process.env.GITHUB_TOKEN;
@@ -547,6 +551,8 @@ app.post("/api/save-logo", async (req, res) => {
 
     if (githubToken && githubRepo) {
       try {
+        const customLogoFilePath = path.join(process.cwd(), "src/data/customLogo.ts");
+        const logoFileContent = `export const OFFICIAL_LOGO_URL = '${finalLogoUrl.replace(/'/g, "\\'")}';\nexport const DEFAULT_LOGO_URL = '/assets/logo/logo-qgx-default.png';\nexport const CUSTOM_LOGO_URL = '${finalLogoUrl.replace(/'/g, "\\'")}';\n`;
         const ghUrl = `https://api.github.com/repos/${githubRepo}/contents/src/data/customLogo.ts`;
         let sha: string | undefined;
 
@@ -592,7 +598,7 @@ app.post("/api/save-logo", async (req, res) => {
       logoUrl: finalLogoUrl,
       message: savedToGithub
         ? "Đã lưu logo và commit lên GitHub thành công!"
-        : "Đã cập nhật logo thành công trên server!"
+        : "Đã cập nhật logo thành công trên Cloud và Server!"
     });
   } catch (err: any) {
     console.error("[Save Logo Error]:", err);
@@ -711,6 +717,111 @@ app.get(["/api/games-database", "/api/games/admin-library", "/api/games/library"
   } catch (err: any) {
     console.error("[Admin Library API Error]:", err);
     return res.status(500).json({ success: false, error: err.message || "Failed to load admin library" });
+  }
+});
+
+// Direct Client Upload to Vercel Blob (bypasses 4.5MB serverless function limit, supports up to 500MB)
+app.post("/api/admin/blob/client-upload", async (req, res) => {
+  const body = req.body as HandleUploadBody;
+  try {
+    const jsonResponse = await handleUpload({
+      body,
+      request: req,
+      onBeforeGenerateToken: async (pathname, clientPayload) => {
+        return {
+          allowedContentTypes: [
+            "application/octet-stream",
+            "application/zip",
+            "application/x-zip-compressed",
+            "application/x-7z-compressed",
+            "application/gzip",
+            "image/png",
+            "image/jpeg",
+            "image/svg+xml",
+            "image/webp",
+            "image/gif"
+          ],
+          maximumSizeInBytes: 500 * 1024 * 1024, // 500 MB
+          addRandomSuffix: false,
+          allowOverwrite: true,
+          tokenPayload: JSON.stringify({ pathname, clientPayload }),
+        };
+      },
+      onUploadCompleted: async ({ blob, tokenPayload }) => {
+        console.log(`[Vercel Blob Client Direct Upload Completed]: ${blob.url}`);
+      },
+    });
+    return res.json(jsonResponse);
+  } catch (err: any) {
+    console.error("[Vercel Blob Client Upload Error]:", err);
+    return res.status(400).json({ error: (err as Error).message });
+  }
+});
+
+// Register newly uploaded ROM in games-database.json
+app.post("/api/admin/blob/register", async (req, res) => {
+  try {
+    const { filename, romUrl, size, title, system, coverArt } = req.body;
+    if (!romUrl) {
+      return res.status(400).json({ success: false, error: "Thiếu đường dẫn ROM (romUrl)!" });
+    }
+
+    const selectedSystem = (system || 'snes').toLowerCase();
+    const systemMeta = getSystemMeta(selectedSystem);
+    const safeFilename = filename || romUrl.split('/').pop() || 'game.sfc';
+
+    const displayTitle = (title && title.trim().length > 0)
+      ? title.trim()
+      : safeFilename.replace(/\.[^/.]+$/, '').replace(/[_.-]+/g, ' ').trim();
+
+    let formattedSize = 'N/A';
+    if (typeof size === 'number' && size > 0) {
+      formattedSize = size < 1024 * 1024
+        ? `${(size / 1024).toFixed(1)} KB`
+        : `${(size / (1024 * 1024)).toFixed(2)} MB`;
+    } else if (typeof size === 'string') {
+      formattedSize = size;
+    }
+
+    const uniqueId = `blob-rom-${Date.now()}-${displayTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+
+    const newGameCard = {
+      id: uniqueId,
+      title: displayTitle,
+      subtitle: `${systemMeta.systemName} • Vercel Blob Cloud ROM`,
+      system: selectedSystem,
+      systemName: systemMeta.systemName,
+      romUrl,
+      coverArt: coverArt || systemMeta.cover,
+      backdropArt: systemMeta.backdrop,
+      platforms: [systemMeta.platform],
+      language: "Gốc / Tiếng Anh ⭐",
+      hasVietHoa: false,
+      releaseYear: new Date().getFullYear(),
+      fileSize: formattedSize,
+      rating: 5.0,
+      genres: [systemMeta.systemName, "Retro", "Quán Game Xóm"],
+      description: `${displayTitle} — Game ${systemMeta.systemName} được lưu trữ trực tiếp trên Vercel Blob Storage tốc độ cao, chơi mượt mà trên trình giả lập EmulatorJS của Quán Game Xóm.`,
+      downloadUrl: romUrl,
+      emulatorCore: selectedSystem,
+      isFeatured: true,
+      isPopular: true,
+      isNewUpdate: true,
+      addedDate: new Date().toISOString().split('T')[0],
+      isHidden: false
+    };
+
+    await addGameToLibrary(newGameCard);
+
+    return res.json({
+      success: true,
+      game: newGameCard,
+      url: romUrl,
+      message: `Đã đăng ký game "${displayTitle}" vào Thư Viện và Vercel Blob thành công!`
+    });
+  } catch (err: any) {
+    console.error("[Register Game Error]:", err);
+    return res.status(500).json({ success: false, error: err.message || "Lỗi khi đăng ký thẻ game." });
   }
 });
 
