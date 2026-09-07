@@ -31,6 +31,7 @@ export default async function handler(req: any, res: any) {
       exportedKeys: [] as string[],
       error: null as string | null,
       stack: null as string | null,
+      serverJsError: null as string | null,
     },
   };
 
@@ -56,6 +57,7 @@ export default async function handler(req: any, res: any) {
     try {
       serverModule = await import("../server.js");
     } catch (e1) {
+      result.serverImport.serverJsError = (e1 as any)?.message || String(e1);
       serverModule = await import("../dist/server.cjs");
     }
     const app = serverModule.default || serverModule;
