@@ -14,6 +14,10 @@
   },
   "rewrites": [
     {
+      "source": "/api/netplay/(.*)",
+      "destination": "/api/netplay-handler?action=$1"
+    },
+    {
       "source": "/api/debug",
       "destination": "/api/debug"
     },
