@@ -16,8 +16,23 @@ export interface NetplayRoomStatus {
   guestIceCandidates?: string[];
 }
 
-// In-memory cache + fallback when BLOB_READ_WRITE_TOKEN is not available
+// In-memory fallback when BLOB_READ_WRITE_TOKEN is not available.  Do not use
+// this as the source of truth when Blob is configured: Vercel can route the
+// host and guest requests to different serverless instances.
 const inMemoryRooms = new Map<string, NetplayRoomStatus>();
+
+async function persistRoom(room: NetplayRoomStatus): Promise<void> {
+  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+  if (!blobToken) return;
+
+  await put(`netplay-rooms/${room.roomId}.json`, JSON.stringify(room), {
+    access: "public",
+    token: blobToken,
+    addRandomSuffix: false,
+    allowOverwrite: true,
+    contentType: "application/json"
+  });
+}
 
 // Auto clean rooms older than 15 minutes
 async function cleanOldRooms() {
@@ -72,18 +87,8 @@ export async function createNetplayRoom(roomId: string, meta?: { gameId?: string
 
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
   if (blobToken) {
-    const blobPath = `netplay-rooms/${cleanId}.json`;
-    put(blobPath, JSON.stringify(roomData), {
-      access: "public",
-      token: blobToken,
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      contentType: "application/json"
-    }).then(blobResult => {
-      console.log(`[Netplay Storage] Created room on Vercel Blob: ${cleanId} -> URL: ${blobResult.url}`);
-    }).catch(err => {
-      console.warn(`[Netplay Storage] Failed to save room to Vercel Blob (${cleanId}):`, err);
-    });
+    await persistRoom(roomData);
+    console.log(`[Netplay Storage] Created room on Vercel Blob: ${cleanId}`);
   }
 
   return roomData;
@@ -91,11 +96,7 @@ export async function createNetplayRoom(roomId: string, meta?: { gameId?: string
 
 export async function joinNetplayRoom(roomId: string): Promise<NetplayRoomStatus | null> {
   const cleanId = roomId.trim().toLowerCase();
-  let room = inMemoryRooms.get(cleanId);
-
-  if (!room) {
-    room = await getRoomStatus(cleanId) || undefined;
-  }
+  let room = await getRoomStatus(cleanId) || undefined;
 
   const now = Date.now();
   if (!room) {
@@ -119,18 +120,8 @@ export async function joinNetplayRoom(roomId: string): Promise<NetplayRoomStatus
 
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
   if (blobToken) {
-    const blobPath = `netplay-rooms/${cleanId}.json`;
-    put(blobPath, JSON.stringify(room), {
-      access: "public",
-      token: blobToken,
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      contentType: "application/json"
-    }).then(blobResult => {
-      console.log(`[Netplay Storage] Player 2 joined room on Vercel Blob: ${cleanId} -> URL: ${blobResult.url}`);
-    }).catch(err => {
-      console.warn(`[Netplay Storage] Failed to update room on Vercel Blob (${cleanId}):`, err);
-    });
+    await persistRoom(room);
+    console.log(`[Netplay Storage] Player 2 joined room on Vercel Blob: ${cleanId}`);
   }
 
   return room;
@@ -138,11 +129,7 @@ export async function joinNetplayRoom(roomId: string): Promise<NetplayRoomStatus
 
 export async function setPlayerReady(roomId: string, role: 'p1' | 'p2' = 'p2'): Promise<NetplayRoomStatus | null> {
   const cleanId = roomId.trim().toLowerCase();
-  let room = inMemoryRooms.get(cleanId);
-
-  if (!room) {
-    room = await getRoomStatus(cleanId) || undefined;
-  }
+  let room = await getRoomStatus(cleanId) || undefined;
 
   const now = Date.now();
   if (!room) {
@@ -170,18 +157,8 @@ export async function setPlayerReady(roomId: string, role: 'p1' | 'p2' = 'p2'): 
 
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
   if (blobToken) {
-    const blobPath = `netplay-rooms/${cleanId}.json`;
-    put(blobPath, JSON.stringify(room), {
-      access: "public",
-      token: blobToken,
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      contentType: "application/json"
-    }).then(blobResult => {
-      console.log(`[Netplay Storage] Player ${role} is READY in room on Vercel Blob: ${cleanId} (p2Ready: ${room?.p2Ready}) -> URL: ${blobResult.url}`);
-    }).catch(err => {
-      console.warn(`[Netplay Storage] Failed to update ready state on Vercel Blob (${cleanId}):`, err);
-    });
+    await persistRoom(room);
+    console.log(`[Netplay Storage] Player ${role} is READY in room on Vercel Blob: ${cleanId} (p2Ready: ${room?.p2Ready})`);
   }
 
   return room;
@@ -189,11 +166,7 @@ export async function setPlayerReady(roomId: string, role: 'p1' | 'p2' = 'p2'): 
 
 export async function startNetplayRoom(roomId: string): Promise<NetplayRoomStatus | null> {
   const cleanId = roomId.trim().toLowerCase();
-  let room = inMemoryRooms.get(cleanId);
-
-  if (!room) {
-    room = await getRoomStatus(cleanId) || undefined;
-  }
+  let room = await getRoomStatus(cleanId) || undefined;
 
   const now = Date.now();
   if (!room) {
@@ -217,18 +190,8 @@ export async function startNetplayRoom(roomId: string): Promise<NetplayRoomStatu
 
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
   if (blobToken) {
-    const blobPath = `netplay-rooms/${cleanId}.json`;
-    put(blobPath, JSON.stringify(room), {
-      access: "public",
-      token: blobToken,
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      contentType: "application/json"
-    }).then(blobResult => {
-      console.log(`[Netplay Storage] Room ${cleanId} marked as STARTED on Vercel Blob -> URL: ${blobResult.url}`);
-    }).catch(err => {
-      console.warn(`[Netplay Storage] Failed to mark room started on Vercel Blob (${cleanId}):`, err);
-    });
+    await persistRoom(room);
+    console.log(`[Netplay Storage] Room ${cleanId} marked as STARTED on Vercel Blob`);
   }
 
   return room;
@@ -239,9 +202,13 @@ export async function getRoomStatus(roomId: string): Promise<NetplayRoomStatus |
   const cleanId = String(roomId).split('?')[0].split('&')[0].trim().toLowerCase();
   if (!cleanId) return null;
 
-  // 1. Check inMemoryRooms first (0ms latency, zero cache lag, perfect for WebRTC real-time signaling)
+  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+
+  // Local development runs without Blob, so memory remains a useful fallback.
+  // In production Blob must be checked first, otherwise a host keeps serving
+  // its own stale in-memory copy after the guest presses Ready.
   const memoryRoom = inMemoryRooms.get(cleanId);
-  if (memoryRoom) {
+  if (!blobToken && memoryRoom) {
     // Check if expired (> 15 mins)
     if (Date.now() - memoryRoom.createdAt > 15 * 60 * 1000) {
       inMemoryRooms.delete(cleanId);
@@ -251,7 +218,6 @@ export async function getRoomStatus(roomId: string): Promise<NetplayRoomStatus |
   }
 
   // 2. If not found in memory and Vercel Blob token exists (e.g. cold start / multi-instance), fallback to Blob
-  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
   if (blobToken) {
     try {
       const { blobs } = await list({ token: blobToken, prefix: `netplay-rooms/${cleanId}` });
@@ -332,10 +298,7 @@ export async function saveSignalPayload(
   role: 'p1' | 'p2' = 'p1'
 ): Promise<NetplayRoomStatus | null> {
   const cleanId = roomId.trim().toLowerCase();
-  let room = inMemoryRooms.get(cleanId);
-  if (!room) {
-    room = (await getRoomStatus(cleanId)) || undefined;
-  }
+  let room = (await getRoomStatus(cleanId)) || undefined;
   const now = Date.now();
   if (!room) {
     room = {
@@ -384,18 +347,8 @@ export async function saveSignalPayload(
 
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
   if (blobToken) {
-    const blobPath = `netplay-rooms/${cleanId}.json`;
-    put(blobPath, JSON.stringify(room), {
-      access: "public",
-      token: blobToken,
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      contentType: "application/json"
-    }).then(() => {
-      console.log(`[Netplay Signaling] Synced ${type} (${role}) for room ${cleanId} to Vercel Blob`);
-    }).catch(err => {
-      console.warn(`[Netplay Signaling] Failed to sync signal to Vercel Blob (${cleanId}):`, err);
-    });
+    await persistRoom(room);
+    console.log(`[Netplay Signaling] Synced ${type} (${role}) for room ${cleanId} to Vercel Blob`);
   }
 
   return room;
