@@ -50,9 +50,14 @@ export default async function handler(req: any, res: any) {
     result.moduleLookup.fsError = fsErr?.message || String(fsErr);
   }
 
-  // 2. Safe dynamic import for '../server'
+  // 2. Safe dynamic import for '../server.js' and '../dist/server.cjs'
   try {
-    const serverModule = await import("../server");
+    let serverModule: any;
+    try {
+      serverModule = await import("../server.js");
+    } catch (e1) {
+      serverModule = await import("../dist/server.cjs");
+    }
     const app = serverModule.default || serverModule;
     result.serverImport.success = true;
     result.serverImport.type = typeof app;
