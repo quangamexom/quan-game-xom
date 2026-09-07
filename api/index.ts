@@ -2,10 +2,10 @@ let appInstance: any = null;
 
 async function getApp() {
   if (!appInstance) {
-    // Vercel compiles server.ts to server.js at the project root. The matching
-    // includeFiles rule keeps this entry and its source dependencies in this
-    // function's runtime bundle.
-    const mod = await import("../server.js");
+    // This prebuilt bundle contains server.ts and all service modules. The
+    // matching includeFiles rule prevents Vercel's file tracer from omitting
+    // dynamic dependencies required by the Express API.
+    const mod = await import("../dist/server.cjs");
     appInstance = mod.default || mod;
   }
   return appInstance;
