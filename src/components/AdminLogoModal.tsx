@@ -103,7 +103,13 @@ export const AdminLogoModal: React.FC<AdminLogoModalProps> = ({ isOpen, onClose 
         })
       });
 
-      const data = await res.json();
+      const rawText = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        throw new Error(`Máy chủ trả về phản hồi không hợp lệ (HTTP ${res.status}): ${rawText.slice(0, 120) || res.statusText}`);
+      }
 
       if (res.ok && data.success) {
         const savedUrl = data.logoUrl || finalImageSrc;
@@ -124,7 +130,7 @@ export const AdminLogoModal: React.FC<AdminLogoModalProps> = ({ isOpen, onClose 
           onClose();
         }, 1200);
       } else {
-        throw new Error(data.error || 'Không thể lưu logo.');
+        throw new Error(data?.error || data?.message || 'Không thể lưu logo.');
       }
     } catch (err: any) {
       console.error('Lỗi khi lưu logo:', err);

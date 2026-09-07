@@ -542,6 +542,28 @@ app.post("/api/save-logo", async (req, res) => {
       }
     }
 
+    // Handle external URL: optionally re-host on Vercel Blob to prevent expiration (e.g. Discord CDN)
+    if (rawLogo.startsWith("http://") || rawLogo.startsWith("https://")) {
+      if (!rawLogo.includes("blob.vercel-storage.com") && process.env.BLOB_READ_WRITE_TOKEN) {
+        try {
+          const fetchImgRes = await fetch(rawLogo);
+          if (fetchImgRes.ok) {
+            const arrayBuf = await fetchImgRes.arrayBuffer();
+            const buf = Buffer.from(arrayBuf);
+            const cType = fetchImgRes.headers.get("content-type") || "image/png";
+            const ext = cType.includes("svg") ? "svg" : cType.includes("jpeg") || cType.includes("jpg") ? "jpg" : cType.includes("webp") ? "webp" : "png";
+            const blobPath = `logos/logo-qgx-${Date.now()}.${ext}`;
+            const blobUrl = await uploadImageToBlob(blobPath, buf, cType);
+            if (blobUrl) {
+              finalLogoUrl = blobUrl;
+            }
+          }
+        } catch (rehostErr) {
+          console.warn("[Save Logo Rehost Warning]:", rehostErr);
+        }
+      }
+    }
+
     // Persistently save logo to Vercel Blob (logo-settings.json) & safe disk update
     await saveCustomLogoUrl(finalLogoUrl);
 
