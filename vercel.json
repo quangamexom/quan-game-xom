@@ -3,6 +3,11 @@
   "framework": "vite",
   "buildCommand": "vite build",
   "outputDirectory": "dist",
+  "functions": {
+    "api/netplay-handler.ts": {
+      "includeFiles": "src/services/netplayRoomStorage.ts"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/netplay/(.*)",
