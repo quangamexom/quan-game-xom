@@ -3,6 +3,16 @@
   "framework": "vite",
   "buildCommand": "vite build",
   "outputDirectory": "dist",
+  "functions": {
+    "api/index.ts": {
+      "includeFiles": [
+        "server.js",
+        "src/services/**",
+        "src/data/**",
+        "public/assets/games-library.json"
+      ]
+    }
+  },
   "rewrites": [
     {
       "source": "/api/debug",
