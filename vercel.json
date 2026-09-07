@@ -10,6 +10,11 @@
         "src/data/**",
         "public/assets/games-library.json"
       ]
+    },
+    "api/netplay-handler.ts": {
+      "includeFiles": [
+        "src/services/netplayRoomStorage.ts"
+      ]
     }
   },
   "rewrites": [
