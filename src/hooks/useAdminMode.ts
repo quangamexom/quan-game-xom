@@ -3,11 +3,15 @@ import { useState, useEffect } from 'react';
 const ADMIN_STORAGE_KEY = 'qgx_is_admin_mode';
 const ADMIN_PASSWORD_KEY = 'qgx_admin_pwd';
 
+export const ADMIN_BLOB_TOKEN_KEY = 'qgx_blob_token';
+
 export function getAdminAuthHeaders(): Record<string, string> {
   const pwd = typeof window !== 'undefined' ? localStorage.getItem(ADMIN_PASSWORD_KEY) || sessionStorage.getItem('adminPassword') || '' : '';
+  const blobToken = typeof window !== 'undefined' ? localStorage.getItem(ADMIN_BLOB_TOKEN_KEY) || '' : '';
   return {
     'x-admin-password': pwd,
-    ...(pwd ? { 'Authorization': `Bearer ${pwd}` } : {})
+    ...(pwd ? { 'Authorization': `Bearer ${pwd}` } : {}),
+    ...(blobToken ? { 'x-blob-token': blobToken } : {})
   };
 }
 

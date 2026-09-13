@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, Upload, Cloud, Copy, Check, Trash2, Play, 
-  Eye, EyeOff, FileCode, AlertCircle, RefreshCw, HardDrive, Sparkles, Gamepad2, CheckCircle2 
+  Eye, EyeOff, FileCode, AlertCircle, RefreshCw, HardDrive, Sparkles, Gamepad2, CheckCircle2,
+  Key, Lock, Save, ExternalLink
 } from 'lucide-react';
 import { upload } from '@vercel/blob/client';
-import { useAdminMode, getAdminAuthHeaders } from '../hooks/useAdminMode';
+import { useAdminMode, getAdminAuthHeaders, ADMIN_BLOB_TOKEN_KEY } from '../hooks/useAdminMode';
 
 export interface AdminBlobGameItem {
   id: string;
@@ -72,6 +73,17 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
   const [hasToken, setHasToken] = useState<boolean>(true);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
+  // Vercel Blob Token Settings state
+  const [showTokenSettings, setShowTokenSettings] = useState(false);
+  const [blobTokenInput, setBlobTokenInput] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(ADMIN_BLOB_TOKEN_KEY) || '';
+    }
+    return '';
+  });
+  const [isSavingToken, setIsSavingToken] = useState(false);
+  const [tokenFeedback, setTokenFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   const detectSystemFromFilename = (filename: string): string => {
     const lower = filename.toLowerCase();
     for (const sys of SUPPORTED_SYSTEMS) {
@@ -95,18 +107,33 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
   const loadBlobs = async () => {
     setIsLoadingBlobs(true);
     try {
+      const savedToken = typeof window !== 'undefined' ? localStorage.getItem(ADMIN_BLOB_TOKEN_KEY) : null;
       const res = await fetch(`/api/admin/blob/list?t=${Date.now()}`, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
-          ...getAdminAuthHeaders()
+          ...getAdminAuthHeaders(),
+          ...(savedToken ? { 'x-blob-token': savedToken } : {})
         }
       });
       const data = await res.json();
       if (data.success) {
         setBlobs(data.blobs || []);
-        setHasToken(data.hasToken !== false);
+        if (data.hasToken !== false) {
+          setHasToken(true);
+        } else if (savedToken) {
+          // Token exists in browser, prime server runtime
+          fetch('/api/admin/blob/save-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...getAdminAuthHeaders(), 'x-blob-token': savedToken },
+            body: JSON.stringify({ token: savedToken })
+          }).then(r => r.json()).then(d => {
+            if (d.success) setHasToken(true);
+          }).catch(() => {});
+        } else {
+          setHasToken(false);
+        }
       } else {
         setHasToken(false);
       }
@@ -114,6 +141,49 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
       console.warn("Load blobs error:", err);
     } finally {
       setIsLoadingBlobs(false);
+    }
+  };
+
+  const handleSaveBlobToken = async () => {
+    const cleanToken = blobTokenInput.trim();
+    if (!cleanToken) {
+      setTokenFeedback({ type: 'error', text: 'Vui lòng nhập Vercel Blob Token (bắt đầu bằng vercel_blob_rw_...)' });
+      return;
+    }
+    if (!cleanToken.startsWith('vercel_blob_rw_')) {
+      setTokenFeedback({ type: 'error', text: 'Token không đúng định dạng. Token Vercel Blob hợp lệ phải bắt đầu bằng: vercel_blob_rw_' });
+      return;
+    }
+
+    setIsSavingToken(true);
+    setTokenFeedback(null);
+    try {
+      localStorage.setItem(ADMIN_BLOB_TOKEN_KEY, cleanToken);
+
+      const res = await fetch('/api/admin/blob/save-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAdminAuthHeaders(),
+          'x-blob-token': cleanToken
+        },
+        body: JSON.stringify({ token: cleanToken })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setTokenFeedback({ type: 'success', text: data.message || 'Đã kết nối Vercel Blob thành công!' });
+        setHasToken(true);
+        setErrorMessage(null);
+        await loadBlobs();
+        setTimeout(() => setShowTokenSettings(false), 2000);
+      } else {
+        setTokenFeedback({ type: 'error', text: data.error || 'Không thể kết nối với Vercel Blob bằng token này.' });
+      }
+    } catch (err: any) {
+      setTokenFeedback({ type: 'error', text: err.message || 'Lỗi mạng khi kiểm tra token.' });
+    } finally {
+      setIsSavingToken(false);
     }
   };
 
@@ -176,6 +246,12 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
   };
 
   const handleUpload = async () => {
+    if (!hasToken && !localStorage.getItem(ADMIN_BLOB_TOKEN_KEY)) {
+      setShowTokenSettings(true);
+      setErrorMessage('Vui lòng cấu hình Vercel Blob Token ở ô bên dưới trước khi upload.');
+      return;
+    }
+
     if (!selectedFile) {
       setErrorMessage('Vui lòng chọn 1 file ROM (.sfc, .smc, .nes, .gba, .zip...) từ máy tính.');
       return;
@@ -419,25 +495,113 @@ export const AdminRomManagerModal: React.FC<AdminRomManagerModalProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowTokenSettings(!showTokenSettings)}
+              className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                hasToken 
+                  ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-400 hover:bg-emerald-900/50' 
+                  : 'bg-amber-950/40 border-amber-500/50 text-amber-400 hover:bg-amber-900/50 animate-pulse'
+              }`}
+              title="Cấu hình / Kiểm tra Vercel Blob Token"
+            >
+              <Key className="w-3.5 h-3.5" />
+              <span>{hasToken ? 'Blob: Đã kết nối' : 'Cần nhập Token'}</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Modal Body: Scrollable */}
         <div className="overflow-y-auto py-5 space-y-6 flex-1 pr-1 custom-scrollbar">
           
-          {/* Environment Warning if token missing */}
-          {!hasToken && (
-            <div className="p-4 bg-amber-950/60 border border-amber-500/50 rounded-2xl text-xs text-amber-200 flex items-start gap-3 font-body">
-              <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-              <div>
-                <strong className="font-bold text-amber-300 block mb-1">Cần cấu hình BLOB_READ_WRITE_TOKEN:</strong>
-                <span>Để upload file lên Vercel Blob Storage, hãy chắc chắn bạn đã gán biến môi trường <code>BLOB_READ_WRITE_TOKEN</code> trong Vercel Project Settings. (Nếu đang dev local, server sẽ tự lưu bản sao metadata vào file disk).</span>
+          {/* Environment Warning / Token Configuration */}
+          {(!hasToken || showTokenSettings) && (
+            <div className="p-4 bg-slate-900/90 border-2 border-amber-500/50 rounded-2xl space-y-3 shadow-xl">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-2.5">
+                  <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 shrink-0">
+                    <Key className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-amber-300 font-mono flex items-center gap-2">
+                      <span>CẤU HÌNH VERCEL BLOB READ/WRITE TOKEN</span>
+                      {hasToken && (
+                        <span className="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-500/40 px-2 py-0.5 rounded font-bold">
+                          Đã kích hoạt
+                        </span>
+                      )}
+                    </h3>
+                    <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                      Để upload ROM lên Vercel Blob Cloud, hãy dán <code className="text-amber-400 font-mono bg-slate-950 px-1.5 py-0.5 rounded border border-amber-500/30">BLOB_READ_WRITE_TOKEN</code> (bắt đầu bằng <code className="text-amber-400">vercel_blob_rw_...</code>).
+                    </p>
+                  </div>
+                </div>
+                {hasToken && (
+                  <button
+                    type="button"
+                    onClick={() => setShowTokenSettings(false)}
+                    className="text-slate-400 hover:text-white text-xs font-mono cursor-pointer"
+                  >
+                    Đóng
+                  </button>
+                )}
               </div>
+
+              {/* Guide steps */}
+              <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-xl text-xs space-y-1 text-slate-400 font-body">
+                <div className="text-[11px] font-mono text-amber-400 font-bold uppercase mb-1">Cách lấy token từ Vercel:</div>
+                <div>1. Vào <a href="https://vercel.com/dashboard" target="_blank" rel="noreferrer" className="text-amber-400 hover:underline inline-flex items-center gap-1">Vercel Dashboard <ExternalLink className="w-3 h-3" /></a> → Chọn Project <strong>quan-game-xom</strong>.</div>
+                <div>2. Chọn tab <strong>Storage</strong> (hoặc chọn Blob store đã tạo) → <strong>Settings</strong>.</div>
+                <div>3. Tại mục <strong>Tokens</strong>, copy chuỗi <strong>Read-Write Token</strong> (<code className="text-slate-300 font-mono">vercel_blob_rw_...</code>) rồi dán vào ô bên dưới:</div>
+              </div>
+
+              {/* Input + Action */}
+              <div className="flex flex-col sm:flex-row items-center gap-2">
+                <input
+                  type="password"
+                  value={blobTokenInput}
+                  onChange={(e) => setBlobTokenInput(e.target.value)}
+                  placeholder="Dán token: vercel_blob_rw_..."
+                  className="w-full sm:flex-1 px-3.5 py-2.5 bg-slate-950 border border-amber-500/40 focus:border-amber-400 rounded-xl text-xs text-amber-200 font-mono placeholder:text-slate-600 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveBlobToken}
+                  disabled={isSavingToken || !blobTokenInput.trim()}
+                  className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 disabled:opacity-50 text-slate-950 text-xs font-mono font-black uppercase rounded-xl flex items-center justify-center gap-2 shrink-0 cursor-pointer shadow-lg shadow-amber-500/20"
+                >
+                  {isSavingToken ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Đang kiểm tra...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-3.5 h-3.5" />
+                      <span>Lưu & Kích Hoạt Token</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Feedback */}
+              {tokenFeedback && (
+                <div className={`p-2.5 rounded-xl text-xs font-mono flex items-center gap-2 ${
+                  tokenFeedback.type === 'success' 
+                    ? 'bg-emerald-950/60 border border-emerald-500/40 text-emerald-300' 
+                    : 'bg-rose-950/60 border border-rose-500/40 text-rose-300'
+                }`}>
+                  {tokenFeedback.type === 'success' ? <Check className="w-4 h-4 text-emerald-400 shrink-0" /> : <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />}
+                  <span>{tokenFeedback.text}</span>
+                </div>
+              )}
             </div>
           )}
 

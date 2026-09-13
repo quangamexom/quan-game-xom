@@ -15,6 +15,8 @@ import {
   getGamesDatabaseBlobUrl,
   getCustomLogoUrl,
   saveCustomLogoUrl,
+  getRuntimeBlobToken,
+  setRuntimeBlobToken,
   GAMES_DATABASE_BLOB_PATH,
   LOGO_SETTINGS_BLOB_PATH
 } from "./src/services/metadataStorage.ts";
@@ -134,7 +136,8 @@ app.get("/api/sheet-games", async (req, res) => {
 app.get(["/api/games-database", "/api/games/database"], async (req, res) => {
   try {
     const shouldSync = req.query.sync === 'true';
-    if (shouldSync && process.env.BLOB_READ_WRITE_TOKEN) {
+    const activeToken = getRuntimeBlobToken(req);
+    if (shouldSync && activeToken) {
       try {
         await syncAllBlobsToLibrary();
       } catch (syncErr) {
@@ -543,8 +546,9 @@ app.post("/api/save-logo", async (req, res) => {
     }
 
     // Handle external URL: optionally re-host on Vercel Blob to prevent expiration (e.g. Discord CDN)
+    const activeToken = getRuntimeBlobToken(req);
     if (rawLogo.startsWith("http://") || rawLogo.startsWith("https://")) {
-      if (!rawLogo.includes("blob.vercel-storage.com") && process.env.BLOB_READ_WRITE_TOKEN) {
+      if (!rawLogo.includes("blob.vercel-storage.com") && activeToken) {
         try {
           const fetchImgRes = await fetch(rawLogo);
           if (fetchImgRes.ok) {
@@ -712,7 +716,8 @@ app.get(["/api/games-database", "/api/games/admin-library", "/api/games/library"
     const includeHidden = req.query.includeHidden === 'true';
     const shouldSync = req.query.sync === 'true';
 
-    if (shouldSync && process.env.BLOB_READ_WRITE_TOKEN) {
+    const activeToken = getRuntimeBlobToken(req);
+    if (shouldSync && activeToken) {
       try {
         await syncAllBlobsToLibrary();
       } catch (syncErr) {
@@ -745,10 +750,17 @@ app.get(["/api/games-database", "/api/games/admin-library", "/api/games/library"
 // Direct Client Upload to Vercel Blob (bypasses 4.5MB serverless function limit, supports up to 500MB)
 app.post("/api/admin/blob/client-upload", async (req, res) => {
   const body = req.body as HandleUploadBody;
+  const blobToken = getRuntimeBlobToken(req);
+  if (!blobToken) {
+    return res.status(400).json({ 
+      error: "Chưa cấu hình biến môi trường BLOB_READ_WRITE_TOKEN trên Vercel/Server! Vui lòng cấu hình token trong Admin Panel hoặc Vercel Project Settings." 
+    });
+  }
   try {
     const jsonResponse = await handleUpload({
       body,
       request: req,
+      token: blobToken,
       onBeforeGenerateToken: async (pathname, clientPayload) => {
         return {
           allowedContentTypes: [
@@ -858,12 +870,12 @@ app.post("/api/admin/blob/upload", async (req, res) => {
       });
     }
 
-    const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+    const blobToken = getRuntimeBlobToken(req);
     if (!blobToken) {
       return res.status(400).json({
         success: false,
         error: "Chưa cấu hình biến môi trường BLOB_READ_WRITE_TOKEN trên Vercel/Server!",
-        hint: "Vui lòng cấu hình BLOB_READ_WRITE_TOKEN trong Settings / Environment Variables trên Vercel."
+        hint: "Vui lòng cấu hình BLOB_READ_WRITE_TOKEN trong Settings / Environment Variables trên Vercel hoặc nhập trực tiếp trong Admin Panel."
       });
     }
 
@@ -999,10 +1011,40 @@ app.post("/api/admin/games/toggle-visibility", async (req, res) => {
   }
 });
 
+// Save & Verify Runtime Vercel Blob Token from Admin Web UI
+app.post("/api/admin/blob/save-token", async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token || typeof token !== "string" || !token.trim().startsWith("vercel_blob_rw_")) {
+      return res.status(400).json({
+        success: false,
+        error: "Token không hợp lệ! Vui lòng nhập token bắt đầu bằng 'vercel_blob_rw_' (Lấy từ Vercel Dashboard -> Storage -> Settings)."
+      });
+    }
+
+    const cleanToken = token.trim();
+    // Test token by listing 1 blob
+    const { blobs } = await list({ token: cleanToken, limit: 1 });
+    setRuntimeBlobToken(cleanToken);
+
+    return res.json({
+      success: true,
+      message: "Đã xác thực và kết nối thành công với Vercel Blob Storage!",
+      blobsCount: blobs.length
+    });
+  } catch (err: any) {
+    console.error("[Save Blob Token Error]:", err);
+    return res.status(400).json({
+      success: false,
+      error: `Token không thể kết nối tới Vercel Blob: ${err.message || err}`
+    });
+  }
+});
+
 // List all uploaded ROMs in Vercel Blob + their metadata status
 app.get("/api/admin/blob/list", async (req, res) => {
   try {
-    const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+    const blobToken = getRuntimeBlobToken(req);
     const library = await readGamesLibrary();
 
     if (!blobToken) {
@@ -1061,7 +1103,7 @@ app.delete("/api/admin/blob/delete", async (req, res) => {
     await removeGameFromLibrary(id || url);
 
     // 2. Delete ROM file from Vercel Blob if url provided
-    const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+    const blobToken = getRuntimeBlobToken(req);
     if (blobToken && url) {
       try {
         await del(url, { token: blobToken });
@@ -1539,7 +1581,7 @@ app.get("/api/debug", (req, res) => {
       nodeEnv: process.env.NODE_ENV || "unknown",
     },
     environmentVariables: {
-      hasBlobToken: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
+      hasBlobToken: Boolean(getRuntimeBlobToken(req)),
       hasGeminiApiKey: Boolean(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY),
     }
   });

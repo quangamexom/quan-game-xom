@@ -39,6 +39,23 @@ export const LOGO_SETTINGS_BLOB_PATH = "logo-settings.json";
 let cachedDatabaseUrl: string | null = null;
 let cachedLogoUrl: string | null = null;
 
+let activeBlobToken: string | undefined = process.env.BLOB_READ_WRITE_TOKEN;
+
+export function setRuntimeBlobToken(token: string) {
+  if (token && typeof token === "string" && token.trim().startsWith("vercel_blob_rw_")) {
+    activeBlobToken = token.trim();
+    process.env.BLOB_READ_WRITE_TOKEN = token.trim();
+  }
+}
+
+export function getRuntimeBlobToken(customToken?: string): string | undefined {
+  if (customToken && typeof customToken === "string" && customToken.trim().startsWith("vercel_blob_rw_")) {
+    setRuntimeBlobToken(customToken.trim());
+    return customToken.trim();
+  }
+  return activeBlobToken || process.env.BLOB_READ_WRITE_TOKEN;
+}
+
 /**
  * Get fallback initial games array from local files (initialGames.json, games-library.json, googleSheetGames.json)
  */
@@ -87,7 +104,7 @@ export async function uploadImageToBlob(
   buffer: Buffer, 
   contentType: string = "image/png"
 ): Promise<string | null> {
-  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+  const blobToken = getRuntimeBlobToken();
   if (!blobToken) return null;
   try {
     const blob = await put(pathname, buffer, {
@@ -108,7 +125,7 @@ export async function uploadImageToBlob(
  * Find the direct public URL of games-database.json on Vercel Blob
  */
 export async function getGamesDatabaseBlobUrl(): Promise<string | null> {
-  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+  const blobToken = getRuntimeBlobToken();
   if (!blobToken) return null;
 
   try {
@@ -134,7 +151,7 @@ export async function getGamesDatabaseBlobUrl(): Promise<string | null> {
  * Auto-initializes games-database.json on Vercel Blob if missing.
  */
 export async function readGamesLibrary(): Promise<PersistentGameCard[]> {
-  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+  const blobToken = getRuntimeBlobToken();
   const localDefaults = getLocalDefaultGames();
 
   // 1. Try reading directly from Vercel Blob (Primary Cloud Persistence)
@@ -198,7 +215,7 @@ export async function readGamesLibrary(): Promise<PersistentGameCard[]> {
  */
 export async function writeGamesLibrary(games: PersistentGameCard[]): Promise<boolean> {
   const jsonContent = JSON.stringify(games, null, 2);
-  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+  const blobToken = getRuntimeBlobToken();
   let writeSuccess = false;
 
   // 1. Always save to Vercel Blob Storage first as games-database.json
@@ -442,7 +459,7 @@ const EXT_SYSTEM_MAP: Record<string, { system: string; systemName: string; platf
  * into games-database.json on Vercel Blob.
  */
 export async function syncAllBlobsToLibrary(): Promise<SyncBlobsResult> {
-  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+  const blobToken = getRuntimeBlobToken();
   const currentLibrary = await readGamesLibrary();
 
   if (!blobToken) {
@@ -570,7 +587,7 @@ export async function getCustomLogoUrl(): Promise<string> {
   const defaultLogoUrl = "/assets/logo/logo-qgx-default.png";
   if (cachedLogoUrl) return cachedLogoUrl;
 
-  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+  const blobToken = getRuntimeBlobToken();
   if (blobToken) {
     try {
       const { blobs } = await list({ token: blobToken });
@@ -616,7 +633,7 @@ export async function getCustomLogoUrl(): Promise<string> {
  */
 export async function saveCustomLogoUrl(logoUrl: string): Promise<boolean> {
   cachedLogoUrl = logoUrl;
-  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+  const blobToken = getRuntimeBlobToken();
   let savedToBlob = false;
 
   // 1. Save to Vercel Blob as logo-settings.json
