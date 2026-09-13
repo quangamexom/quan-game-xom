@@ -6,7 +6,8 @@ async function getApp() {
     // matching includeFiles rule prevents Vercel's file tracer from omitting
     // dynamic dependencies required by the Express API.
     const mod = await import("../dist/server.cjs");
-    appInstance = mod.default || mod;
+    const raw = mod.default || mod;
+    appInstance = typeof raw === "function" ? raw : (raw.default || raw.app || mod.app);
   }
   return appInstance;
 }

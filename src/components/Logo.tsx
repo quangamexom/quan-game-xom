@@ -98,8 +98,10 @@ export const Logo: React.FC<LogoProps> = ({
               referrerPolicy="no-referrer"
               loading="eager"
               onError={() => {
-                // Fallback to SVG if PNG fails
-                if (imgSrc !== '/assets/logo/logo-qgx-default.svg') {
+                // Fallback to official PNG if custom fails, then SVG
+                if (imgSrc !== '/assets/logo/logo-qgx-default.png?v=2' && imgSrc !== '/assets/logo/logo-qgx-default.png') {
+                  setImgSrc('/assets/logo/logo-qgx-default.png?v=2');
+                } else if (imgSrc !== '/assets/logo/logo-qgx-default.svg') {
                   setImgSrc('/assets/logo/logo-qgx-default.svg');
                 } else {
                   setHasError(true);
