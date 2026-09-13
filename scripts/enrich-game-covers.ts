@@ -19,6 +19,8 @@ const PATHS = {
   publicLibrary: path.join(ROOT_DIR, 'public', 'assets', 'games-library.json'),
   adminLibrary: path.join(ROOT_DIR, 'src', 'data', 'adminGamesLibrary.json'),
   initialGames: path.join(ROOT_DIR, 'src', 'data', 'initialGames.json'),
+  initialGamesTs: path.join(ROOT_DIR, 'src', 'data', 'initialGames.ts'),
+  googleSheetJson: path.join(ROOT_DIR, 'src', 'data', 'googleSheetGames.json'),
   missingLog: path.join(ROOT_DIR, 'missing-images-log.json')
 };
 
@@ -392,10 +394,22 @@ async function main() {
   fs.writeFileSync(PATHS.publicLibrary, finalJson, 'utf-8');
   fs.writeFileSync(PATHS.adminLibrary, finalJson, 'utf-8');
   fs.writeFileSync(PATHS.initialGames, finalJson, 'utf-8');
+  fs.writeFileSync(PATHS.googleSheetJson, finalJson, 'utf-8');
+
+  const tsContent = `import { GameItem } from '../types';
+
+export const DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/1VA8Wv9OQmrR4nDpf0SUFQiqC4IAoVSCswCjY37ChplM/edit?gid=0#gid=0";
+export const DEFAULT_SHEET_ID = "1VA8Wv9OQmrR4nDpf0SUFQiqC4IAoVSCswCjY37ChplM";
+
+export const INITIAL_GAMES: GameItem[] = ${finalJson};
+`;
+  fs.writeFileSync(PATHS.initialGamesTs, tsContent, 'utf-8');
   fs.writeFileSync(PATHS.missingLog, JSON.stringify(missingLogList, null, 2), 'utf-8');
   console.log(`   ✓ Đã cập nhật file public/assets/games-library.json`);
   console.log(`   ✓ Đã cập nhật file src/data/adminGamesLibrary.json`);
   console.log(`   ✓ Đã cập nhật file src/data/initialGames.json`);
+  console.log(`   ✓ Đã cập nhật file src/data/googleSheetGames.json`);
+  console.log(`   ✓ Đã cập nhật file src/data/initialGames.ts (Frontend React Dataset)`);
   console.log(`   ✓ Đã ghi log các game thiếu ảnh vào missing-images-log.json (${missingLogList.length} game)`);
 
   // Write to Vercel Blob if token is available

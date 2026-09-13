@@ -5,14 +5,45 @@ export const DEFAULT_SHEET_ID = "1VA8Wv9OQmrR4nDpf0SUFQiqC4IAoVSCswCjY37ChplM";
 
 export const INITIAL_GAMES: GameItem[] = [
   {
+    "id": "blob-rom-1789272673263-biker-mice-from-mars",
+    "title": "Biker Mice from Mars",
+    "subtitle": "Super Nintendo (SNES) • Vercel Blob Cloud ROM",
+    "system": "snes",
+    "systemName": "Super Nintendo (SNES)",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Biker_Mice_from_Mars__USA_.sfc",
+    "coverArt": "https://media.rawg.io/media/games/004/004c7379149fa76bfb566050a604a2b8.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/004/004c7379149fa76bfb566050a604a2b8.jpg",
+    "platforms": [
+      "Other"
+    ],
+    "language": "Gốc / Tiếng Anh ⭐",
+    "hasVietHoa": false,
+    "releaseYear": 2026,
+    "fileSize": "1.00 MB",
+    "rating": 5,
+    "genres": [
+      "Super Nintendo (SNES)",
+      "Retro",
+      "Quán Game Xóm"
+    ],
+    "description": "Biker Mice from Mars — Game Super Nintendo (SNES) được lưu trữ trực tiếp trên Vercel Blob Storage tốc độ cao, chơi mượt mà trên trình giả lập EmulatorJS của Quán Game Xóm.",
+    "downloadUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Biker_Mice_from_Mars__USA_.sfc",
+    "emulatorCore": "snes",
+    "isFeatured": true,
+    "isPopular": true,
+    "isNewUpdate": true,
+    "addedDate": "2026-09-13",
+    "isHidden": false
+  },
+  {
     "id": "blob-auto-1787395907033-zombies-ate-my-neighbors-5qs7",
     "title": "Zombies Ate My Neighbors",
     "subtitle": "Super Nintendo (SNES) • Vercel Blob Cloud ROM",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
     "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Zombies%20Ate%20My%20Neighbors.smc",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/caa/caace5e91603bbeb0cf7d4560d437c1a.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/caa/caace5e91603bbeb0cf7d4560d437c1a.jpg",
     "platforms": [
       "Other"
     ],
@@ -42,8 +73,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
     "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Wild%20Guns%20%28U%29.smc",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/70c/70ccf35edceff427153bb4385cad84f1.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/70c/70ccf35edceff427153bb4385cad84f1.jpg",
     "platforms": [
       "Other"
     ],
@@ -73,8 +104,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
     "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Tiny%20Toon%20Adventures%20-%20Wacky%20Sports%20Challenge%20%28U%29.smc",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/899/899d83596072dcf9bb402650903f89a8.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/899/899d83596072dcf9bb402650903f89a8.jpg",
     "platforms": [
       "Other"
     ],
@@ -104,8 +135,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
     "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Tiny%20Toon%20Adventures%20%28J%29.smc",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/449/4493bcf828939aa1302da1b80d288dc6.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/449/4493bcf828939aa1302da1b80d288dc6.jpg",
     "platforms": [
       "Other"
     ],
@@ -135,8 +166,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
     "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/The%20Ninja%20Warriors%20Again%20%28J%29%20-%20Fastrom.sfc",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/2d3/2d340d6c40f2cf8a2a09b39d0eeab8ae.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/2d3/2d340d6c40f2cf8a2a09b39d0eeab8ae.jpg",
     "platforms": [
       "Other"
     ],
@@ -166,8 +197,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
     "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Teenage%20Mutant%20Hero%20Turtles%20IV%20-%20Turtles%20in%20Time%20%28E%29.smc",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/4cf/4cfbd3fc7011fa848e672b14e73e9db9.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/4cf/4cfbd3fc7011fa848e672b14e73e9db9.jpg",
     "platforms": [
       "Other"
     ],
@@ -197,8 +228,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
     "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Super%20Bomberman%204%20%28English%20v1.0%29.sfc",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/f9d/f9db4be01e076cf2f0ba8caab825146b.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/f9d/f9db4be01e076cf2f0ba8caab825146b.jpg",
     "platforms": [
       "Other"
     ],
@@ -228,8 +259,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
     "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Super%20Bomberman%203%20%28E%29.smc",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/791/7914bcea6cd25542dcbfd44e27f2f432.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/791/7914bcea6cd25542dcbfd44e27f2f432.jpg",
     "platforms": [
       "Other"
     ],
@@ -259,8 +290,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
     "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/SD%20Gundam%20Power%20Formation%20Puzzle%20%28J%29.smc",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/c0d/c0d6a1c5f9e2d3fd7d1e191b171ef6a5.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/c0d/c0d6a1c5f9e2d3fd7d1e191b171ef6a5.jpg",
     "platforms": [
       "Other"
     ],
@@ -290,8 +321,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
     "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Kishin%20Douji%20Zenki%20Battle%20Raiden%20%28Vi%E1%BB%87t%20h%C3%B3a%29.smc",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/aef/aefbe2ebe1d839fa9cf5ba8020ef1057.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/aef/aefbe2ebe1d839fa9cf5ba8020ef1057.jpg",
     "platforms": [
       "Other"
     ],
@@ -321,8 +352,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
     "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Goof%20Troop%20%28E%29.smc",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/bc7/bc7433e588afd253f7fea83839545539.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/bc7/bc7433e588afd253f7fea83839545539.jpg",
     "platforms": [
       "Other"
     ],
@@ -352,8 +383,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
     "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Ghost%20Chaser%20Densei%20%28Viet%20Hoa%29.smc",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/d77/d77679fb31131a5f9757d47a5fdec8b0.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/d77/d77679fb31131a5f9757d47a5fdec8b0.jpg",
     "platforms": [
       "Other"
     ],
@@ -383,8 +414,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
     "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Ganbare%20Goemon%202%20-%20Kiteretsu%20Shougun%20Magginesu%20%28Japan%29%20%28English%20patched%29.sfc",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/0cc/0cc7aa39ee332372ec278b27c184489a.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/0cc/0cc7aa39ee332372ec278b27c184489a.jpg",
     "platforms": [
       "Other"
     ],
@@ -414,7 +445,7 @@ export const INITIAL_GAMES: GameItem[] = [
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
     "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Fire%20Emblem%20Genealogy%20of%20the%20Holy%20War%20%28Vi%E1%BB%87t%20h%C3%B3a%29.smc",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/ce9/ce913686271304e77e5a3d6e35a6a424.jpg",
     "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
     "platforms": [
       "Other"
@@ -445,8 +476,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
     "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Der%20Langrisser%20%28Viet%20Hoa%29.smc",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/6bf/6bff74c5dc0641abdbf3fa105130b770.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/6bf/6bff74c5dc0641abdbf3fa105130b770.jpg",
     "platforms": [
       "Other"
     ],
@@ -476,8 +507,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
     "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Captain%20Tsubasa%20III%20Koutei%20no%20Chousen%20%28Viet%20Hoa%29.smc",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/338/338b02e34dd8d8c83e8d950c2081e3e2.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/338/338b02e34dd8d8c83e8d950c2081e3e2.jpg",
     "platforms": [
       "Other"
     ],
@@ -507,8 +538,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
     "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Battletoads___Double_Dragon_-_The_Ultimate_Team__E_.smc",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/5d9/5d964c81ef84a680319ae3860ebe8463.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/5d9/5d964c81ef84a680319ae3860ebe8463.jpg",
     "platforms": [
       "Other"
     ],
@@ -537,8 +568,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Super Nintendo (SNES) • Vercel Blob Cloud ROM",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/983/9833303155b5f348a459500666f6edfc.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/983/9833303155b5f348a459500666f6edfc.jpg",
     "platforms": [
       "Other"
     ],
@@ -559,7 +590,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "isPopular": true,
     "isNewUpdate": true,
     "addedDate": "2026-08-15",
-    "isHidden": false
+    "isHidden": false,
+    "romUrl": "https://archive.org/download/snes-romset-ultra/Aladdin%20%28USA%29.sfc"
   },
   {
     "id": "blob-rom-power-rangers-fighting",
@@ -568,8 +600,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
     "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Mighty_Morphin_Power_Rangers_-_The_Fighting_Edition__E_.smc",
-    "coverArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/b4c/b4ce46311f97937d82f588b61a51ec86.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/b4c/b4ce46311f97937d82f588b61a51ec86.jpg",
     "platforms": [
       "Other"
     ],
@@ -599,8 +631,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Đua xe bắn súng chuột không gian • Konami SNES",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "coverArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/004/004c7379149fa76bfb566050a604a2b8.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/004/004c7379149fa76bfb566050a604a2b8.jpg",
     "platforms": [
       "Other"
     ],
@@ -622,7 +654,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "isPopular": true,
     "isNewUpdate": true,
     "addedDate": "2026-08-15",
-    "isHidden": false
+    "isHidden": false,
+    "romUrl": "/roms/biker-mice-from-mars.sfc"
   },
   {
     "id": "snes-aladdin",
@@ -630,8 +663,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Disney's Aladdin • Super Nintendo (SNES) 16-Bit",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/983/9833303155b5f348a459500666f6edfc.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/983/9833303155b5f348a459500666f6edfc.jpg",
     "platforms": [
       "Other"
     ],
@@ -653,7 +686,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "isPopular": true,
     "isNewUpdate": true,
     "addedDate": "2026-08-15",
-    "isHidden": false
+    "isHidden": false,
+    "romUrl": "/roms/aladdin.sfc"
   },
   {
     "id": "blob-rom-megaman-x2-vn",
@@ -662,8 +696,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
     "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Mega%20Man%20X2%20VN.smc",
-    "coverArt": "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/51d/51d339e2adc19deaa4a9ba1a8e3ea2e4.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/51d/51d339e2adc19deaa4a9ba1a8e3ea2e4.jpg",
     "platforms": [
       "Other"
     ],
@@ -694,8 +728,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
     "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/YuyuHakusho_VN.smc",
-    "coverArt": "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/ac1/ac1ac4a10d4794f137e4b9164333f8a2.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/ac1/ac1ac4a10d4794f137e4b9164333f8a2.jpg",
     "platforms": [
       "Other"
     ],
@@ -727,8 +761,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
     "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Battletoads___Double_Dragon_-_The_Ultimate_Team__E_.smc",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/5d9/5d964c81ef84a680319ae3860ebe8463.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/5d9/5d964c81ef84a680319ae3860ebe8463.jpg",
     "platforms": [
       "SNES",
       "Other"
@@ -756,8 +790,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Khám Phá Vùng Đất Khủng Long Cùng Mario & Khủng Long Yoshi",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "coverArt": "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/3bb/3bb2c8d774c3a83eb2c17d0d3d51f020.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/3bb/3bb2c8d774c3a83eb2c17d0d3d51f020.jpg",
     "platforms": [
       "SNES",
       "Other"
@@ -776,7 +810,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Super%20Mario%20World%20%28USA%29.sfc"
   },
   {
     "id": "snes-chrono-trigger",
@@ -784,8 +819,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Du Hành Xuyên Không Gian Thời Gian Cứu Rỗi Thế Giới",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "coverArt": "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/ae4/ae404f4e0f504131199703c09111bb78.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/ae4/ae404f4e0f504131199703c09111bb78.jpg",
     "platforms": [
       "SNES",
       "Other"
@@ -805,7 +840,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": true,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Chrono%20Trigger%20%28USA%29.sfc"
   },
   {
     "id": "snes-donkey-kong-country",
@@ -813,8 +849,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Cuộc Phiêu Lưu Của Gia Đình Vượn Donkey Kong & Diddy Kong",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/6df/6df71f3ff0f6d6bbac306cb9adf935ee.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/6df/6df71f3ff0f6d6bbac306cb9adf935ee.jpg",
     "platforms": [
       "SNES",
       "Other"
@@ -833,7 +869,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Donkey%20Kong%20Country%20%28USA%29.sfc"
   },
   {
     "id": "snes-street-fighter-2-turbo",
@@ -841,8 +878,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Đại Chiến Đấu Sĩ Đường Phố Tốc Độ Cao",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "coverArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/19e/19e0d1d867e89fc7435167aeff6d7f4a.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/19e/19e0d1d867e89fc7435167aeff6d7f4a.jpg",
     "platforms": [
       "SNES",
       "Other"
@@ -862,7 +899,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Street%20Fighter%20II%20Turbo%20%28USA%29.sfc"
   },
   {
     "id": "snes-super-castlevania-iv",
@@ -870,8 +908,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Simon Belmont & Huyền Thoại Roi Da Diệt Bá Tước Dracula",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "coverArt": "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/6c2/6c299f5dc9039c83b4c7a29b6830e29e.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/6c2/6c299f5dc9039c83b4c7a29b6830e29e.jpg",
     "platforms": [
       "SNES",
       "Other"
@@ -890,7 +928,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Super%20Castlevania%20IV%20%28USA%29.sfc"
   },
   {
     "id": "snes-tmnt-turtles-in-time",
@@ -898,8 +937,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Ninja Rùa Du Hành Thời Gian Trừ Gian Diệt Bạo",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "coverArt": "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/4cf/4cfbd3fc7011fa848e672b14e73e9db9.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/4cf/4cfbd3fc7011fa848e672b14e73e9db9.jpg",
     "platforms": [
       "SNES",
       "Other"
@@ -919,7 +958,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Teenage%20Mutant%20Ninja%20Turtles%20IV%20-%20Turtles%20in%20Time%20%28USA%29.sfc"
   },
   {
     "id": "snes-aladdin-capcom",
@@ -927,8 +967,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Hành Trình Aladdin & Cây Đèn Thần Cứu Công Chúa Jasmine",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "coverArt": "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/983/9833303155b5f348a459500666f6edfc.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/983/9833303155b5f348a459500666f6edfc.jpg",
     "platforms": [
       "SNES",
       "Other"
@@ -947,7 +987,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Aladdin%20%28USA%29.sfc"
   },
   {
     "id": "snes-lion-king",
@@ -955,8 +996,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Vua Sư Tử Simba - Trưởng Thành & Đòi Lại Ngai Vàng Pride Rock",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/bb1/bb182c89b9d4e19b41e5d0f81caa0f42.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/bb1/bb182c89b9d4e19b41e5d0f81caa0f42.jpg",
     "platforms": [
       "SNES",
       "Other"
@@ -975,7 +1016,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "isFeatured": false,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/The%20Lion%20King%20%28USA%29.sfc"
   },
   {
     "id": "snes-contra-3-alien-wars",
@@ -983,8 +1025,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Chiến Tranh Người Ngoài Hành Tinh - Biệt Đội Hủy Diệt Contra",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "coverArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/876/87695e289689a74aa507ce3df0afae35.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/876/87695e289689a74aa507ce3df0afae35.jpg",
     "platforms": [
       "SNES",
       "Other"
@@ -1004,7 +1046,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Contra%20III%20-%20The%20Alien%20Wars%20%28USA%29.sfc"
   },
   {
     "id": "snes-sunset-riders",
@@ -1012,8 +1055,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Bắn Súng Cao Bồi Miền Viễn Tây Nổi Tiếng",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "coverArt": "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/dc9/dc991555bf9bfab348633c4e5308f06e.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/dc9/dc991555bf9bfab348633c4e5308f06e.jpg",
     "platforms": [
       "SNES",
       "Other"
@@ -1033,7 +1076,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Sunset%20Riders%20%28USA%29.sfc"
   },
   {
     "id": "snes-top-gear-1",
@@ -1041,8 +1085,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Đua Xe Tốc Độ Nitrous Bất Hủ Tuổi Thơ",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "coverArt": "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/8e3/8e3e1b2953d178d200b2c74be6de9b25.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/8e3/8e3e1b2953d178d200b2c74be6de9b25.jpg",
     "platforms": [
       "SNES",
       "Other"
@@ -1062,7 +1106,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Top%20Gear%20%28USA%29.sfc"
   },
   {
     "id": "snes-super-bomberman-5",
@@ -1070,8 +1115,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Đặt Bom Cứu Bạn Bè & So Tài Đặt Bom 4-5 Người Chơi",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "coverArt": "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/119/119d4d9ead8f5e8f8ad37807ccf1aa8c.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/119/119d4d9ead8f5e8f8ad37807ccf1aa8c.jpg",
     "platforms": [
       "SNES",
       "Other"
@@ -1091,7 +1136,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Super%20Bomberman%205%20%28Japan%29.sfc"
   },
   {
     "id": "snes-mortal-kombat-2",
@@ -1099,8 +1145,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Rồng Đen 2 - Tuyệt Kỹ Fatality & Đấu Sĩ Ngoại Giới Outworld",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "coverArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/0df/0dfe8852fa43d58cbdeb973765a9828d.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/0df/0dfe8852fa43d58cbdeb973765a9828d.jpg",
     "platforms": [
       "SNES",
       "Other"
@@ -1120,7 +1166,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "isFeatured": false,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Mortal%20Kombat%20II%20%28USA%29.sfc"
   },
   {
     "id": "snes-mega-man-x",
@@ -1128,8 +1175,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Khởi Đầu Huyền Thoại Mega Man X & Kiếm Sĩ Zero",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "coverArt": "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/9e5/9e5db3cb9bc5e74293a344998207a22c.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/9e5/9e5db3cb9bc5e74293a344998207a22c.jpg",
     "platforms": [
       "SNES",
       "Other"
@@ -1148,14 +1195,15 @@ export const INITIAL_GAMES: GameItem[] = [
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Mega%20Man%20X%20%28USA%29.sfc"
   },
   {
     "id": "sheet-0-starcraft-gundam-century",
     "title": "Starcraft Gundam Century",
     "subtitle": "Bản mod Gundam và bản gốc",
     "coverArt": "/assets/covers/starcraft_gundam_century-cover.jpg?t=1786369905350",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
+    "backdropArt": "https://media.rawg.io/media/games/0ab/0ab355d5f87d75b009a68ab24f917ee0.jpeg",
     "platforms": [
       "PC"
     ],
@@ -1303,8 +1351,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-6-god-of-war-ragnar-k",
     "title": "God of War Ragnarök",
     "subtitle": "• Việt hóa ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/1c3/1c305096502c475c00276c827f0fd697.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/1c3/1c305096502c475c00276c827f0fd697.jpg",
     "platforms": [
       "PC",
       "PS4"
@@ -1484,8 +1532,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-13-grand-theft-auto-iv--the-complete-edition",
     "title": "Grand Theft Auto IV: The Complete Edition",
     "subtitle": "🚗 GTA IV Complete • Việt hóa ⭐️ • by gametiengviet",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/e59/e59cc96f38cc93af5a396173878018d7.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/e59/e59cc96f38cc93af5a396173878018d7.jpg",
     "platforms": [
       "PC"
     ],
@@ -1510,8 +1558,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-14-diner-dash--qu-n-game-x-m-ultimate-collection",
     "title": "Diner Dash: Quán Game Xóm Ultimate Collection",
     "subtitle": "Full series quản lý nhà hàng",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/f37/f37133e0ed06dc3c9674144ff1498d56.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/f37/f37133e0ed06dc3c9674144ff1498d56.jpg",
     "platforms": [
       "PC"
     ],
@@ -1535,8 +1583,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-15-the-witcher-3--wild-hunt",
     "title": "The Witcher 3: Wild Hunt",
     "subtitle": "⚔️ GOTY 2015 • Next-gen • Full DLC • Việt hóa",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/618/618c2031a07bbff6b4f611f10b6bcdbc.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/618/618c2031a07bbff6b4f611f10b6bcdbc.jpg",
     "platforms": [
       "PC"
     ],
@@ -1561,8 +1609,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-16-the-witcher-2--assassins-of-kings-enhanced-edition",
     "title": "The Witcher 2: Assassins of Kings Enhanced Edition",
     "subtitle": "Bản thứ 2 của Series siêu phẩm The Witcher",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/6cd/6cd653e0aaef5ff8bbd295bf4bcb12eb.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/6cd/6cd653e0aaef5ff8bbd295bf4bcb12eb.jpg",
     "platforms": [
       "PC"
     ],
@@ -1587,8 +1635,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-17-the-witcher--enhanced-edition",
     "title": "The Witcher: Enhanced Edition",
     "subtitle": "⚔️ RPG dark fantasy • Bản đầu series • Enhanced Edition",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/ee3/ee3e10193aafc3230ba1cae426967d10.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/ee3/ee3e10193aafc3230ba1cae426967d10.jpg",
     "platforms": [
       "PC"
     ],
@@ -1612,8 +1660,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-18-army-men-rts",
     "title": "Army Men RTS",
     "subtitle": "🧠 RTS lính nhựa • PC 2002 Mod đồ họa • Full map",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/cb9/cb988f8c804a749536038594388d441c.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/cb9/cb988f8c804a749536038594388d441c.jpg",
     "platforms": [
       "PC"
     ],
@@ -1638,8 +1686,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-19-ganbare-goemon-2--kiteretsu-shogun-magginesu",
     "title": "Ganbare Goemon 2: Kiteretsu Shogun Magginesu",
     "subtitle": "🎯 SNES retro — Tam hiệp lùn 2 Patch tiếng Anh ✧",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/be9/be9cf02720c9326e11d0fda14518554f.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/be9/be9cf02720c9326e11d0fda14518554f.jpg",
     "platforms": [
       "PC"
     ],
@@ -1662,8 +1710,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-20-chocobo-racing",
     "title": "Chocobo Racing",
     "subtitle": "🏎️ Đua xe thú — PS1 Giả lập PC/Android/iOS ✦",
-    "coverArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/9e4/9e4ddf675900a0da0b1406c9fc25c9bf.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/9e4/9e4ddf675900a0da0b1406c9fc25c9bf.jpg",
     "platforms": [
       "PS1"
     ],
@@ -1689,8 +1737,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-21------the-legend-of-dragoon---severed-chains",
     "title": "🔥🔥 The Legend of Dragoon • Severed Chains",
     "subtitle": "Bản port lên PC upscale đồ họa 4K 60FPS • Kèm tool dịch màn hình chơi tiếng Việt",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/820/820032daf39cf1bad9b1a0f5d5ccd259.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/820/820032daf39cf1bad9b1a0f5d5ccd259.jpg",
     "platforms": [
       "PC"
     ],
@@ -1714,8 +1762,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-23-tiny-toon-adventures--wacky-sports-challenge",
     "title": "Tiny Toon Adventures: Wacky Sports Challenge",
     "subtitle": "🎯 Mùa thế vận hội vui nhộn — Mini thể thao ✦ Arcade vibe",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/899/899d83596072dcf9bb402650903f89a8.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/899/899d83596072dcf9bb402650903f89a8.jpg",
     "platforms": [
       "PC"
     ],
@@ -1739,8 +1787,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-24-call-of-duty--modern-warfare-3",
     "title": "Call of Duty: Modern Warfare 3",
     "subtitle": "Series bắn súng nổi tiếng • Việt hóa",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/e9c/e9c042d14515eb3ff7cb4db9fe78e435.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/e9c/e9c042d14515eb3ff7cb4db9fe78e435.jpg",
     "platforms": [
       "PC"
     ],
@@ -1765,8 +1813,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-25-call-of-duty--modern-warfare-2---campaign-remastered",
     "title": "Call of Duty: Modern Warfare 2 - Campaign Remastered",
     "subtitle": "Bản Remaster 4k/60 FPS • Việt hóa",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/526/52604f43739e5280b8e7ba040ae2c855.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/526/52604f43739e5280b8e7ba040ae2c855.jpg",
     "platforms": [
       "PC"
     ],
@@ -1791,8 +1839,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-26-call-of-duty-modern-warfare-remastered",
     "title": "Call of Duty Modern Warfare Remastered",
     "subtitle": "Bản Remaster 4k/60 FPS • Việt hóa",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/509/509c81a5da92a8d0645d9e160d155017.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/509/509c81a5da92a8d0645d9e160d155017.jpg",
     "platforms": [
       "PC"
     ],
@@ -1817,8 +1865,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-27-call-of-duty-4--modern-warfare",
     "title": "Call of Duty 4: Modern Warfare",
     "subtitle": "Game bắn súng nổi tiếng cốt truyện chiến tranh hiện đại",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/9fb/9fbaea2168caea1f806546dfdaaeb1da.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/9fb/9fbaea2168caea1f806546dfdaaeb1da.jpg",
     "platforms": [
       "PC"
     ],
@@ -1844,8 +1892,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-29-rune-classic",
     "title": "Rune Classic",
     "subtitle": "2000 • Game hành động",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/f83/f8324f17a0b08015911d878d881a0b71.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/f83/f8324f17a0b08015911d878d881a0b71.jpg",
     "platforms": [
       "PC"
     ],
@@ -1869,8 +1917,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-30-red-dead-redemption-ii",
     "title": "Red Dead Redemption II",
     "subtitle": "🤠 Siêu phẩm cao bồi — Open-world đỉnh cao ✦ Việt hóa ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/511/5118aff5091cb3efec399c808f8c598f.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/511/5118aff5091cb3efec399c808f8c598f.jpg",
     "platforms": [
       "PC"
     ],
@@ -1895,8 +1943,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-31-contra-gender-swap",
     "title": "Contra Gender Swap",
     "subtitle": "Game Contra mod 2 bé gái • Đa hệ PC / Điện thoại",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/4d8/4d8c5bbeb392f708601f179b8ec2d01e.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/4d8/4d8c5bbeb392f708601f179b8ec2d01e.jpg",
     "platforms": [
       "PC"
     ],
@@ -1921,8 +1969,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-32-dai-4-ji-super-robot-taisen",
     "title": "Dai-4-ji Super Robot Taisen",
     "subtitle": "Trận chiến robo 4 • Super Robo 4  Patch tiếng Anh",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/f0a/f0a2de2932cf10011444d5d4b137c50b.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/f0a/f0a2de2932cf10011444d5d4b137c50b.jpg",
     "platforms": [
       "PC"
     ],
@@ -1947,8 +1995,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-33-road-rash",
     "title": "Road Rash",
     "subtitle": "Game đua xe \"yêu thương\" nhau • PC / PS1 / Android / iOS",
-    "coverArt": "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?q=80&w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?q=80&w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/8b1/8b17097694791b1d38162d32921d6ad4.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/8b1/8b17097694791b1d38162d32921d6ad4.jpg",
     "platforms": [
       "PC"
     ],
@@ -1974,8 +2022,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-34-yu-gi-oh--power-of-chaos-trilogy---extended-qgx",
     "title": "Yu-Gi-Oh! Power of Chaos Trilogy + Extended QGX",
     "subtitle": "Bộ 03 bản Yu-Gi-Oh trên PC + 04 bản mở rộng (Mai/Dark Magicial Girl + Lồng tiếng Việt) •  Việt hóa ⭐ Credit Việt hóa/Mod: Đại Thắng | website bankhonggioi",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/fc7/fc78dab56559f375150b398a88343994.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/fc7/fc78dab56559f375150b398a88343994.jpg",
     "platforms": [
       "PC"
     ],
@@ -2001,8 +2049,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-35-grand-theft-auto--vice-city---the-definitive-edition",
     "title": "Grand Theft Auto: Vice City – The Definitive Edition",
     "subtitle": "Bản làm lại 4k / 60 FPS của Rockstar •  Việt hóa ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/a0d/a0d4405596639b3fe4de603f4489755e.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/a0d/a0d4405596639b3fe4de603f4489755e.jpg",
     "platforms": [
       "PC"
     ],
@@ -2055,8 +2103,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-37-yu-gi-oh--monster-capsule--breed-and-battle",
     "title": "Yu-Gi-Oh! Monster Capsule: Breed and Battle",
     "subtitle": "Game đánh cờ quái vật Yu-Gi-Oh PS1",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/eb0/eb08e45b6769304f121c2303720677a7.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/eb0/eb08e45b6769304f121c2303720677a7.jpg",
     "platforms": [
       "PS1"
     ],
@@ -2081,8 +2129,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-38-sniper-elite-iii--ultimate-edition",
     "title": "Sniper Elite III: Ultimate Edition",
     "subtitle": "Game bắn tỉa ám sát",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/25b/25b44a211b4eb55b2ed207a65195974f.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/25b/25b44a211b4eb55b2ed207a65195974f.jpg",
     "platforms": [
       "PC"
     ],
@@ -2107,8 +2155,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-39-command---conquer--renegade",
     "title": "Command & Conquer: Renegade",
     "subtitle": "Game hành động bắn súng chủ để Red Alert 2",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/fb7/fb7634700e0f4d97e569ec768a08c780.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/fb7/fb7634700e0f4d97e569ec768a08c780.jpg",
     "platforms": [
       "PC"
     ],
@@ -2132,8 +2180,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-40-story-of-seasons--friends-of-mineral-town",
     "title": "STORY OF SEASONS: Friends of Mineral Town",
     "subtitle": "2020 • Bản làm lại Remake của người làm vườn Harvest Moon (bao gồm bản PS1 + GBA) •  Việt hóa ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/ef7/ef7339c15f7c8cb08c7981d5d1324077.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/ef7/ef7339c15f7c8cb08c7981d5d1324077.jpg",
     "platforms": [
       "PC"
     ],
@@ -2159,8 +2207,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-41-dragon-ball--advanced-adventure",
     "title": "Dragon Ball: Advanced Adventure",
     "subtitle": "2004 • Songoku lúc nhỏ •  Việt hóa ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/de5/de5a17d237badcf50c37dbe72a54069f.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/de5/de5a17d237badcf50c37dbe72a54069f.jpg",
     "platforms": [
       "PC"
     ],
@@ -2186,8 +2234,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-42-commandos--behind-enemy-lines",
     "title": "Commandos: Behind Enemy Lines",
     "subtitle": "1998 · Game chiến thuật nổi tiếng",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/253/2539258054a5e134aec9a75fc1da7ad7.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/253/2539258054a5e134aec9a75fc1da7ad7.jpg",
     "platforms": [
       "PC"
     ],
@@ -2238,8 +2286,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-44------final-fantasy-vii---simple-mod---qu-n-game-x-m-edittion",
     "title": "🔥🔥 FINAL FANTASY VII – SIMPLE MOD - QUÁN GAME XÓM EDITTION",
     "subtitle": "2012 · PC · Bản ép cứng mod 60FPS + Chibi · Việt hoá ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/4e2/4e2ba6071056ab22c6aaa71ee5d40273.jpeg",
+    "backdropArt": "https://media.rawg.io/media/games/4e2/4e2ba6071056ab22c6aaa71ee5d40273.jpeg",
     "platforms": [
       "PC"
     ],
@@ -2291,8 +2339,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-47------final-fantasy-vii---simple-edition",
     "title": "🔥🔥 FINAL FANTASY VII – SIMPLE EDITION",
     "subtitle": "2012 · PC · Bản Simple Unrar & Play · Việt hoá The Red Team port by Lưu Việt Hoàng ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/d89/d89bd0cf4fcdc10820892980cbba0f49.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/d89/d89bd0cf4fcdc10820892980cbba0f49.jpg",
     "platforms": [
       "PC"
     ],
@@ -2318,8 +2366,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-49-fire-emblem--the-blazing-blade",
     "title": "Fire Emblem: The Blazing Blade",
     "subtitle": "Mộc đế 7 • 03 phần truyện trên GBA • Việt hóa ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/049/049346481c0f988bc2946f857e111834.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/049/049346481c0f988bc2946f857e111834.jpg",
     "platforms": [
       "PC"
     ],
@@ -2344,8 +2392,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-50-harvest-moon--back-to-nature",
     "title": "Harvest Moon: Back to Nature",
     "subtitle": "Người làm vườn PS1 • Việt hóa ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/d46/d46da4db91d7fc19c7ce7fdc45d2b76c.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/d46/d46da4db91d7fc19c7ce7fdc45d2b76c.jpg",
     "platforms": [
       "PS1"
     ],
@@ -2371,8 +2419,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-51-crisis-core--final-fantasy-vii---reunion",
     "title": "Crisis Core: Final Fantasy VII – Reunion",
     "subtitle": "Bản remake của FF7 Crisis Core trên PSP • Việt hóa ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/f6c/f6cfffdb246351c35b6f07a8bcf6e748.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/f6c/f6cfffdb246351c35b6f07a8bcf6e748.jpg",
     "platforms": [
       "PC"
     ],
@@ -2398,8 +2446,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-52-pocky---rocky-reshrined",
     "title": "Pocky & Rocky Reshrined",
     "subtitle": "2022• Ninja gấu Remake • Việt hóa ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/670/670e9d93c1a180e5632df9c492d8aeec.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/670/670e9d93c1a180e5632df9c492d8aeec.jpg",
     "platforms": [
       "PC"
     ],
@@ -2425,7 +2473,7 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-53------fire-emblem--seisen-no-keifu",
     "title": "🔥🔥 Fire Emblem: Seisen no Keifu",
     "subtitle": "1996 • Mộc đế 4 • Việt hóa ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/ce9/ce913686271304e77e5a3d6e35a6a424.jpg",
     "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
     "platforms": [
       "PC"
@@ -2453,8 +2501,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-54-final-fantasy-x-x-2-hd-remaster",
     "title": "Final Fantasy X/X-2 HD Remaster",
     "subtitle": "2013• Bản Remaster của Final Fantasy X và X-2 huyền thoại PC • Việt hóa ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/a14/a14acef284eaa4854f83c99e80fc15d8.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/a14/a14acef284eaa4854f83c99e80fc15d8.jpg",
     "platforms": [
       "PC"
     ],
@@ -2505,8 +2553,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-56-the-house-of-the-dead--remake",
     "title": "The House of the Dead: Remake",
     "subtitle": "2022 • PC • Việt hóa ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/afa/afa033ebee8e18662f3680ed111b98d2.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/afa/afa033ebee8e18662f3680ed111b98d2.jpg",
     "platforms": [
       "PC"
     ],
@@ -2532,8 +2580,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-57-prince-of-qin",
     "title": "Prince Of Qin",
     "subtitle": "2002 • PC • có tool dịch màn hình Việt hóa ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/af3/af3dfbbf2794dbc0cf7c6623aed20d7d.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/af3/af3dfbbf2794dbc0cf7c6623aed20d7d.jpg",
     "platforms": [
       "PC"
     ],
@@ -2559,8 +2607,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-58-the-sims-3-ultimate-collection",
     "title": "The Sims 3 Ultimate Collection",
     "subtitle": "Full bộ tất cả các bản mở rộng + Việt hóa ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/a04/a04c2b329f2bc9fa02e6247f25d93926.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/a04/a04c2b329f2bc9fa02e6247f25d93926.jpg",
     "platforms": [
       "PC"
     ],
@@ -2586,8 +2634,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-59-command---conquer--red-alert-2---yuri-s-revenge",
     "title": "Command & Conquer: Red Alert 2 – Yuri’s Revenge",
     "subtitle": "🗓 2001 • PC • Việt hóa ⭐ • Full phim cắt cảnh • Maps Bonus",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/e26/e26670c17cc10bfa963cbb97e8e70d56.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/e26/e26670c17cc10bfa963cbb97e8e70d56.jpg",
     "platforms": [
       "PC"
     ],
@@ -2688,8 +2736,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-63-final-fantasy-vii-remake-intergrade",
     "title": "Final Fantasy VII Remake Intergrade",
     "subtitle": "2021 • DLC Yuffie • PC • Việt hóa ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/acf/acf26d699ac392c014656f7fb3224d3d.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/acf/acf26d699ac392c014656f7fb3224d3d.jpg",
     "platforms": [
       "PC"
     ],
@@ -2714,8 +2762,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-64-captain-tsubasa-3--koutei-no-chousen",
     "title": "Captain Tsubasa 3: Koutei no Chousen",
     "subtitle": "Bản chuẩn Việt Hóa • Quán Game Xóm",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/338/338b02e34dd8d8c83e8d950c2081e3e2.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/338/338b02e34dd8d8c83e8d950c2081e3e2.jpg",
     "platforms": [
       "PC"
     ],
@@ -2742,8 +2790,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-65-battle-realms--zen-edition",
     "title": "Battle Realms: Zen Edition",
     "subtitle": "(Bao gồm 2 Bản là Phần đầu tiên gốc tiếng Anh (bản này có bug luyện ngọc) + Bản Zen bao gồm cốt truyện cả 2 phần tiếng Việt)",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/159/1595f4b91ce7e7687fba6b6211e311f1.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/159/1595f4b91ce7e7687fba6b6211e311f1.jpg",
     "platforms": [
       "PC"
     ],
@@ -2769,8 +2817,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-66-krush-kill--n-destroy-2--krossfire--2020-",
     "title": "Krush Kill ‘N Destroy 2: Krossfire (2020)",
     "subtitle": "(Bản Mod Full HD + 60 FPS)",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/76d/76d37b5dd666a968b1cd7c8398ae4471.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/76d/76d37b5dd666a968b1cd7c8398ae4471.jpg",
     "platforms": [
       "PC"
     ],
@@ -2795,8 +2843,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-67-half-life",
     "title": "Half-Life",
     "subtitle": "🔫 FPS huyền thoại — PC 1998 Half-Life ma | Deathmatch ✦ Mod BOT",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/653/6538b1b294060674f128aa8377decb44.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/653/6538b1b294060674f128aa8377decb44.jpg",
     "platforms": [
       "PC"
     ],
@@ -2820,8 +2868,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-68-chrono-cross--the-radical-dreamers-edition",
     "title": "CHRONO CROSS: THE RADICAL DREAMERS EDITION",
     "subtitle": "🧙 JRPG kinh điển — Remaster 2022 PC • Nâng cấp đồ họa ✦ từ PS1",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/3ff/3ffdeb71f32b5560db5786088a07f4be.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/3ff/3ffdeb71f32b5560db5786088a07f4be.jpg",
     "platforms": [
       "PC"
     ],
@@ -2871,8 +2919,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-70-mega-man-x4",
     "title": "Mega Man X4",
     "subtitle": "1997 · PC · Việt hóa",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/45f/45ff84b8d2b2c610edad9117abbc89f4.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/45f/45ff84b8d2b2c610edad9117abbc89f4.jpg",
     "platforms": [
       "PC"
     ],
@@ -2898,8 +2946,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-71-diablo-ii--lord-of-destruction",
     "title": "Diablo II: Lord of Destruction",
     "subtitle": "2001 · PC ·  Việt hoá ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/525/52577395aba84652f16e68e9541d38d7.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/525/52577395aba84652f16e68e9541d38d7.jpg",
     "platforms": [
       "PC"
     ],
@@ -2926,8 +2974,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-72-zoo-tycoon--complete-collection",
     "title": "Zoo Tycoon: Complete Collection",
     "subtitle": "Mô phỏng quản lý sở thú · Bao gồm 2 bản mở rộng: Dinosaur + Marine Mania",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/4a7/4a70c734fd9919a5ca0406f56abcc3d5.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/4a7/4a70c734fd9919a5ca0406f56abcc3d5.jpg",
     "platforms": [
       "PC"
     ],
@@ -2952,8 +3000,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-73-grand-theft-auto-v-enhanced",
     "title": "Grand Theft Auto V Enhanced",
     "subtitle": "GTA 5 bản nâng cấp đồ hoạ · Việt hoá ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/274/27424f7f32c1ff74a40c256d9b7a95d0.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/274/27424f7f32c1ff74a40c256d9b7a95d0.jpg",
     "platforms": [
       "PC"
     ],
@@ -2978,8 +3026,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-74-tearring-saga--yutona-eiyuu-senki",
     "title": "Tearring Saga: Yutona Eiyuu Senki",
     "subtitle": "🧠 Mộc đế — SRPG chiến thuật 2001 PS1 • Việt hóa ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/c77/c77443c1e8e5ed5c041bc47cbc106209.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/c77/c77443c1e8e5ed5c041bc47cbc106209.jpg",
     "platforms": [
       "PS1"
     ],
@@ -3006,8 +3054,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-75-popcap-greatest-hits",
     "title": "PopCap Greatest Hits",
     "subtitle": "(80 Games Pop cap giải trí hay nhất)",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/a94/a94aebeadcf6a2c27a40962f934dca39.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/a94/a94aebeadcf6a2c27a40962f934dca39.jpg",
     "platforms": [
       "PC"
     ],
@@ -3031,8 +3079,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-76-heroes-of-might---magic-iii---hd-edition--2015-",
     "title": "Heroes of Might & Magic III - HD Edition (2015)",
     "subtitle": "(Tổng cộng 04 bản: Bản Complete Edition + 03 bản DLC đều Việt hóa)",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/921/9214ad73a4387f0b94474fdcd439468c.jpeg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/921/9214ad73a4387f0b94474fdcd439468c.jpeg",
     "platforms": [
       "PC"
     ],
@@ -3059,8 +3107,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-77-serious-sam-classic--the-first-encounter--2001-",
     "title": "Serious Sam Classic: The First Encounter (2001)",
     "subtitle": "🔫 FPS cổ điển — PC 2001 Nhịp bắn dồn dập ✦ arcade chaos",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/f0e/f0e050dc774d4ae3afced76b33516295.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/f0e/f0e050dc774d4ae3afced76b33516295.jpg",
     "platforms": [
       "PC"
     ],
@@ -3085,8 +3133,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-78-serious-sam-classic--the-second-encounter--2002-",
     "title": "Serious Sam Classic: The Second Encounter (2002)",
     "subtitle": "🔫 FPS cổ điển — PC 2002 Combat dồn dập ✦ arcade chaos",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/68e/68e7d64c8b37ae0de3616aca74cc4bba.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/68e/68e7d64c8b37ae0de3616aca74cc4bba.jpg",
     "platforms": [
       "PC"
     ],
@@ -3111,8 +3159,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-79-kyatt--ninden-teyandee--1991-",
     "title": "Kyattō Ninden Teyandee (1991)",
     "subtitle": "🎯 NES retro — Ninja mèo 1991 Việt hóa ⭐ • Sufami",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/b33/b3322558bc923b8b1d2bbc8073726b31.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/b33/b3322558bc923b8b1d2bbc8073726b31.jpg",
     "platforms": [
       "PC"
     ],
@@ -3138,8 +3186,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-80-y--y--hakusho--tokubetsu-hen--1994-",
     "title": "Yū Yū Hakusho: Tokubetsu-hen (1994)",
     "subtitle": "👊 Nhất Dương Chỉ 2 | Yū Yū Hakusho   Đối kháng 1994 • Việt hóa ⭐ • Sufami",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/d0b/d0b0a3b62a219168e40cab2461cb32d4.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/d0b/d0b0a3b62a219168e40cab2461cb32d4.jpg",
     "platforms": [
       "PC"
     ],
@@ -3165,8 +3213,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-81-rittai-ninja-katsugeki-tench---shinobi-gaisen",
     "title": "Rittai Ninja Katsugeki Tenchū: Shinobi Gaisen",
     "subtitle": "🥷 Ninja báo thù — Hành động lén lút PS1 Việt hóa ⭐ • Sufami",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/d00/d005cf97481cb7db935cca728c5ef5ee.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/d00/d005cf97481cb7db935cca728c5ef5ee.jpg",
     "platforms": [
       "PS1"
     ],
@@ -3192,8 +3240,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-82-counter-strike",
     "title": "Counter-Strike",
     "subtitle": "🔫 CS huyền thoại — FPS cổ điển v1.1 | 1.3 | 1.6 ✦",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/7b2/7b2920260f974292970d6c2312991a3d.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/7b2/7b2920260f974292970d6c2312991a3d.jpg",
     "platforms": [
       "PC"
     ],
@@ -3245,8 +3293,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-84-devil-may-cry-4--special-edition",
     "title": "Devil May Cry 4: Special Edition",
     "subtitle": "Credit Việt hóa: gametiengviet.com ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/8e7/8e79a8e6bd4e71c8ce0006544a17aaf2.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/8e7/8e79a8e6bd4e71c8ce0006544a17aaf2.jpg",
     "platforms": [
       "PC"
     ],
@@ -3272,8 +3320,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-85-dmc--devil-may-cry---definitive-edition",
     "title": "DmC: Devil May Cry - Definitive Edition",
     "subtitle": "Credit Việt hóa: gametiengviet.com ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/295/295eb868c241e6ad32ac033b8e6a2ede.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/295/295eb868c241e6ad32ac033b8e6a2ede.jpg",
     "platforms": [
       "PC"
     ],
@@ -3299,8 +3347,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-86-devil-may-cry-hd-collection",
     "title": "Devil May Cry HD Collection",
     "subtitle": "Trọn bộ Devil May Cry 1,2,3 Remastered",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/13a/13a97b75b6e6b999901f6dd6fda47848.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/13a/13a97b75b6e6b999901f6dd6fda47848.jpg",
     "platforms": [
       "PC"
     ],
@@ -3325,8 +3373,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-87-mitsume-ga-tooru",
     "title": "Mitsume Ga Tooru",
     "subtitle": "🎯 NES cổ điển • Cậu bé 3 mắt Việt hóa ⭐ • Huỳnh Hữu Ân",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/363/363e72a852ca2192625ebd6db2386a50.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/363/363e72a852ca2192625ebd6db2386a50.jpg",
     "platforms": [
       "PC"
     ],
@@ -3350,8 +3398,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-88-seal-of-evil",
     "title": "Seal of Evil",
     "subtitle": "🧙 RPG cổ điển • PC 2004 kèm Tool dịch màn hình",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/c81/c810d230e21ce9916e982f08aed43e08.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/c81/c810d230e21ce9916e982f08aed43e08.jpg",
     "platforms": [
       "PC"
     ],
@@ -3376,8 +3424,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-89-sleeping-dogs--definitive-edition",
     "title": "Sleeping Dogs: Definitive Edition",
     "subtitle": "🚗 GTA Hồng Kông • Definitive Edition Việt hóa ⭐ • gametiengviet.com",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/bd7/bd7cfccfececba1ec2b97a120a40373f.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/bd7/bd7cfccfececba1ec2b97a120a40373f.jpg",
     "platforms": [
       "PC"
     ],
@@ -3403,8 +3451,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-90-sleeping-dogs--definitive-edition--ps4-",
     "title": "Sleeping Dogs: Definitive Edition (PS4)",
     "subtitle": "GTA Hồng Kông • Việt hóa ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/bd7/bd7cfccfececba1ec2b97a120a40373f.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/bd7/bd7cfccfececba1ec2b97a120a40373f.jpg",
     "platforms": [
       "PS4"
     ],
@@ -3429,8 +3477,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-91-chicken-invaders-ultimate-qu-n-game-x-m-collection",
     "title": "Chicken Invaders Ultimate Quán Game Xóm Collection",
     "subtitle": "Full series bắn gà",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/f37/f37133e0ed06dc3c9674144ff1498d56.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/f37/f37133e0ed06dc3c9674144ff1498d56.jpg",
     "platforms": [
       "PC"
     ],
@@ -3454,8 +3502,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-92-cossacks--back-to-war---qgx-repack",
     "title": "Cossacks: Back to War • QGX Repack",
     "subtitle": "Game chiến tranh Châu Âu | Bản fix Win 10/11",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/27a/27a4335cf43724419cdaae9935d2e8ff.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/27a/27a4335cf43724419cdaae9935d2e8ff.jpg",
     "platforms": [
       "PC"
     ],
@@ -3480,8 +3528,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-93-neighbours-from-hell---the-complete-series---qu-n-game-x-m-ultimate-collection",
     "title": "NEIGHBOURS FROM HELL • THE COMPLETE SERIES • QUÁN GAME XÓM ULTIMATE COLLECTION",
     "subtitle": "Multi-Platform: Windows • Android | Full Việt Hóa ⭐",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/160/1609d2e78bc0a19bdbc38b6f53b28968_hFQ0k8h.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/160/1609d2e78bc0a19bdbc38b6f53b28968_hFQ0k8h.jpg",
     "platforms": [
       "PC",
       "Android"
@@ -3507,8 +3555,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-94-150-gamehouse-games-pack",
     "title": "150 Gamehouse Games Pack",
     "subtitle": "Bộ sưu tập 150 game giải trí của hãng GameHouse",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/e85/e8500290f4048f50507e84e8e65904cf_EI7R2iG.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/e85/e8500290f4048f50507e84e8e65904cf_EI7R2iG.jpg",
     "platforms": [
       "PC"
     ],
@@ -3533,8 +3581,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-95-chaos-legion",
     "title": "Chaos Legion",
     "subtitle": "⚔️ Chặt chém • Combat tốc độ cao",
-    "coverArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/484/484764a6f0a5bb5d9edc536e633bb6e5.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/484/484764a6f0a5bb5d9edc536e633bb6e5.jpg",
     "platforms": [
       "PC"
     ],
@@ -3559,8 +3607,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-96-super-bomberman-collection",
     "title": "SUPER BOMBERMAN COLLECTION",
     "subtitle": "🎯 Full Series đặt bom trên SNES • Bonus 02 bản NES",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/797/797791e8fe14e5af187d2cdd401c6da9.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/797/797791e8fe14e5af187d2cdd401c6da9.jpg",
     "platforms": [
       "PC"
     ],
@@ -3585,8 +3633,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-97-rollercoaster-tycoon-classic",
     "title": "RollerCoaster Tycoon Classic",
     "subtitle": "🏛️ Bản tổng hợp RCT 1+2  🎡 Quản lý công viên · Thiết kế tàu lượn",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/fdc/fdc474dec73b5413fcf32e077142bd7a.jpeg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/fdc/fdc474dec73b5413fcf32e077142bd7a.jpeg",
     "platforms": [
       "PC"
     ],
@@ -3611,8 +3659,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-98-dynasty-warriors-3--complete-edition-remastered",
     "title": "DYNASTY WARRIORS 3: Complete Edition Remastered",
     "subtitle": "⚔️ Tam Quốc Chí 3 — Bản Remaster",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/7f8/7f8d7188bc5f3139b60f35eaeaa7d0c9.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/7f8/7f8d7188bc5f3139b60f35eaeaa7d0c9.jpg",
     "platforms": [
       "PC"
     ],
@@ -3635,8 +3683,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-99-dynasty-warrior-4--hyper",
     "title": "Dynasty Warrior 4: Hyper",
     "subtitle": "⚔️ Tam Quốc Chí 4 — Musou chặt chém PC • Hyper Edition",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/7f8/7f8d7188bc5f3139b60f35eaeaa7d0c9.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/7f8/7f8d7188bc5f3139b60f35eaeaa7d0c9.jpg",
     "platforms": [
       "PC"
     ],
@@ -3661,8 +3709,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-100-dynasty-warriors-5---shin-sangokumusou-4-special",
     "title": "Dynasty Warriors 5 - SHIN SANGOKUMUSOU 4 SPECIAL",
     "subtitle": "Tam quốc vô song 5",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/57a/57a0948becfd6472ecc2922e6bc6feaa.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/57a/57a0948becfd6472ecc2922e6bc6feaa.jpg",
     "platforms": [
       "PC"
     ],
@@ -3686,8 +3734,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-101-dynasty-warriors-6",
     "title": "Dynasty Warriors 6",
     "subtitle": "Tam quốc vô song 6",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/29e/29edfdb12a254869f3e5f75d8fc9d22f.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/29e/29edfdb12a254869f3e5f75d8fc9d22f.jpg",
     "platforms": [
       "PC"
     ],
@@ -3712,8 +3760,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-102-dynasty-warriors-7--xtreme-legends-definitive-edition",
     "title": "DYNASTY WARRIORS 7: Xtreme Legends Definitive Edition",
     "subtitle": "Tam quốc vô song 7 bản full DLC",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/59b/59b65e697371d4aa95b0b4c8b6cb301c.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/59b/59b65e697371d4aa95b0b4c8b6cb301c.jpg",
     "platforms": [
       "PC"
     ],
@@ -3738,8 +3786,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-103-dynasty-warriors-8--xtreme-legends-complete-edition",
     "title": "DYNASTY WARRIORS 8: Xtreme Legends Complete Edition",
     "subtitle": "Tam Quốc Chí 8 • PC",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/637/6370d17534183a7cbcff7bb1878188a6.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/637/6370d17534183a7cbcff7bb1878188a6.jpg",
     "platforms": [
       "PC"
     ],
@@ -3763,8 +3811,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-104-dynasty-warriors-8--xtreme-legends-definitive-edition",
     "title": "DYNASTY WARRIORS 8: Xtreme Legends Definitive Edition",
     "subtitle": "⚔️ Musou Tam Quốc — Android Xtreme Legends Definitive ✦}",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/2d7/2d7b4d407a59e63003b2e66900ff3ad5.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/2d7/2d7b4d407a59e63003b2e66900ff3ad5.jpg",
     "platforms": [
       "Android"
     ],
@@ -3788,8 +3836,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-105-dynasty-warriors-9",
     "title": "DYNASTY WARRIORS 9",
     "subtitle": "Tam Quốc Chí 9 • Việt hóa",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/5f3/5f32837b17b42552f63874428163e53d.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/5f3/5f32837b17b42552f63874428163e53d.jpg",
     "platforms": [
       "PC"
     ],
@@ -3813,8 +3861,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-106-dynasty-warriors--origins",
     "title": "DYNASTY WARRIORS: ORIGINS",
     "subtitle": "Tân Tam Quốc 2025 • Việt hóa",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/7f8/7f8d7188bc5f3139b60f35eaeaa7d0c9.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/7f8/7f8d7188bc5f3139b60f35eaeaa7d0c9.jpg",
     "platforms": [
       "PC"
     ],
@@ -3838,8 +3886,8 @@ export const INITIAL_GAMES: GameItem[] = [
   {
     "id": "sheet-107-samurai-warriors-2",
     "title": "Samurai Warriors 2",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/88a/88aaff14f7aaea9e12ec072ee59eb68e.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/88a/88aaff14f7aaea9e12ec072ee59eb68e.jpg",
     "platforms": [
       "PC"
     ],
@@ -3863,8 +3911,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-108-samurai-warriors-4-ii",
     "title": "SAMURAI WARRIORS 4-II",
     "subtitle": "__________",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/745/745d4e9df08ff87d034759966063ee42.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/745/745d4e9df08ff87d034759966063ee42.jpg",
     "platforms": [
       "PC"
     ],
@@ -3888,8 +3936,8 @@ export const INITIAL_GAMES: GameItem[] = [
   {
     "id": "sheet-109-musou-orochi-z",
     "title": "Musou Orochi Z",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/305/3058efafc37bcb305c5dedb3fc6a0f1c.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/305/3058efafc37bcb305c5dedb3fc6a0f1c.jpg",
     "platforms": [
       "PC"
     ],
@@ -3912,8 +3960,8 @@ export const INITIAL_GAMES: GameItem[] = [
   {
     "id": "sheet-110-warriors-orochi-3-ultimate-definitive-edition",
     "title": "WARRIORS OROCHI 3 Ultimate Definitive Edition",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/048/0488c3e846ab62844d220bc81a2cef3b.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/048/0488c3e846ab62844d220bc81a2cef3b.jpg",
     "platforms": [
       "PC"
     ],
@@ -3936,8 +3984,8 @@ export const INITIAL_GAMES: GameItem[] = [
   {
     "id": "sheet-111-warriors-orochi-4",
     "title": "Warriors Orochi 4",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/c86/c866c8c6adcd8939bfefc7c77bf30fff.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/c86/c866c8c6adcd8939bfefc7c77bf30fff.jpg",
     "platforms": [
       "PC"
     ],
@@ -3961,8 +4009,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-112-metal-gear-solid-v--the-phantom-pain",
     "title": "Metal Gear Solid V: The Phantom Pain",
     "subtitle": "Bản chuẩn Việt Hóa • Quán Game Xóm",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/490/49016e06ae2103881ff6373248843069.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/490/49016e06ae2103881ff6373248843069.jpg",
     "platforms": [
       "PC"
     ],
@@ -4063,8 +4111,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-116-torchlight-ii",
     "title": "Torchlight II",
     "subtitle": "Bản chuẩn Việt Hóa • Quán Game Xóm",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/c06/c06d88c35785c8003147cb53c84af033.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/c06/c06d88c35785c8003147cb53c84af033.jpg",
     "platforms": [
       "PC"
     ],
@@ -4088,8 +4136,8 @@ export const INITIAL_GAMES: GameItem[] = [
   {
     "id": "sheet-117-wild-guns-reloaded",
     "title": "Wild Guns Reloaded",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/712/71266a39cca8fcabea958368aa8506e5.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/712/71266a39cca8fcabea958368aa8506e5.jpg",
     "platforms": [
       "PC"
     ],
@@ -4113,8 +4161,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-118-hitman-absolution-professional-edition",
     "title": "Hitman Absolution Professional Edition",
     "subtitle": "Bản chuẩn Việt Hóa • Quán Game Xóm",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/d46/d46373f39458670305704ef089387520.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/d46/d46373f39458670305704ef089387520.jpg",
     "platforms": [
       "PC"
     ],
@@ -4165,8 +4213,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-120-diablo-ii-resurrected-infernal-edition",
     "title": "Diablo II Resurrected Infernal Edition",
     "subtitle": "Bản chuẩn Việt Hóa • Quán Game Xóm",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/3f2/3f207dcc7931598567a90bc779a95cf8.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/3f2/3f207dcc7931598567a90bc779a95cf8.jpg",
     "platforms": [
       "PC"
     ],
@@ -4190,8 +4238,8 @@ export const INITIAL_GAMES: GameItem[] = [
   {
     "id": "sheet-121-oni",
     "title": "Oni",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/60e/60ec0cee4c7dfdec953e608332b7a472.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/60e/60ec0cee4c7dfdec953e608332b7a472.jpg",
     "platforms": [
       "PC"
     ],
@@ -4215,8 +4263,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-122-final-fantasy-xiii",
     "title": "Final Fantasy XIII",
     "subtitle": "Bản chuẩn Việt Hóa • Quán Game Xóm",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/943/9432de383089b0a427a3cdf3687b2b73.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/943/9432de383089b0a427a3cdf3687b2b73.jpg",
     "platforms": [
       "PC"
     ],
@@ -4241,8 +4289,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-123-final-fantasy-xiii-2",
     "title": "FINAL FANTASY XIII-2",
     "subtitle": "Bản chuẩn Việt Hóa • Quán Game Xóm",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/c6f/c6fc62de480c614fed2b88df0155cdcd.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/c6f/c6fc62de480c614fed2b88df0155cdcd.jpg",
     "platforms": [
       "PC"
     ],
@@ -4266,8 +4314,8 @@ export const INITIAL_GAMES: GameItem[] = [
   {
     "id": "sheet-124-brigandine-grand-edition",
     "title": "Brigandine Grand Edition",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/6f3/6f376c4ecb7625ecba8ceb9bdce115cf.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/6f3/6f376c4ecb7625ecba8ceb9bdce115cf.jpg",
     "platforms": [
       "PC"
     ],
@@ -4290,8 +4338,8 @@ export const INITIAL_GAMES: GameItem[] = [
   {
     "id": "sheet-126-bahamut-lagoon",
     "title": "Bahamut Lagoon",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/ba6/ba6dc02961f02c32f8b13cf7b621b187.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/ba6/ba6dc02961f02c32f8b13cf7b621b187.jpg",
     "platforms": [
       "PC"
     ],
@@ -4315,8 +4363,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-127-contra",
     "title": "Contra",
     "subtitle": "Bản chuẩn Việt Hóa • Quán Game Xóm",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1200&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/4d8/4d8c5bbeb392f708601f179b8ec2d01e.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/4d8/4d8c5bbeb392f708601f179b8ec2d01e.jpg",
     "platforms": [
       "PC"
     ],
@@ -4339,8 +4387,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-128-kage-plus",
     "title": "Kage Plus",
     "subtitle": "Bản chuẩn Việt Hóa • Quán Game Xóm",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/8a7/8a75028028592f9323d1e6e86668bb91.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/8a7/8a75028028592f9323d1e6e86668bb91.jpg",
     "platforms": [
       "PC"
     ],
@@ -4365,8 +4413,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-130-grand-theft-auto-v-legacy",
     "title": "Grand Theft Auto V Legacy",
     "subtitle": "Bản chuẩn Việt Hóa • Quán Game Xóm",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/20a/20aa03a10cda45239fe22d035c0ebe64.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/20a/20aa03a10cda45239fe22d035c0ebe64.jpg",
     "platforms": [
       "PC"
     ],
@@ -4391,8 +4439,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "id": "sheet-132-final-fantasy-tactics--the-war-of-the-lions",
     "title": "Final Fantasy Tactics: The War of the Lions",
     "subtitle": "Bản chuẩn Việt Hóa • Quán Game Xóm",
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/d0a/d0affccf7936505528f278a597b9422e.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/d0a/d0affccf7936505528f278a597b9422e.jpg",
     "platforms": [
       "PC"
     ],
@@ -4422,8 +4470,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "platforms": [
       "PC"
     ],
-    "coverArt": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/525/52577395aba84652f16e68e9541d38d7.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/525/52577395aba84652f16e68e9541d38d7.jpg",
     "language": "Tiếng Việt ⭐",
     "hasVietHoa": true,
     "releaseYear": 2001,
@@ -4450,8 +4498,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "platforms": [
       "PC"
     ],
-    "coverArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/efa/efa20a88e86267ed7c49f394fa22c1d0.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/efa/efa20a88e86267ed7c49f394fa22c1d0.jpg",
     "language": "Tiếng Việt x Tiếng Anh ⭐",
     "hasVietHoa": true,
     "releaseYear": 1999,
@@ -4477,8 +4525,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "platforms": [
       "PC"
     ],
-    "coverArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/6c5/6c55e22185876626881b76c11922b073.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/6c5/6c55e22185876626881b76c11922b073.jpg",
     "language": "Tiếng Việt ⭐",
     "hasVietHoa": true,
     "releaseYear": 1998,
@@ -4504,8 +4552,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "platforms": [
       "PC"
     ],
-    "coverArt": "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/13a/13a528ac9cf48bbb6be5d35fe029336d.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/13a/13a528ac9cf48bbb6be5d35fe029336d.jpg",
     "language": "Tiếng Việt ⭐",
     "hasVietHoa": true,
     "releaseYear": 2002,
@@ -4531,8 +4579,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "platforms": [
       "PC"
     ],
-    "coverArt": "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/41b/41ba37b6a3e706dc1d27d49afbf0f72a.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/41b/41ba37b6a3e706dc1d27d49afbf0f72a.jpg",
     "language": "Tiếng Việt x Tiếng Anh ⭐",
     "hasVietHoa": true,
     "releaseYear": 2005,
@@ -4558,8 +4606,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "platforms": [
       "PC"
     ],
-    "coverArt": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/69b/69b057c6b3eecf554507a2dd1172148a.jpg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/69b/69b057c6b3eecf554507a2dd1172148a.jpg",
     "language": "Tiếng Việt ⭐",
     "hasVietHoa": true,
     "releaseYear": 2000,
@@ -4588,8 +4636,8 @@ export const INITIAL_GAMES: GameItem[] = [
       "Android",
       "PC"
     ],
-    "coverArt": "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/screenshots/7e5/7e56cc0421adcea354ed6b85057f2caa.jpeg",
+    "backdropArt": "https://media.rawg.io/media/screenshots/7e5/7e56cc0421adcea354ed6b85057f2caa.jpeg",
     "language": "Tiếng Việt ⭐",
     "hasVietHoa": true,
     "releaseYear": 2004,
@@ -4618,8 +4666,8 @@ export const INITIAL_GAMES: GameItem[] = [
       "PC",
       "Android"
     ],
-    "coverArt": "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/45d/45da4dc311d84b79230317d7b24a3dec.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/45d/45da4dc311d84b79230317d7b24a3dec.jpg",
     "language": "Tiếng Việt ⭐",
     "hasVietHoa": true,
     "releaseYear": 1997,
@@ -4643,8 +4691,8 @@ export const INITIAL_GAMES: GameItem[] = [
     "subtitle": "Thế Giới Ánh Sáng & Bóng Tối • Thanh Kiếm Master Sword Huyền Thoại",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "coverArt": "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?w=600&auto=format&fit=crop",
-    "backdropArt": "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=1920&auto=format&fit=crop",
+    "coverArt": "https://media.rawg.io/media/games/087/08727beb32c364d30e8b2a1aa8595f8e.jpg",
+    "backdropArt": "https://media.rawg.io/media/games/087/08727beb32c364d30e8b2a1aa8595f8e.jpg",
     "platforms": [
       "SNES",
       "Other"
@@ -4664,6 +4712,7 @@ export const INITIAL_GAMES: GameItem[] = [
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": true,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/The%20Legend%20of%20Zelda%20-%20A%20Link%20to%20the%20Past%20%28USA%29.sfc"
   }
 ];

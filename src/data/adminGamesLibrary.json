@@ -563,7 +563,6 @@
     "subtitle": "Super Nintendo (SNES) • Vercel Blob Cloud ROM",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://archive.org/download/snes-romset-ultra/Aladdin%20%28USA%29.sfc",
     "coverArt": "https://media.rawg.io/media/games/983/9833303155b5f348a459500666f6edfc.jpg",
     "backdropArt": "https://media.rawg.io/media/games/983/9833303155b5f348a459500666f6edfc.jpg",
     "platforms": [
@@ -586,7 +585,8 @@
     "isPopular": true,
     "isNewUpdate": true,
     "addedDate": "2026-08-15",
-    "isHidden": false
+    "isHidden": false,
+    "romUrl": "https://archive.org/download/snes-romset-ultra/Aladdin%20%28USA%29.sfc"
   },
   {
     "id": "blob-rom-power-rangers-fighting",
@@ -626,7 +626,6 @@
     "subtitle": "Đua xe bắn súng chuột không gian • Konami SNES",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "/roms/biker-mice-from-mars.sfc",
     "coverArt": "https://media.rawg.io/media/games/004/004c7379149fa76bfb566050a604a2b8.jpg",
     "backdropArt": "https://media.rawg.io/media/games/004/004c7379149fa76bfb566050a604a2b8.jpg",
     "platforms": [
@@ -650,7 +649,8 @@
     "isPopular": true,
     "isNewUpdate": true,
     "addedDate": "2026-08-15",
-    "isHidden": false
+    "isHidden": false,
+    "romUrl": "/roms/biker-mice-from-mars.sfc"
   },
   {
     "id": "snes-aladdin",
@@ -658,7 +658,6 @@
     "subtitle": "Disney's Aladdin • Super Nintendo (SNES) 16-Bit",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "/roms/aladdin.sfc",
     "coverArt": "https://media.rawg.io/media/games/983/9833303155b5f348a459500666f6edfc.jpg",
     "backdropArt": "https://media.rawg.io/media/games/983/9833303155b5f348a459500666f6edfc.jpg",
     "platforms": [
@@ -682,7 +681,8 @@
     "isPopular": true,
     "isNewUpdate": true,
     "addedDate": "2026-08-15",
-    "isHidden": false
+    "isHidden": false,
+    "romUrl": "/roms/aladdin.sfc"
   },
   {
     "id": "blob-rom-megaman-x2-vn",
@@ -785,7 +785,6 @@
     "subtitle": "Khám Phá Vùng Đất Khủng Long Cùng Mario & Khủng Long Yoshi",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Super%20Mario%20World%20%28USA%29.sfc",
     "coverArt": "https://media.rawg.io/media/games/3bb/3bb2c8d774c3a83eb2c17d0d3d51f020.jpg",
     "backdropArt": "https://media.rawg.io/media/games/3bb/3bb2c8d774c3a83eb2c17d0d3d51f020.jpg",
     "platforms": [
@@ -806,7 +805,8 @@
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Super%20Mario%20World%20%28USA%29.sfc"
   },
   {
     "id": "snes-chrono-trigger",
@@ -814,7 +814,6 @@
     "subtitle": "Du Hành Xuyên Không Gian Thời Gian Cứu Rỗi Thế Giới",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Chrono%20Trigger%20%28USA%29.sfc",
     "coverArt": "https://media.rawg.io/media/games/ae4/ae404f4e0f504131199703c09111bb78.jpg",
     "backdropArt": "https://media.rawg.io/media/games/ae4/ae404f4e0f504131199703c09111bb78.jpg",
     "platforms": [
@@ -836,7 +835,8 @@
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": true,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Chrono%20Trigger%20%28USA%29.sfc"
   },
   {
     "id": "snes-donkey-kong-country",
@@ -844,7 +844,6 @@
     "subtitle": "Cuộc Phiêu Lưu Của Gia Đình Vượn Donkey Kong & Diddy Kong",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Donkey%20Kong%20Country%20%28USA%29.sfc",
     "coverArt": "https://media.rawg.io/media/screenshots/6df/6df71f3ff0f6d6bbac306cb9adf935ee.jpg",
     "backdropArt": "https://media.rawg.io/media/screenshots/6df/6df71f3ff0f6d6bbac306cb9adf935ee.jpg",
     "platforms": [
@@ -865,7 +864,8 @@
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Donkey%20Kong%20Country%20%28USA%29.sfc"
   },
   {
     "id": "snes-street-fighter-2-turbo",
@@ -873,7 +873,6 @@
     "subtitle": "Đại Chiến Đấu Sĩ Đường Phố Tốc Độ Cao",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Street%20Fighter%20II%20Turbo%20%28USA%29.sfc",
     "coverArt": "https://media.rawg.io/media/screenshots/19e/19e0d1d867e89fc7435167aeff6d7f4a.jpg",
     "backdropArt": "https://media.rawg.io/media/screenshots/19e/19e0d1d867e89fc7435167aeff6d7f4a.jpg",
     "platforms": [
@@ -895,7 +894,8 @@
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Street%20Fighter%20II%20Turbo%20%28USA%29.sfc"
   },
   {
     "id": "snes-super-castlevania-iv",
@@ -903,7 +903,6 @@
     "subtitle": "Simon Belmont & Huyền Thoại Roi Da Diệt Bá Tước Dracula",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Super%20Castlevania%20IV%20%28USA%29.sfc",
     "coverArt": "https://media.rawg.io/media/screenshots/6c2/6c299f5dc9039c83b4c7a29b6830e29e.jpg",
     "backdropArt": "https://media.rawg.io/media/screenshots/6c2/6c299f5dc9039c83b4c7a29b6830e29e.jpg",
     "platforms": [
@@ -924,7 +923,8 @@
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Super%20Castlevania%20IV%20%28USA%29.sfc"
   },
   {
     "id": "snes-tmnt-turtles-in-time",
@@ -932,7 +932,6 @@
     "subtitle": "Ninja Rùa Du Hành Thời Gian Trừ Gian Diệt Bạo",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Teenage%20Mutant%20Ninja%20Turtles%20IV%20-%20Turtles%20in%20Time%20%28USA%29.sfc",
     "coverArt": "https://media.rawg.io/media/screenshots/4cf/4cfbd3fc7011fa848e672b14e73e9db9.jpg",
     "backdropArt": "https://media.rawg.io/media/screenshots/4cf/4cfbd3fc7011fa848e672b14e73e9db9.jpg",
     "platforms": [
@@ -954,7 +953,8 @@
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Teenage%20Mutant%20Ninja%20Turtles%20IV%20-%20Turtles%20in%20Time%20%28USA%29.sfc"
   },
   {
     "id": "snes-aladdin-capcom",
@@ -962,7 +962,6 @@
     "subtitle": "Hành Trình Aladdin & Cây Đèn Thần Cứu Công Chúa Jasmine",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Aladdin%20%28USA%29.sfc",
     "coverArt": "https://media.rawg.io/media/games/983/9833303155b5f348a459500666f6edfc.jpg",
     "backdropArt": "https://media.rawg.io/media/games/983/9833303155b5f348a459500666f6edfc.jpg",
     "platforms": [
@@ -983,7 +982,8 @@
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Aladdin%20%28USA%29.sfc"
   },
   {
     "id": "snes-lion-king",
@@ -991,7 +991,6 @@
     "subtitle": "Vua Sư Tử Simba - Trưởng Thành & Đòi Lại Ngai Vàng Pride Rock",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/The%20Lion%20King%20%28USA%29.sfc",
     "coverArt": "https://media.rawg.io/media/games/bb1/bb182c89b9d4e19b41e5d0f81caa0f42.jpg",
     "backdropArt": "https://media.rawg.io/media/games/bb1/bb182c89b9d4e19b41e5d0f81caa0f42.jpg",
     "platforms": [
@@ -1012,7 +1011,8 @@
     "isFeatured": false,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/The%20Lion%20King%20%28USA%29.sfc"
   },
   {
     "id": "snes-contra-3-alien-wars",
@@ -1020,7 +1020,6 @@
     "subtitle": "Chiến Tranh Người Ngoài Hành Tinh - Biệt Đội Hủy Diệt Contra",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Contra%20III%20-%20The%20Alien%20Wars%20%28USA%29.sfc",
     "coverArt": "https://media.rawg.io/media/games/876/87695e289689a74aa507ce3df0afae35.jpg",
     "backdropArt": "https://media.rawg.io/media/games/876/87695e289689a74aa507ce3df0afae35.jpg",
     "platforms": [
@@ -1042,7 +1041,8 @@
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Contra%20III%20-%20The%20Alien%20Wars%20%28USA%29.sfc"
   },
   {
     "id": "snes-sunset-riders",
@@ -1050,7 +1050,6 @@
     "subtitle": "Bắn Súng Cao Bồi Miền Viễn Tây Nổi Tiếng",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Sunset%20Riders%20%28USA%29.sfc",
     "coverArt": "https://media.rawg.io/media/screenshots/dc9/dc991555bf9bfab348633c4e5308f06e.jpg",
     "backdropArt": "https://media.rawg.io/media/screenshots/dc9/dc991555bf9bfab348633c4e5308f06e.jpg",
     "platforms": [
@@ -1072,7 +1071,8 @@
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Sunset%20Riders%20%28USA%29.sfc"
   },
   {
     "id": "snes-top-gear-1",
@@ -1080,7 +1080,6 @@
     "subtitle": "Đua Xe Tốc Độ Nitrous Bất Hủ Tuổi Thơ",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Top%20Gear%20%28USA%29.sfc",
     "coverArt": "https://media.rawg.io/media/games/8e3/8e3e1b2953d178d200b2c74be6de9b25.jpg",
     "backdropArt": "https://media.rawg.io/media/games/8e3/8e3e1b2953d178d200b2c74be6de9b25.jpg",
     "platforms": [
@@ -1102,7 +1101,8 @@
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Top%20Gear%20%28USA%29.sfc"
   },
   {
     "id": "snes-super-bomberman-5",
@@ -1110,7 +1110,6 @@
     "subtitle": "Đặt Bom Cứu Bạn Bè & So Tài Đặt Bom 4-5 Người Chơi",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Super%20Bomberman%205%20%28Japan%29.sfc",
     "coverArt": "https://media.rawg.io/media/screenshots/119/119d4d9ead8f5e8f8ad37807ccf1aa8c.jpg",
     "backdropArt": "https://media.rawg.io/media/screenshots/119/119d4d9ead8f5e8f8ad37807ccf1aa8c.jpg",
     "platforms": [
@@ -1132,7 +1131,8 @@
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Super%20Bomberman%205%20%28Japan%29.sfc"
   },
   {
     "id": "snes-mortal-kombat-2",
@@ -1140,7 +1140,6 @@
     "subtitle": "Rồng Đen 2 - Tuyệt Kỹ Fatality & Đấu Sĩ Ngoại Giới Outworld",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Mortal%20Kombat%20II%20%28USA%29.sfc",
     "coverArt": "https://media.rawg.io/media/games/0df/0dfe8852fa43d58cbdeb973765a9828d.jpg",
     "backdropArt": "https://media.rawg.io/media/games/0df/0dfe8852fa43d58cbdeb973765a9828d.jpg",
     "platforms": [
@@ -1162,7 +1161,8 @@
     "isFeatured": false,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Mortal%20Kombat%20II%20%28USA%29.sfc"
   },
   {
     "id": "snes-mega-man-x",
@@ -1170,7 +1170,6 @@
     "subtitle": "Khởi Đầu Huyền Thoại Mega Man X & Kiếm Sĩ Zero",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Mega%20Man%20X%20%28USA%29.sfc",
     "coverArt": "https://media.rawg.io/media/games/9e5/9e5db3cb9bc5e74293a344998207a22c.jpg",
     "backdropArt": "https://media.rawg.io/media/games/9e5/9e5db3cb9bc5e74293a344998207a22c.jpg",
     "platforms": [
@@ -1191,7 +1190,8 @@
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": false,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/Mega%20Man%20X%20%28USA%29.sfc"
   },
   {
     "id": "sheet-0-starcraft-gundam-century",
@@ -4686,7 +4686,6 @@
     "subtitle": "Thế Giới Ánh Sáng & Bóng Tối • Thanh Kiếm Master Sword Huyền Thoại",
     "system": "snes",
     "systemName": "Super Nintendo (SNES)",
-    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/The%20Legend%20of%20Zelda%20-%20A%20Link%20to%20the%20Past%20%28USA%29.sfc",
     "coverArt": "https://media.rawg.io/media/games/087/08727beb32c364d30e8b2a1aa8595f8e.jpg",
     "backdropArt": "https://media.rawg.io/media/games/087/08727beb32c364d30e8b2a1aa8595f8e.jpg",
     "platforms": [
@@ -4708,6 +4707,7 @@
     "isFeatured": true,
     "isPopular": true,
     "isNewUpdate": true,
-    "addedDate": "2026-08-15"
+    "addedDate": "2026-08-15",
+    "romUrl": "https://qdextdpa7wktpocb.public.blob.vercel-storage.com/roms/The%20Legend%20of%20Zelda%20-%20A%20Link%20to%20the%20Past%20%28USA%29.sfc"
   }
 ]
