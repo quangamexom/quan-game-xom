@@ -48,7 +48,19 @@ export function setRuntimeBlobToken(token: string) {
   }
 }
 
-export function getRuntimeBlobToken(customToken?: string): string | undefined {
+export function getRuntimeBlobToken(customTokenOrReq?: string | any): string | undefined {
+  let customToken: string | undefined = undefined;
+  if (typeof customTokenOrReq === "string") {
+    customToken = customTokenOrReq;
+  } else if (customTokenOrReq && typeof customTokenOrReq === "object") {
+    const headerToken = customTokenOrReq.headers?.["x-blob-token"] || (typeof customTokenOrReq.header === "function" ? customTokenOrReq.header("x-blob-token") : undefined);
+    if (typeof headerToken === "string") {
+      customToken = headerToken;
+    } else if (typeof customTokenOrReq.body?.blobToken === "string") {
+      customToken = customTokenOrReq.body.blobToken;
+    }
+  }
+
   if (customToken && typeof customToken === "string" && customToken.trim().startsWith("vercel_blob_rw_")) {
     setRuntimeBlobToken(customToken.trim());
     return customToken.trim();
