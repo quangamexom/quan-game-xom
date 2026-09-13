@@ -4,5 +4,6 @@ dist/
 coverage/
 .DS_Store
 *.log
+games-library-backup-*.json
 .env*
 !.env.example
